@@ -1,0 +1,13 @@
+SOURCE = \
+ijkZone/ijkZone.C \
+uniformStencil/uniformStencil.C \
+reconstructionSchemes/cartesianSchemes/youngCartesian/youngCartesian.C \
+reconstructionSchemes/cartesianSchemes/ccdCartesian/ccdCartesian.C \
+reconstructionSchemes/cartesianSchemes/mycCartesian/mycCartesian.C \
+interfaceForces/interfaceForces.C \
+interfaceForces/curvatureModels/curvatureModel.C \
+interfaceForces/curvatureModels/newCurvatureModel.C \
+interfaceForces/curvatureModels/heightFunction/heightFunction.C \
+interfaceForces/curvatureModels/divGradAlpha/divGradAlpha.C \
+
+# sources

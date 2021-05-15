@@ -1,0 +1,5 @@
+#!/bin/bash
+
+wmake libso src
+
+wmake applications/solvers/interIsoCartFoam

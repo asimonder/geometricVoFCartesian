@@ -1,0 +1,96 @@
+ /*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2006                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      fvOptions;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+
+FederovForce
+{
+  type            vectorCodedSource;
+    
+  selectionMode   all;      
+  fields          (U);
+  name            sourceTime;
+    
+    codeInclude
+      #{
+#include "fvcGrad.H"
+#include "fvcSnGrad.H"
+#include "fvcReconstruct.H"
+#include "surfaceInterpolate.H"
+#include "Time.H"
+      #};
+
+     codeCorrect
+       #{
+       //Info<< "coded_gradPdriving: codeCorrect" << endl;
+       #};
+
+     codeAddSup
+       #{
+      //Info<< "interFaceWave...step 0" << endl;  
+      const scalarField& V = mesh_.V();
+      const Time& time = mesh_.time();
+      vectorField& USource = eqn.source();
+
+      const scalar nuWater=1e-06;
+      const scalar rhoWater=1000.; //000;
+      const scalar pi=Foam::constant::mathematical::pi;
+      const scalar g=9.81;
+      const scalar lamb=0.05;
+      const scalar k=2*pi/lamb;
+      const scalar ak=0.28;
+      const scalar p0=0.0069;
+      const scalar sigmaST=0.074/rhoWater;
+      const scalar c0=sqrt(g/k+sigmaST*k);
+      const scalar theta=-pi+4.0*nuWater*k/c0*ak/p0;
+      const scalar c=c0*sqrt(1-(p0/ak)*cos(theta));
+
+      
+      const volScalarField& alpha = 
+	mesh().thisDb().lookupObject<volScalarField>("alpha.water");
+
+      const volScalarField& rhoV = mesh().thisDb().lookupObject<volScalarField>("rho");
+
+      //const surfaceScalarField& rhoV = 
+      //	mesh().thisDb().lookupObject<surfaceScalarField>("rhoPhi");
+
+      //const volVectorField gradAlpha(fvc::grad(alpha));
+      const volVectorField gradAlpha(fvc::reconstruct(fvc::snGrad(alpha)*mesh_.magSf()));
+
+      //USource +=USource+V*rhoWater*rotxGradAlpha*Ac*2*sqrt(time.value()*nuWater/pi);
+      forAll(V, i)
+	    {
+	      //scalar rhoNorm=(1-alpha[i])*rhoAir+alpha[i]*rhoWater;
+	      //USource[i]+=V[i]*2*rhoV[i]*rotxGradAlpha*Ac*ACurrent;
+	      USource[i]+=1.*V[i]*gradAlpha[i]*p0*rhoWater*sqr(c0)*cos(k*mesh_.C()[i].x()-theta-c*time.value());
+	    }
+      #};
+      
+      codeConstrain
+	#{
+        Info<< "FederovForce..." << endl;
+	#};
+
+      codeSetValue
+	#{
+        //Info<< "FederovForce..." << endl;
+	#};
+}
+
+
+// ************************************************************************* //
+
+

@@ -1,0 +1,109 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2006                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     interIsoCartFoam;
+
+//startFrom       latestTime;
+startFrom       startTime;
+
+startTime       0.0; 
+
+stopAt          endTime; 
+//stopAt          writeNow; //endTime;
+
+endTime         0.6;
+
+deltaT          1e-10;
+
+//writeControl    timeStep;
+writeControl  adjustableRunTime;
+
+writeInterval 0.0005;
+
+purgeWrite      10;
+
+writeFormat     ascii;
+
+writePrecision  8;
+
+writeCompression on;
+
+timeFormat      general;
+
+timePrecision   10;
+
+runTimeModifiable true;
+
+adjustTimeStep yes;
+
+maxCo           0.4;
+
+maxAlphaCo      0.04;
+
+maxDeltaT       0.1;
+
+libs
+(
+    "libtwoPhaseProperties.so"
+);
+
+
+functions
+{
+    
+  surface1
+    {
+      #includeEtc "caseDicts/postProcessing/visualization/surfaces.cfg"
+      
+      //fields       (p_rgh U alpha.water reconstructedDistanceFunction centre.water normal.water);
+      fields       (U alpha.water K_);
+      writeControl  writeTime;
+      //writeControl  adjustableRunTime;
+      // writeInterval   0.001;
+
+      //surfaceFormat vtk;
+      surfaces
+	(	 
+	 yNormal
+	 {
+	   $cuttingPlane;
+	   cell true;
+	   pointAndNormalDict
+	     {
+	       point    (0 0.001 0); // location of the streamwise spanwise plane
+	       normal $y;       // Overrides default normalVector (0 1 0)
+	     }                       
+	 }
+
+	freeSurface1
+	 {
+	   type isoSurface;
+	   cell false;
+	   isoField alpha.water;
+	   isoValue 0.5;
+	   interpolate true;
+	   //writeControl  writeTime;
+	 }
+	 
+	 );
+    }
+
+
+}
+
+
+// ************************************************************************* //
