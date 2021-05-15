@@ -1,16 +1,22 @@
-Library of new reconstruction schemes and surface tension models for two-phase flow simulations in OpenFOAM.  Compatible with OpenFOAM v2006.
 
-The methods are designed for uniform Cartesian grids. In cases where the interface is restriced to a subset of a domain, e.g.,problems involving deep water waves, the uniform grid can also be restricted to a smaller zone containing the interface. This is currently achieved using the cellSet functionality. The rest of the domain can use unstructured grids. Such an approach allows best of both worlds: the accuracy and speed of Cartesian methods around the interface where they are needed, and the flexibility of the unstructured grids elsewhere. 
+# geometricVoFCartesian
+An extension library containing new interface reconstruction schemes and surface tension models for two-phase flow simulations in OpenFOAM.  
 
-The library is still in development. At the moment, the available methods are:
-Interface normal: Young's method, central-columns differences, mixed Young-central method
-Interface curvature: height function method
+## Description
+The methods are designed for uniform Cartesian grids. In cases where the interface is restriced to a subset of the domain, e.g., deep water waves, the uniform grid can also be restricted to a smaller zone containing the interface. This is currently achieved using the cellSet functionality. The rest of the domain can use unstructured grids. Such an approach allows best of both worlds: the accuracy and speed of Cartesian methods around the interface where they are needed, and the flexibility of the unstructured grids elsewhere. 
 
-An example for gravity-capillary waves is provided. More benchmark cases will follow.
+The library is still in development. At the moment, the available methods are: (i) interface normal: Young's method, central-columns differences, mixed Young-central method; (ii) interface curvature: height function method.
 
-A paper documenting the details of the library will be added when ready.
+A paper documenting the details of the library and references will be added when ready.
 
-Author: Asim Onder
+## Example 
+An example for gravity-capillary waves is provided. More examples and benchmark cases will follow.
+
+## Prerequisites
+OpenFOAM v2006.
+
+## Author
+Asim Önder
 
 
 
