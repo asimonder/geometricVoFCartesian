@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------*\
-            Copyright (c) 2017-2019, German Aerospace Center (DLR)
+            Copyright (c) 2021, Asim Onder
 -------------------------------------------------------------------------------
 License
     This file is part of the VoFLibrary source code library, which is an
@@ -135,17 +135,10 @@ void Foam::divGradAlpha::calculateK()
     // Interpolated face-gradient of alpha
     surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
 
-    //gradAlphaf -=
-    //    (mesh.Sf()/mesh.magSf())
-    //   *(fvc::snGrad(alpha1_) - (mesh.Sf() & gradAlphaf)/mesh.magSf());
 
     // Face unit interface normal
     surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
-    // surfaceVectorField nHatfv
-    // (
-    //     (gradAlphaf + deltaN_*vector(0, 0, 1)
-    //    *sign(gradAlphaf.component(vector::Z)))/(mag(gradAlphaf) + deltaN_)
-    // );
+
     correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryField());
 
     // Face unit interface normal flux
@@ -154,94 +147,6 @@ void Foam::divGradAlpha::calculateK()
     // Simple expression for curvature
     K_ = -fvc::div(nHatfv & Sf);
 }
-
-/*void Foam::divGradAlpha::correctContactAngle
-(
-    surfaceVectorField::Boundary& nHatb,
-    surfaceVectorField::Boundary& gradAlphaf
-)
-{
-    scalar convertToRad = Foam::constant::mathematical::pi/180.0;
-
-    const fvMesh& mesh = alpha1_.mesh();
-    const volScalarField::Boundary& abf = alpha1_.boundaryField();
-
-    const fvBoundaryMesh& boundary = mesh.boundary();
-
-    forAll(boundary, patchi)
-    {
-        if (isA<alphaContactAngleFvPatchScalarField>(abf[patchi]))
-        {
-            alphaContactAngleFvPatchScalarField& acap =
-                const_cast<alphaContactAngleFvPatchScalarField&>
-                (
-                    refCast<const alphaContactAngleFvPatchScalarField>
-                    (
-                        abf[patchi]
-                    )
-                );
-
-            fvsPatchVectorField& nHatp = nHatb[patchi];
-            const scalarField theta
-            (
-                convertToRad*acap.theta(U_.boundaryField()[patchi], nHatp)
-            );
-
-            const vectorField nf
-            (
-                boundary[patchi].nf()
-            );
-
-            // Reset nHatp to correspond to the contact angle
-            const scalarField a12(nHatp & nf);
-            const scalarField b1(cos(theta));
-
-            scalarField b2(nHatp.size());
-            forAll(b2, facei)
-            {
-                b2[facei] = cos(acos(a12[facei]) - theta[facei]);
-            }
-
-            const scalarField det(1.0 - a12*a12);
-
-            scalarField a((b1 - a12*b2)/det);
-            scalarField b((b2 - a12*b1)/det);
-
-            nHatp = a*nf + b*nHatp;
-            nHatp /= (mag(nHatp) + deltaN_.value());
-
-            acap.gradient() = (nf & nHatp)*mag(gradAlphaf[patchi]);
-            acap.evaluate();
-        }
-    }
-}
-
-
-void Foam::divGradAlpha::K()
-{
-    const fvMesh& mesh = alpha1_.mesh();
-    const surfaceVectorField& Sf = mesh.Sf();
-
-    // Cell gradient of alpha
-    const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
-
-    // Interpolated face-gradient of alpha
-    surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
-
-    // Face unit interface normal
-    surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
-
-    correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
-
-    // Face unit interface normal flux
-    nHatf_ = nHatfv & Sf;
-
-    // Simple expression for curvature
-    K_ = -fvc::div(nHatf_);
-
-    // Kf_ = fvc::interpolate(K_);
-    }*/
-
 
 
 // ************************************************************************* //

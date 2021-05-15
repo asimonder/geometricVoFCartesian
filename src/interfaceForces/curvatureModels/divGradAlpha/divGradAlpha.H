@@ -19,8 +19,7 @@ Class
     Foam::divGradAlpha
 
 Description
-     the curvature from the sharp volume fraction field similiar to the
-    mode of Brackbill et al. (1992)
+
 
 SourceFiles
     divGradAlpha.C
