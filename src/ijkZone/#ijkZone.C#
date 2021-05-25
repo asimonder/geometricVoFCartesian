@@ -239,7 +239,7 @@ Foam::Vector<Foam::label> Foam::ijkZone::ijk3(label celli)
     i=0;
   else if (isEmpty_.y())
     j=0;
-  else if (isEmpty_.z())
+  else if (isEmpty_.x())
     k=0;
 
   return Vector<label>(i,j,k);

@@ -134,13 +134,12 @@ public:
 
   //- Indicator of the proximity of the interface
   //  Field values are 1 near and 0 away for the interface.
-  //tmp<volScalarField> nearInterface() const;
+  tmp<volScalarField> nearInterface() const;
 
-  void correct();
-  
   //- Read transportProperties dictionary
   bool read();
 
+  void correct();
 };
 
 

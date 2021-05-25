@@ -93,11 +93,10 @@ Foam::interfaceForces::surfaceTensionForce() const
   return fvc::interpolate(sigma()*K())*fvc::snGrad(alpha1_);
 }
 
-
-void Foam::interfaceForces::correct()
+Foam::tmp<Foam::volScalarField>
+Foam::interfaceForces::nearInterface() const
 {
-  //calculateK();
-  curvature_->correct();
+    return pos0(alpha1_ - 0.01)*pos0(0.99 - alpha1_);
 }
 
 
@@ -109,4 +108,8 @@ bool Foam::interfaceForces::read()
     return true;
 }
 
+void Foam::interfaceForces::correct()
+{
+     return curvature_->correct();
+}
 // ************************************************************************* //

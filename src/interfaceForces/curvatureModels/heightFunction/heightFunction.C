@@ -68,6 +68,38 @@ Foam::heightFunction::heightFunction
   
   ijkMesh_.markBoundaryCells(boundaryCells_,nMax_);
   Info<<"Done setting up ijkMesh for the height function method..."<<endl;
+
+  const scalar dx=ijkMesh_.dx();
+  const scalar dy=ijkMesh_.dy();
+  const scalar dz=ijkMesh_.dz();
+
+  bool isUniform=true;
+  if ( !ijkMesh_.isEmpty().x() and !ijkMesh_.isEmpty().y() and fabs(1-dx/dy)/dx>1e-6)
+    isUniform=false;
+  if ( !ijkMesh_.isEmpty().y() and !ijkMesh_.isEmpty().z() and fabs(1-dy/dz)/dy>1e-6)
+    isUniform=false;
+  if ( !ijkMesh_.isEmpty().x() and !ijkMesh_.isEmpty().z() and fabs(1-dx/dz)/dx>1e-6)
+    isUniform=false;
+
+  if (!isUniform)
+    FatalErrorInFunction
+      << "Height function requires uniform grids!"
+      << abort(FatalError);
+
+  is2D_=false;
+  if(ijkMesh_.isEmpty().x() or ijkMesh_.isEmpty().y() or ijkMesh_.isEmpty().z())
+    is2D_=true;
+
+  if(!ijkMesh_.isEmpty().x())
+    dl_=dx;
+  else
+    {
+      if(!ijkMesh_.isEmpty().y())
+	dl_=dy;
+      else
+	dl_=dz;
+    }
+
   
 }
 
@@ -133,12 +165,114 @@ void Foam::heightFunction::correctContactAngle
 }
 
 
+Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar>& phiIJK,const Vector<label>& ijk,label dir)
+{
+  const labelList& globalIds=ijkMesh_.globalIds();
+  const Vector<bool>& isEmpty=ijkMesh_.isEmpty();
+  const label Nx=ijkMesh_.Nx();
+  const label Ny=ijkMesh_.Ny();
+  const label Nz=ijkMesh_.Nz();
+  
+  const label& iP=ijk.x();
+  const label& jP=ijk.y();
+  const label& kP=ijk.z();
+
+  label nMax[3]={1,1,1};
+  nMax[dir]=nMax_;
+  
+  int il,jl,kl=0;
+
+  List<scalar> H;
+  if (is2D_)
+   {
+     H.setSize(3,0.0);
+     if (isEmpty.x())
+       {
+	 il=0;
+	 for (int j=-nMax[1];j<nMax[1]+1;j++)
+	   {
+	     for (int k=-nMax[2];k<nMax[2]+1;k++)
+	       {		 
+		 jl=(jP+j+Ny)%Ny;
+		 kl=(kP+k+Nz)%Nz;
+		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
+		 label gblIdx=globalIds[ijkG];
+		 if (dir==1)
+		   H[k+1]+=phiIJK[gblIdx];
+		 else
+		   H[j+1]+=phiIJK[gblIdx];
+	       }
+	   }
+       }
+     else if (isEmpty.y())
+       {
+	 jl=0;
+	 for (int i=-nMax[0];i<nMax[0]+1;i++)
+	   {
+	     for (int k=-nMax[2];k<nMax[2]+1;k++)
+	       {
+		 il=(iP+i+Nx)%Nx;
+		 kl=(kP+k+Nz)%Nz;
+		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
+		 label gblIdx=globalIds[ijkG];
+		 if (dir==0)
+		   H[k+1]+=phiIJK[gblIdx];
+		 else
+		   H[i+1]+=phiIJK[gblIdx];
+	       }
+	   }
+       }
+     else 
+       {
+	 kl=0;
+	 for (int i=-nMax[0];i<nMax[0]+1;i++)
+	   {
+	     for (int j=-nMax[1];j<nMax[1]+1;j++)
+	       {
+		 il=(iP+i+Nx)%Nx;
+		 jl=(jP+j+Ny)%Ny;
+		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
+		 label gblIdx=globalIds[ijkG];
+		 if (dir==0)
+		   H[j+1]+=phiIJK[gblIdx];
+		 else
+		   H[i+1]+=phiIJK[gblIdx];
+	       }
+	   }
+       }
+   }
+  else
+    {
+      H.setSize(9,0.0);
+      for (int i=-nMax[0];i<nMax[0]+1;i++)
+	{
+	  for (int j=-nMax[1];j<nMax[1]+1;j++)
+	    {
+	      for (int k=-nMax[2];k<nMax[2]+1;k++)
+		{
+		  label il=(iP+i+Nx)%Nx;
+		  label jl=(jP+j+Ny)%Ny;
+		  label kl=(kP+k+Nz)%Nz;
+		  label ijkG=ijkMesh_.ijk1(il,jl,kl); 
+		  label gblIdx=globalIds[ijkG];
+		  if (dir==0)
+		    H[j+1+3*(k+1)]+=phiIJK[gblIdx];
+		  else if (dir==1)
+		    H[i+1+3*(k+1)]+=phiIJK[gblIdx];
+		  else
+		    H[i+1+3*(j+1)]+=phiIJK[gblIdx];
+		}
+	    }
+	}
+    }
+
+  return -H*dl_;
+  
+}
+
 void Foam::heightFunction::calculateK()
 {
-  Info<<"Calculting the curvature with the heigh function method..."<<endl;
-  const label iMax=nMax_;
-  label jMax,kMax=0;
-  //const scalar nEls=2.0*iMax+1;
+  Info<<"Calculating the curvature with the height function method..."<<endl;
   const fvMesh& mesh = alpha1_.mesh();
   const volVectorField& C = mesh.C();
   //const surfaceVectorField& Sf = mesh.Sf();
@@ -156,170 +290,151 @@ void Foam::heightFunction::calculateK()
   Map<vector> faceCentreIJK;
   Map<scalar> curvIJK;
 
-  forAll (K_,celli)
-    K_[celli]=0;
-
   // where to put this one?
   const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
   surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
   surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
   correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
-    
+
+  forAll(K_,celli)
+    K_[celli]=0;
+
+
   reconstructionSchemes& surf =
     mesh.lookupObjectRef<reconstructionSchemes>("reconstructionScheme");
 
   surf.reconstruct(false);
 
   const boolList& interfaceCells = surf.interfaceCell();
-
     
   const volVectorField& faceCentre = surf.centre();
   const volVectorField& faceNormal = surf.normal();
 
-  Vector<label> stencilSize(iMax,iMax,iMax);
+  Vector<label> stencilSize(nMax_,nMax_,nMax_);
   ijkMesh_.getZoneField(interfaceCells,alphaIJK,alpha1_,stencilSize);
-
-  scalar dN=dx;
-  scalar dT=dz;
-  if (Nz==1)
-    dT=dy;
-
-  //Info<<"2: Calculting the curvature with the heigh function method..."<<endl;
+  
   forAll(interfaceCells,celli)
     {
       vector n = faceNormal[celli];
       if(interfaceCells[celli] && mag(n)>0)
 	{
-	  label dir=0;
-	  scalar nHat=0.0;
-	  if (mag(n.x())>0.0)
-	    nHat=n.x()/mag(n.x());
-	  const point cc = C[celli];
-	  
-	  if (mag(n.y())>mag(n.x()) && Ny>1)
+	  label dir=-1;
+	  if (mag(n.x())>0.0 and !ijkMesh_.isEmpty().x())
+	    dir=0;
+	  if (mag(n.y())>mag(n.x()) and !ijkMesh_.isEmpty().y())
+	    dir=1;
+	  if (mag(n.z())>mag(n.y()) and mag(n.z())>mag(n.x()) and !ijkMesh_.isEmpty().z())
+	    dir=2;
+	  if (dir==-1)
 	    {
-	      dir=1;
-	      nHat=n.y()/mag(n.y());
-	      dN=dy;dT=dx;
-	    }
-	  if (mag(n.z())>mag(n.y()) && mag(n.z())>mag(n.x()) && Nz>1)
-	    {
-	      dir=2;
-	      nHat=n.z()/mag(n.z());
-	      dN=dz;dT=dx;
+	      FatalErrorInFunction
+	      << "Normal direction cannot be identified."
+	     << abort(FatalError);
 	    }
 
 	  if (boundaryCells_[celli])
 	    {
+	      //Info<<"C[celli]="<<C[celli]<<endl;
+	      printf("Proc=%d, x=%f, y=%f, z=%f",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
 	      FatalErrorInFunction
 		<< "Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment."
 		<< abort(FatalError);
+	      //continue;
 	    }
-	      
-	  label i=round((cc.x()-Pmin.x())/dx);
-	  label j=round((cc.y()-Pmin.y())/dy);
-	  label k=round((cc.z()-Pmin.z())/dz);
-	  if (Ny==1)
-	    j=0;
-	  if (Nz==1)
-	    k=0;
 
-	  double H[3]={0.0,0.0,0.0}; 
-	  label il,jl,kl;
-	  for (int iN=-iMax;iN<iMax+1;iN++)
+	  //stencil_.setStencil(alphaIJK,ijkG);
+	  //K_[celli]=stencil_.calcCurvature(dir);
+
+	  Vector<label> ijkG=ijkMesh_.ijk3(celli);
+	  List<scalar> H=calculateHeights(alphaIJK,ijkG,dir); 
+
+	  if (is2D_)
 	    {
-	      for (int iT=-1;iT<2;iT++)
-		{
-		  if (dir==0)
-		    {
-		      il=(i+iN)%Nx;
-		      if (Ny==1)
-			{
-			  kl=(k+iT);
-			  jl=0;
-			}
-		      else
-			{
-			  jl=(j+iT);
-			  kl=0;
-			}
-		    }
-		  else if (dir==1)
-		    {
-		      il=(i+iT)%Nx;jl=(j+iN);kl=0;
-		    }
-		  else
-		    {
-		      il=(i+iT)%Nx;kl=(k+iN);jl=0;
-		    }			    			   
-		  label ijk=il+Nx*jl+Nx*Ny*kl;	  
-		  label gblIdx=globalIds[ijk];
-		  H[iT+1]+=alphaIJK[gblIdx]*dN;
-		}
+	      scalar Ht=(H[2]-H[0])/2.0/dl_;
+	      scalar Htt=(H[2]-2.0*H[1]+H[0])/dl_/dl_;
+	      K_[celli]=(Htt)/Foam::pow(1.0+Ht*Ht,1.5);
 	    }
-	  scalar Ht=(H[2]-H[0])/2.0/dT;
-	  scalar Htt=(H[2]-2.0*H[1]+H[0])/dT/dT;
-	  scalar kappa=(Htt)/Foam::pow(1.0+Ht*Ht,1.5);
-	  K_[celli]=-kappa; 
-	}
-      
+	  else
+	    {
+	      double H2[3][3]={{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}}; 
+	      for (int i=-1;i<2;i++)//normal 
+		{
+		  for (int j=-1;j<2;j++)//tangent
+		    {
+		      H2[i][j]=H[i+1+3*(j+1)]; 
+		    }
+		}
+	      scalar Ht=(H2[2][1]-H2[0][1])/2.0/dl_;
+	      scalar Hb=(H2[1][2]-H2[1][0])/2.0/dl_;
+	      scalar Htt=(H2[2][1]-2.0*H2[1][1]+H2[0][1])/dl_/dl_;
+	      scalar Hbb=(H2[1][2]-2.0*H2[1][1]+H2[1][0])/dl_/dl_;
+	      scalar Htb=(H2[2][2]-H2[2][0]-H2[0][2]+H2[0][0])/4./dl_/dl_;
+	      K_[celli]=(Htt+Hbb+Htt*Hb*Hb+Hbb*Ht*Ht-2.0*Htb*Ht*Hb)/Foam::pow(1.0+Ht*Ht+Hb*Hb,1.5);      
+	    }	  	      
+	}      
     }
 
-  //Info<<"3: Calculting the curvature with the heigh function method..."<<endl;  
+  
   label neiMax=1;
   //this one can cause problems at cyclic BC!
   RDF_.markCellsNearSurf(interfaceCells,neiMax);
   const boolList& nextToInterface =RDF_.nextToInterface(); 
-  //boolList atBoundary=ijkMesh_.markBoundaryCells(1);
   
   boolList neiInterface(mesh.nCells(),false);
 
   forAll(neiInterface,celli)
     {
-      if (nextToInterface[celli] and !interfaceCells[celli]) // and !boundaryCells_[celli])
+      if (nextToInterface[celli] and !interfaceCells[celli] and !boundaryCells_[celli])
 	  neiInterface[celli]=true;
     }
 
-  stencilSize=Vector<label>(neiMax+1,neiMax+1,neiMax+1);
+  neiMax+=1;
+  stencilSize=Vector<label>(neiMax,neiMax,neiMax);
   ijkMesh_.getZoneField(neiInterface,faceCentreIJK,faceCentre,stencilSize);
   ijkMesh_.getZoneField(neiInterface,curvIJK,K_,stencilSize);
 
-  //Info<<"4: Calculting the curvature with the heigh function method..."<<endl;
-  
-  neiMax+=1;
+
+  label iMax,jMax,kMax;
+
+  if (ijkMesh_.isEmpty().x())
+    {
+      iMax=0;jMax=neiMax;kMax=neiMax;
+    }
+  else if (ijkMesh_.isEmpty().y())
+    {
+      iMax=neiMax;jMax=0;kMax=neiMax;
+    }
+  else if (ijkMesh_.isEmpty().z())
+    {
+      iMax=neiMax;jMax=neiMax;kMax=0;
+    }
+  else
+    {
+      iMax=neiMax;jMax=neiMax;kMax=neiMax;
+    }
+    
+  //label nCount=0;  
   forAll(neiInterface,celli)
     {
       if (neiInterface[celli])
 	{
 	  const point cc = C[celli];
 
-	  label i=round((cc.x()-Pmin.x())/dx);
-	  label j=round((cc.y()-Pmin.y())/dy);
-	  label k=round((cc.z()-Pmin.z())/dz);
-	  if (Ny==1)
-	    {
-	      j=0;
-	      jMax=0;
-	      kMax=neiMax;
-	    }
-	  
-	  if (Nz==1)
-	    {
-	      k=0;
-	      kMax=0;
-	      jMax=neiMax;
-	    }
+	  label i=round((cc.x()-Pmin.x())/dl_);
+	  label j=round((cc.y()-Pmin.y())/dl_);
+	  label k=round((cc.z()-Pmin.z())/dl_);
+
 	  label gblIdMin=-1;
 	  scalar distMin=GREAT;
-	  for (int ii=-neiMax;ii<neiMax+1;ii++)
+	  for (int ii=-iMax;ii<iMax+1;ii++)
 	    {
 	      for (int jj=-jMax;jj<jMax+1;jj++)
 		{
 		  for (int kk=-kMax;kk<kMax+1;kk++)
 		    {
-		      label il=(i+ii)%Nx;
-		      label kl=(k+kk); 
-		      label jl=(j+jj);
+		      label il=(i+ii+Nx)%Nx;
+		      label jl=(j+jj+Ny)%Ny;
+		      label kl=(k+kk+Nz)%Nz; 
 		      label ijk=il+Nx*jl+Nx*Ny*kl;
 		      label gblId=globalIds[ijk];
 		      vector faceCentre=faceCentreIJK[gblId];
@@ -333,11 +448,11 @@ void Foam::heightFunction::calculateK()
 		    }
 		}
 	    }
+	  
 	  K_[celli]=curvIJK[gblIdMin];
 	}
     }
 
-  // Info<<"5: Calculting the curvature with the heigh function method..."<<endl;
 }
 
 

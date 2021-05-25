@@ -52,7 +52,7 @@ Foam::curvatureModel::curvatureModel
             IOobject::AUTO_WRITE
         ),
         alpha1_.mesh(),
-        dimensionedScalar("K", dimless/dimLength, 0.0)
+        dimensionedScalar("K", dimless/dimLength, 0.0)//,
         //"zeroGradient"
 	//"cyclic"
     )

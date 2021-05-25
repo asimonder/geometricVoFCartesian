@@ -48,7 +48,7 @@ Description
 
     isoAdvector code supplied by Johan Roenby, STROMNING (2018)
 
-    Adapted to include new surface tension models.
+    Adapted by A. Onder to include new surface tension models.
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 
                 if (mesh.changing())
                 {
-		  /*gh = (g & mesh.C()) - ghRef;
+		  gh = (g & mesh.C()) - ghRef;
                     ghf = (g & mesh.Cf()) - ghRef;
 
                     if (isA<dynamicRefineFvMesh>(mesh))
@@ -158,10 +158,10 @@ int main(int argc, char *argv[])
                     if (checkMeshCourantNo)
                     {
                         #include "meshCourantNo.H"
-			}*/
-		  FatalErrorInFunction
+			}
+		    /*FatalErrorInFunction
 		    << "Dynamic mesh is not supported at the moment."
-		    << abort(FatalError);
+		    << abort(FatalError);*/
 
                 }
             }
@@ -171,6 +171,8 @@ int main(int argc, char *argv[])
 
             mixture.correct();
 
+	    interfaceForce.correct();
+	    
             if (pimple.frozenFlow())
             {
                 continue;

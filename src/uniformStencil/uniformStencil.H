@@ -27,7 +27,6 @@ Class
     Foam::uniformStencil
 
 Description
-
     Developed by Asim Onder (2021)
 
 SourceFiles
@@ -49,6 +48,7 @@ SourceFiles
 #include "MeshObject.H"
 #include "IFstream.H"
 #include "cellSet.H"
+//#include "DynamicList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -68,12 +68,13 @@ namespace Foam
   
     const fvMesh& mesh_;
     const ijkZone& ijkMesh_;
-    List<scalar> A_;
     const label nMax_;
     label N_;
     label NS_;
     bool is2D_;
-      
+    List<scalar> A_;
+
+
   //- No copy construct
     uniformStencil(const uniformStencil&) = delete;
   
@@ -82,12 +83,12 @@ namespace Foam
 
     label a2(const label i, const label j)
     {
-      return (i+1)+NS_*(j+1);
+      return (i+nMax_)+NS_*(j+nMax_);
     }
   
     label a3(const label i, const label j, const label k)
     {
-      return (i+1)+NS_*(j+1)+NS_*NS_*(k+1);
+      return (i+nMax_)+NS_*(j+nMax_)+NS_*NS_*(k+nMax_);
     }
 
   public:
@@ -110,6 +111,8 @@ namespace Foam
 
     vector calcYoungNormal();
     vector calcCCDNormal();
+    //scalar calcCurvature(const Map<scalar>& phiIJK,const Vector<label>& ijk,label normalDir);
+    scalar calcCurvature(label normalDir);
     
   };
 

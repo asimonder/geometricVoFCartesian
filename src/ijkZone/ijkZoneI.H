@@ -65,12 +65,12 @@ void Foam::ijkZone::getZoneField(const Foam::boolList& zone,
       if (zone[celli])
 	{
 	  //if (!atBoundary[celli])
-	  Vector<label> ijk=ijk3(celli);
+	  Vector<label> ijkG=ijk3(celli);
 	  label il,jl,kl=0;
 
-	  label i=ijk.x();
-	  label j=ijk.y();
-	  label k=ijk.z();
+	  label i=ijkG.x();
+	  label j=ijkG.y();
+	  label k=ijkG.z();
 
 	  for (int ii=-iMax;ii<iMax+1;ii++)
 	    {
@@ -78,9 +78,9 @@ void Foam::ijkZone::getZoneField(const Foam::boolList& zone,
 		{
 		  for (int jj=-jMax;jj<jMax+1;jj++)
 		    {
-		      il=(i+ii)%Nx_;
-		      jl=(j+jj)%Ny_;
-		      kl=(k+kk)%Nz_;
+		      il=(i+ii+Nx_)%Nx_;
+		      jl=(j+jj+Ny_)%Ny_;
+		      kl=(k+kk+Nz_)%Nz_;
 		      label ijk=il+Nx_*jl+Nx_*Ny_*kl;	  
 		      label gblIdx=globalIds_[ijk];
 		      

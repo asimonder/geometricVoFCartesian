@@ -19,8 +19,8 @@
     rhoPhi = advector.getRhoPhi(rho1f, rho2f);
 
     alpha2 = 1.0 - alpha1;
-    mixture.correct();
-    interfaceForce.correct();
+    //mixture.correct();
+    //interfaceForce.correct();
 }
 
 Info<< "Phase-1 volume fraction = "
