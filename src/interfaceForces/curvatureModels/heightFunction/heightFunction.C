@@ -335,11 +335,11 @@ void Foam::heightFunction::calculateK()
 	  if (boundaryCells_[celli])
 	    {
 	      //Info<<"C[celli]="<<C[celli]<<endl;
-	      printf("Proc=%d, x=%f, y=%f, z=%f",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
-	      FatalErrorInFunction
+	      printf("Cell at the boundary: proc=%d, x=%f, y=%f, z=%f",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
+	      /*FatalErrorInFunction
 		<< "Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment."
-		<< abort(FatalError);
-	      //continue;
+		<< abort(FatalError);*/
+	      continue;
 	    }
 
 	  //stencil_.setStencil(alphaIJK,ijkG);
@@ -361,7 +361,7 @@ void Foam::heightFunction::calculateK()
 		{
 		  for (int j=-1;j<2;j++)//tangent
 		    {
-		      H2[i][j]=H[i+1+3*(j+1)]; 
+		      H2[i+1][j+1]=H[i+1+3*(j+1)]; 
 		    }
 		}
 	      scalar Ht=(H2[2][1]-H2[0][1])/2.0/dl_;
