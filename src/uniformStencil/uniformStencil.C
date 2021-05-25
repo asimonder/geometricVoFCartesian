@@ -9,8 +9,6 @@
 -------------------------------------------------------------------------------
 
 License
-    This file is part of OpenFOAM.
-
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -44,8 +42,8 @@ Foam::uniformStencil::uniformStencil(const Foam::fvMesh& mesh,const ijkZone& ijk
   nMax_(nMax),
   NS_(2*nMax_+1),
   is2D_(false)
-{
-  
+  //A_(200,0.0)
+{  
   label NxS=NS_;
   label NyS=NS_;
   label NzS=NS_;
@@ -80,19 +78,6 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
   const label& jP=ijk.y();
   const label& kP=ijk.z();
 
-  //boundary cells not involved
-  /*if (!isCyclic_.x() and !isEmpty_.x() and (iP+iMax>=Nx_ or iP-iMax<=0))
-      FatalErrorInFunction
-      << "Stencil is centred at a non-periodic boundary in the x direction!"
-      << abort(FatalError);
-  if (!isCyclic_.y() and !isEmpty_.y() and (jP+iMax>=Ny_ or jP-iMax<=0))
-      FatalErrorInFunction
-      << "Stencil is centred at a non-periodic boundary in the y direction!"
-      << abort(FatalError);
-  if (!isCyclic_.z() and !isEmpty_.z() and (kP+iMax>=Nz_ or kP-iMax<=0))
-      FatalErrorInFunction
-      << "Stencil is centred at a non-periodic boundary in the z direction!"
-      << abort(FatalError);*/
 
   int il,jl,kl=0;
       
@@ -104,12 +89,12 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 	  for (int k=-nMax_;k<nMax_+1;k++)
 	    {
 	      
-	      jl=(jP+j)%Ny;
-	      kl=(kP+k)%Nz;
+	      jl=(jP+j+Ny)%Ny;
+	      kl=(kP+k+Nz)%Nz;
 	      label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 	      label gblIdx=globalIds[ijkG];
-	      label ijkL=(j+1)+NS_*(k+1);
-	      A_[ijkL]=phiIJK[gblIdx];	
+	      //label ijkL=(j+nMax_)+NS_*(k+nMax_);
+	      A_[a2(j,k)]=phiIJK[gblIdx];	
 	    }
 	}
     }
@@ -120,12 +105,12 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 	{
 	  for (int k=-nMax_;k<nMax_+1;k++)
 	    {
-	      il=(iP+i)%Nx;
-	      kl=(kP+k)%Nz;
+	      il=(iP+i+Nx)%Nx;
+	      kl=(kP+k+Nz)%Nz;
 	      label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 	      label gblIdx=globalIds[ijkG];
-	      label ijkL=(i+1)+NS_*(k+1);
-	      A_[ijkL]=phiIJK[gblIdx];
+	      //label ijkL=(i+nMax_)+NS_*(k+nMax_);
+	      A_[a2(i,k)]=phiIJK[gblIdx];
 	    }
 	}
     }
@@ -136,12 +121,12 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 	{
 	  for (int j=-nMax_;j<nMax_+1;j++)
 	    {
-	      il=(iP+i)%Nx;
-	      jl=(jP+j)%Ny;
+	      il=(iP+i+Nx)%Nx;
+	      jl=(jP+j+Ny)%Ny;
 	      label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 	      label gblIdx=globalIds[ijkG];
-	      label ijkL=(i+1)+NS_*(j+1);
-	      A_[ijkL]=phiIJK[gblIdx];	
+	      //label ijkL=(i+nMax_)+NS_*(j+nMax_);
+	      A_[a2(i,j)]=phiIJK[gblIdx];	
 	    }
 	}
     }
@@ -153,13 +138,13 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 	    {
 	      for (int k=-nMax_;k<nMax_+1;k++)
 		{
-		  label il=(iP+i)%Nx;
-		  label jl=(jP+j)%Ny;
-		  label kl=(kP+k)%Nz;
+		  label il=(iP+i+Nx)%Nx;
+		  label jl=(jP+j+Ny)%Ny;
+		  label kl=(kP+k+Nz)%Nz;
 		  label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 		  label gblIdx=globalIds[ijkG];
-		  label ijkL=(i+1)+NS_*(j+1)+NS_*NS_*(k+1);
-		  A_[ijkL]=phiIJK[gblIdx];	
+		  //label ijkL=(i+nMax_)+NS_*(j+nMax_)+NS_*NS_*(k+nMax_);
+		  A_[a3(i,j,k)]=phiIJK[gblIdx];	
 		}
 	    }
 	}
@@ -394,7 +379,73 @@ Foam::vector Foam::uniformStencil::calcCCDNormal()
 	  return -m3;
 	}
     }
+}
+
+
+Foam::scalar Foam::uniformStencil::calcCurvature(label normalDir)
+{
+  const Foam::scalar dx=ijkMesh_.dx();
+  scalar kappa=0.0;
+
+  //const List<scalar>& A=A_;
   
+  if (is2D_)
+    {
+      double H[3]={0.0,0.0,0.0}; 
+      for (int iN=-nMax_;iN<nMax_+1;iN++)
+	{
+	  for (int iT=-1;iT<2;iT++)
+	    {
+	      if(normalDir==0)
+		H[iT+1]+=A_[a2(iN,iT)]*dx;
+	      else if(normalDir==1)
+		{
+		  if (ijkMesh_.isEmpty().x())
+		    H[iT+1]+=A_[a2(iN,iT)]*dx;
+		  else
+		    H[iT+1]+=A_[a2(iT,iN)]*dx;
+		}
+	      else
+		H[iT+1]+=A_[a2(iT,iN)]*dx;
+	    }
+	}
+      scalar Ht=(H[2]-H[0])/2.0/dx;
+      scalar Htt=(H[2]-2.0*H[1]+H[0])/dx/dx;
+      kappa=(Htt)/Foam::pow(1.0+Ht*Ht,1.5);
+    }
+  else
+    {
+      double H[3][3]={{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}}; 
+      for (int iN=-nMax_;iN<nMax_+1;iN++)//normal 
+	{
+	  for (int iT=-1;iT<2;iT++)//tangent
+	    {
+	      for (int iB=-1;iB<2;iB++)//bi-normal
+		{
+		  if (normalDir==0)
+		    {
+		      H[iT+1][iB+1]+=A_[a3(iN,iT,iB)]*dx;
+		    }
+		  else if (normalDir==1)
+		    {
+		      H[iT+1][iB+1]+=A_[a3(iT,iN,iB)]*dx;
+		    }
+		  else
+		    {
+		      H[iT+1][iB+1]+=A_[a3(iT,iB,iN)]*dx;
+		    }			    			   
+		}
+	    }
+	}
+      scalar Ht=(H[2][1]-H[0][1])/2.0/dx;
+      scalar Hb=(H[1][2]-H[1][0])/2.0/dx;
+      scalar Htt=(H[2][1]-2.0*H[1][1]+H[0][1])/dx/dx;
+      scalar Hbb=(H[1][2]-2.0*H[1][1]+H[1][0])/dx/dx;
+      scalar Htb=(H[2][2]-H[2][0]-H[0][2]+H[0][0])/4./dx/dx;
+      kappa=(Htt+Hbb+Htt*Hb*Hb+Hbb*Ht*Ht-2.0*Htb*Ht*Hb)/Foam::pow(1.0+Ht*Ht+Hb*Hb,1.5);      
+    }
+
+  return -kappa;
 }
 
 

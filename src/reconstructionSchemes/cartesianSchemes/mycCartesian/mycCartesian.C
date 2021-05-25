@@ -112,6 +112,13 @@ void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
 	}
 
     }
+
+  if (Pstream::parRun())
+      {
+	Foam::reduce(youngCount, sumOp<label>());
+	Foam::reduce(CCDCount, sumOp<label>());    
+      }
+
   Info<<"youngCount="<<youngCount<<endl;
   Info<<"CCDCount="<<CCDCount<<endl;
 }
@@ -227,7 +234,7 @@ void Foam::reconstruction::mycCartesian::reconstruct(bool forceUpdate)
 
 void Foam::reconstruction::mycCartesian::mapAlphaField() const
 {
-    // without it, we seem to get a race condition
+    // without this line, we seem to get a race condition
     mesh_.C();
 
     cutCellPLIC cutCell(mesh_);

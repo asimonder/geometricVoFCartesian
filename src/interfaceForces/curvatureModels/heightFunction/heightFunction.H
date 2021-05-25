@@ -35,7 +35,6 @@ SourceFiles
 #include "curvatureModel.H"
 #include "globalIndex.H"
 #include "reconstructedDistanceFunction.H"
-//#include "markInterfaceRegion.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -67,7 +66,12 @@ private:
   boolList boundaryCells_;
 
   ijkZone ijkMesh_;
+
   const globalIndex globalNumbering_;
+
+  bool is2D_;
+
+  scalar dl_;
 
   //- Disallow copy construct
   heightFunction(const heightFunction&);
@@ -75,7 +79,8 @@ private:
   //- Disallow default bitwise assignment
   void operator=(const heightFunction&);
 
-
+  List<scalar> calculateHeights(const Map<scalar>& phiIJK,const Vector<label>& ijk,label dir);
+  
 protected:
 
   //- Re-calculate the interface curvature

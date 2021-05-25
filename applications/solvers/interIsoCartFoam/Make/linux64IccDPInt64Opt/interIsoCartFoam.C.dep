@@ -945,23 +945,23 @@ $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/readhRef.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/gh.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/createMRF.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/createFvOptions.H \
-$(WM_PROJECT_DIR)/applications/solvers/multiphase/interFoam/initCorrectPhi.H \
-$(WM_PROJECT_DIR)/applications/solvers/multiphase/interFoam/correctPhi.H \
+initCorrectPhi.H \
+correctPhi.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/continuityErrs.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/createUfIfPresent.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/CourantNo.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/setInitialDeltaT.H \
 $(WM_PROJECT_DIR)/src/dynamicFvMesh/lnInclude/readDyMControls.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/readTimeControls.H \
-$(WM_PROJECT_DIR)/applications/solvers/multiphase/VoF/alphaCourantNo.H \
+alphaCourantNo.H \
 $(WM_PROJECT_DIR)/applications/solvers/multiphase/VoF/setDeltaT.H \
 $(WM_PROJECT_DIR)/src/dynamicFvMesh/lnInclude/meshCourantNo.H \
 alphaControls.H \
 alphaEqnSubCycle.H \
 alphaEqn.H \
-$(WM_PROJECT_DIR)/applications/solvers/multiphase/interFoam/alphaSuSp.H \
-$(WM_PROJECT_DIR)/applications/solvers/multiphase/interFoam/rhofs.H \
+alphaSuSp.H \
+rhofs.H \
 UEqn.H \
-$(WM_PROJECT_DIR)/applications/solvers/multiphase/interFoam/pEqn.H \
+pEqn.H \
 
 
