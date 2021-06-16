@@ -7,8 +7,6 @@ The methods are designed for uniform Cartesian grids. In cases where the interfa
 
 The library is still in development. At the moment, the available methods are: (i) interface normal: Young's method, central-columns differences, mixed Young-central method; (ii) interface curvature: height function method.
 
-A paper documenting the details of the library and references will be added when ready.
-
 ## Example 
 An example for gravity-capillary waves is provided. More examples and benchmark cases will follow.
 
