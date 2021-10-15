@@ -1,5 +1,5 @@
 
-# geometricVoFCartesian
+# machineLearningVOF
 An extension library containing new neural-network based interface reconstruction schemes and surface tension models for two-phase flow simulations in OpenFOAM.  
 
 ## Description
