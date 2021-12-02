@@ -1,0 +1,276 @@
+/*---------------------------------------------------------------------------*\
+            Copyright (c) 2021, Asim Onder
+-------------------------------------------------------------------------------
+License
+    OpenFOAM is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+
+Application
+    generateJONSWAPData
+
+Description
+
+
+Author
+   Asim Onder
+
+\*---------------------------------------------------------------------------*/
+
+#include "fvCFD.H"
+
+#include "OFstream.H"
+#include "autoPtr.H"
+#include "reconstructionSchemes.H"
+#include "waveFunction.H"
+#include "writeFile.H"
+//#include "isoCutCell.H"
+
+#include "interfaceForces.H"
+#include "ijkZone.H"
+#include "uniformStencil.H"
+//#include "randomWaveFieldImplicitFunction.H"
+//#include "OBJstream.H"
+#include <ctime>
+#include <stdio.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+void setAlpha
+(
+    const fvMesh& mesh,
+    //const dictionary& setAlphaFieldDict,
+    Foam::autoPtr<waveFunction>& func,
+    volScalarField& alpha1
+)
+{
+
+  const cellList& cells=mesh.cells();
+  const faceList& faces=mesh.faces();
+  const  surfaceVectorField&  Cf = mesh.Cf();
+  label Nx=40;
+  label Ny=Nx;
+  label iC=0;
+  forAll(alpha1,iCell)
+    {
+      iC+=1;
+      vector Pmin=vector::uniform(VGREAT);
+      vector Pmax=vector::uniform(-VGREAT);
+      for (int iF=0;iF<6;iF++)
+	{
+	  label f1=cells[iCell][iF];
+	  Pmin.x()=Foam::min(Cf[f1].x(),Pmin.x());
+	  Pmin.y()=Foam::min(Cf[f1].y(),Pmin.y());
+	  Pmin.z()=Foam::min(Cf[f1].z(),Pmin.z());
+	  Pmax.x()=Foam::max(Cf[f1].x(),Pmax.x());
+	  Pmax.y()=Foam::max(Cf[f1].y(),Pmax.y());
+	  Pmax.z()=Foam::max(Cf[f1].z(),Pmax.z());
+	}
+
+      scalar dxC=(Pmax.x()-Pmin.x());
+
+      scalar dx=dxC/Nx;
+
+      //printf("proc=%d: iCell=%d/%d, dx=%f, dxC=%f\n",Pstream::myProcNo(),iC, mesh.nCells(),dx,dxC);
+      
+      scalar V=dxC*dxC*dxC;
+      vector P0=Pmin+vector(dx/2.,dx/2.,0);
+      scalar sum=0;
+      scalar Hmax=-VGREAT;
+      scalar Hmin=VGREAT;
+      for (int i=0;i<Nx;i++)
+	    {
+	      for (int j=0;j<Ny;j++)
+		{
+		  vector Pc=P0+vector(dx*i,dx*j,0);
+		  scalar val=func->value(Pc);
+		  Hmax=Foam::max(Hmax,val);
+		  Hmin=Foam::min(Hmin,val);
+		  //if (Pstream::master())
+		  //  printf("proc=%d: iCell=%d/%d, H=%f\n",Pstream::myProcNo(),iC, mesh.nCells(),val);
+		  if (val<0.0)
+		    continue;
+		  else if (val>dxC)
+		    sum+=dxC*dx*dx;
+		  else
+		    sum+=val*dx*dx;
+		}
+	    }
+      Info<<"iCell="<<iC<<"/"<<mesh.nCells()<<", Hmax="<<Hmax+Pmin.z()<<",  Hmin="<<Hmin+Pmin.z()<<endl;
+      if(sum/V>1.0)
+	{
+	  //Info<<"Something wrong: alpha="<<sum/V<<endl;
+	  alpha1[iCell]=1.0;
+	}
+      else
+	alpha1[iCell]=sum/V;
+    }
+
+  alpha1.correctBoundaryConditions();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+int main(int argc, char *argv[])
+{
+//    #include "addRegionOption.H"
+    #include "setRootCase.H"
+    #include "createTime.H"
+    #include "createMesh.H"
+    #include "createControl.H"
+    #include "createFields.H"
+ 
+    #include "createTimeControls.H"
+    #include "readTimeControls.H"
+    #include "CourantNo.H"
+    #include "setInitialDeltaT.H"
+
+  ijkZone ijkMesh(mesh);
+  const label NCells=ijkMesh.Nx();
+  const vector Pmin=ijkMesh.Pmin();  
+  const vector Pmax=ijkMesh.Pmax();
+  const scalar dx=ijkMesh.dx();
+
+  scalar recTime = 0;
+  label nMax=1;
+  boolList interfaceCells(mesh.nCells(),false);
+  //boolList atBoundary(mesh.nCells(),false);
+  //ijkMesh.markBoundaryCells(atBoundary,2);
+
+  uniformStencil stencil(mesh,ijkMesh,nMax);
+  
+  word reconScheme=fvSolutionDict.get<word>("reconstructionScheme");
+  autoPtr<reconstructionSchemes> surf =
+    reconstructionSchemes::New(alpha1,phi,U,fvSolutionDict);
+
+  word curvModel=transportProperties.get<word>("curvatureModel");
+  interfaceForces surfForces(alpha1,U,transportProperties);
+
+
+
+  while (runTime.run())
+    {
+      runTime++;
+      	  
+      Info<<"Setting alpha field..."<<endl;
+      //setAlpha(cutCell,mesh,setAlphaFieldDict,alpha1);
+      Foam::autoPtr<waveFunction> waveField(Foam::waveFunction::New
+				       (
+					setAlphaFieldDict.get<word>("type"),
+					setAlphaFieldDict
+					));
+      
+      const scalar interfaceTol=setAlphaFieldDict.getOrDefault<scalar>("interfaceTol",0.000001);      
+      setAlpha(mesh,waveField,alpha1);	  
+      recTime += mesh.time().cpuTimeIncrement();
+
+      FILE *writeTraining;
+      FILE *writeNormals;
+      FILE *writeCurvatures;
+      string strNc=std::to_string(NCells);
+      //string strXFetch=std::to_string(XFetch);
+      //string strU=std::to_string(UWind);
+      string strName=waveField->name();
+      string dictPath=runTime.path()/"trainingData_"+strName+"_N"+strNc+".dat";
+      writeTraining = fopen (dictPath.c_str(),"a");
+      dictPath=runTime.path()/"normalData_"+strName+"_N"+strNc+"_"+reconScheme+".dat";
+      writeNormals = fopen (dictPath.c_str(),"a");
+      dictPath=runTime.path()/"curvatureData_"+strName+"_N"+strNc+"_"+curvModel+"_"+reconScheme+".dat";
+      writeCurvatures = fopen (dictPath.c_str(),"a");
+
+      Info<<"recTime="<<recTime<<endl;
+      
+      Info<<"Calculating stencils..."<<endl;
+	  //select interfacecells
+      interfaceCells=false;
+      label cInt=0;
+      forAll (alpha1,iCell)
+	{
+	  if (alpha1[iCell]>interfaceTol and alpha1[iCell]<1-interfaceTol) // and !atBoundary[iCell])
+	    {
+	      interfaceCells[iCell]=true;
+	      cInt+=1;
+	    }
+	}
+      Info<<"number of interface cells="<<cInt<<endl;
+      Map<scalar> alphaIJK;
+      Vector<label> stencilSize(nMax,nMax,nMax);
+      ijkMesh.getZoneField(interfaceCells,alphaIJK,alpha1,stencilSize);
+      recTime += mesh.time().cpuTimeIncrement();
+      Info<<"recTime="<<recTime<<endl;
+      
+      Info<<"Calculating curvatures..."<<endl;
+      //interface reconstruction
+      surf->reconstruct();
+      const volVectorField& faceNormal = surf->normal();
+      //volScalarField RDF = mesh.lookupObjectRef<volScalarField>("RDF");
+      //Map<scalar> rdfIJK;
+      //ijkMesh.getZoneField(interfaceCells,rdfIJK,RDF,stencilSize);
+
+      //calculate surface tension
+      surfForces.correct();
+      surfForces.surfaceTensionForce();
+
+      recTime += mesh.time().cpuTimeIncrement();
+      volScalarField curvCalc = mesh.lookupObjectRef<volScalarField>("K_");     
+      
+      List<scalar> A;
+      //List<scalar> Df;
+      scalar curv=0;
+      scalar curvMax=0;
+
+      const volVectorField& C = mesh.C();
+      
+      forAll(interfaceCells,iCell)		
+	{
+	  if(interfaceCells[iCell])
+	    {
+	      stencil.setStencil(alphaIJK,ijkMesh.ijk3(iCell));
+	      A=stencil.getStencil();
+	      vector n = faceNormal[iCell];	      
+
+	      vector X=C[iCell];
+	      curv=waveField->curvature(X);
+	      vector G=waveField->grad(X);
+	      symmTensor2D H=waveField->hessian(X);
+	      fprintf(writeTraining,"%.12e,%.12e,%.12e,%.12e,%.12e",G.x(),G.y(),H.xx()*dx,H.yy()*dx,H.xy()*dx,curv*dx,dx);
+	      forAll(A,iA)
+		fprintf(writeTraining,"%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e,%.12e\n",G.x(),G.y(),H.xx(),H.yy(),H.xy(),curv*dx,dx,A[0],A[1],A[2],A[3],A[4],A[5],A[6],A[7],A[8],A[9],A[10],A[11],A[12],A[13],A[14],A[15],A[16],A[17],A[18],A[19],A[20],A[21],A[22],A[23],A[24],A[25],A[26]);
+
+	      
+	      fprintf(writeNormals,"%.12e,%.12e,%.12e\n",n.x(),n.y(),n.z());
+	      fprintf(writeCurvatures,"%.12e\n",curvCalc[iCell]*dx);
+
+	      curvMax=max(curvMax,curv);
+	    }
+	}	  
+      Info<<"curvMax*dx="<<curvMax*dx<<endl;
+      recTime += mesh.time().cpuTimeIncrement();
+      Info<<"recTime="<<recTime<<endl;		
+
+      fclose(writeTraining);
+      fclose(writeNormals);
+      fclose(writeCurvatures);
+	
+      runTime.write();
+    }
+
+  Info<< "End\n" << endl;
+  return 0;
+}
+
+
+// ************************************************************************* //

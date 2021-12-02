@@ -80,7 +80,7 @@ namespace Foam
     labelList globalIds_;
     bool is2D_;
     const globalIndex globalNumbering_;
-    const volVectorField& C_ = mesh_.C();
+    const volVectorField& C_;
     Vector<bool> isEmpty_;
     Vector<bool> isCyclic_;
 

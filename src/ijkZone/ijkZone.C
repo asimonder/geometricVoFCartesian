@@ -48,6 +48,7 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
   isCyclic_(false,false,false)
 {
 
+  Info<<"Building the ijkZone..."<<endl;
   fileName dictPath=mesh_.time().path()/"system/ijkDict";
   if (Pstream::parRun())
     dictPath=mesh_.time().path()/"../system/ijkDict";
@@ -62,8 +63,8 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
 
   const  surfaceVectorField&  Cf = mesh_.Cf();
 
-  cellList cells=mesh_.cells();
-  faceList faces=mesh_.faces();
+  const cellList& cells=mesh_.cells();
+  const faceList& faces=mesh_.faces();
   labelList cellIndices;
   if (!isDomain)
     {
@@ -181,7 +182,7 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
 	      {
 		//printf("Proc=%d, cyclic patch found...\n",Pstream::myProcNo());
 		vector transDir=mesh_.faceAreas()[facei];
-		if (transDir.x()!=0 and transDir.y()==0 and transDir.z()==0)
+		/*if (transDir.x()!=0 and transDir.y()==0 and transDir.z()==0)
 		  isCyclic_.x()=true;
 		else if (transDir.y()!=0 and transDir.x()==0 and transDir.z()==0)
 		  isCyclic_.y()=true;
@@ -190,7 +191,22 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
 		else
 		  FatalErrorInFunction
 		    << "Cyclic BC found but not aligned with one of the Cartesian coordinates"
-		    << abort(FatalError);
+		    << abort(FatalError);*/
+
+		isCyclic_.x()=true;
+		isCyclic_.y()=true;
+		isCyclic_.z()=false;
+		
+		/*if (transDir.x()>transDir.y() and transDir.x()>transDir.z())
+		  isCyclic_.x()=true;
+		else if (transDir.y()>transDir.x() and transDir.y()>transDir.z()) //(transDir.y()!=0 and transDir.x()==0 and transDir.z()==0)
+		  isCyclic_.y()=true;
+		else if (transDir.z()>transDir.x() and transDir.z()>transDir.y()) //(transDir.z()!=0 and transDir.x()==0 and transDir.y()==0)
+		  isCyclic_.z()=true;
+		else
+		  FatalErrorInFunction
+		    << "Cyclic BC found but not aligned with one of the Cartesian coordinates"
+		    << abort(FatalError);*/
 	      }
 	  }
       }

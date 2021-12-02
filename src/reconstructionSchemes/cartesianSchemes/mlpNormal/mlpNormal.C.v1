@@ -1,0 +1,363 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2021 OpenCFD Ltd.
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+                            | Copyright (C) 2021 Asim Onder
+-------------------------------------------------------------------------------
+License
+    OpenFOAM is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+
+\*---------------------------------------------------------------------------*/
+
+#include "mlpNormal.H"
+#include "fvc.H"
+#include "addToRunTimeSelectionTable.H"
+#include "globalIndex.H"
+
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
+namespace Foam
+{
+namespace reconstruction
+{
+    defineTypeNameAndDebug(mlpNormal, 0);
+    addToRunTimeSelectionTable(reconstructionSchemes, mlpNormal, components);
+}
+}
+
+
+void Foam::reconstruction::mlpNormal::gradSurf(const volScalarField& phi)
+{
+  Map<scalar> phiIJK;
+  Vector<label> stencilSize(iMax_,jMax_,kMax_);
+  ijkMesh_.getZoneField(interfaceCell_,phiIJK,phi,stencilSize);
+  std::vector<double> derivatives={0,0};
+  std::vector<double> inputData(NInput_,0.0);
+
+  scalar rec_setStencil=0;
+  scalar rec_getStencil=0;
+  scalar rec_predict=0;
+  forAll(interfaceLabels_, i)
+    {
+      Foam::vector m(0.0,0.0,-1.0);
+      label celli=interfaceLabels_[i];
+      stencil_.setStencil(phiIJK,ijkMesh_.ijk3(celli));
+      List<scalar> A=stencil_.getStencil();
+      //forAll(A,iA)
+      //	inputData[iA]=A[iA];
+      int iA=0;	      
+      List<scalar> H;
+      H.setSize(3,0.0);
+      scalar sgnN=1.0;
+      scalar sumZ=0;
+      if (is2D_)
+	{
+	  H=0;
+	  for (int i=-1;i<2;i++)
+	    {
+	      sumZ+=A[stencil_.a2(i,1)]-A[stencil_.a2(i,-1)];
+	      for (int k=-2;k<3;k++)
+		{
+		  H[i+1]+=A[stencil_.a2(i,k)];
+		}
+	    }
+	  scalar alphaZFac=1.0;
+	  if (sumZ>0)
+	    alphaZFac=-1.0;
+	  scalar Hxx=H[0]-2.*H[1]+H[2];
+	  scalar Hx=H[2]-H[0];
+	  bool posK=!std::signbit(-alphaZFac*Hxx);
+	  bool posN=!std::signbit(alphaZFac*Hx);
+	  sgnN=(posN?1.0:-1.0);
+	  int iF=0;int kF=0;
+	  scalar alphaFac=0;
+	  if (zonalModel_)
+	    {
+	      if (posN and !posK)
+		{
+		  iF=-1;kF=-1;alphaFac=-1.;
+		}
+	      else if (!posN and posK)
+		{
+		  iF=-1;kF=1;alphaFac=1.;
+		}
+	      else if (!posN and !posK)
+		{
+		  iF=1;kF=-1;alphaFac=-1.;
+		}
+	      else
+		{
+		  iF=1;kF=1;alphaFac=1.0;
+		}
+	    }
+	  else
+	    {
+	      if (posN)
+		{
+		  iF=1;kF=1;alphaFac=1.;
+		}
+	      else
+		{
+		  iF=-1;kF=1;alphaFac=1.;
+		}
+	    }
+	  //hard coded to z as 2nd direction
+	  for (int i=-iMax_;i<iMax_+1;i++)
+	    {
+	      for (int k=-1;k<2;k++)
+		{
+		  indices_[iA]=stencil_.a2(iF*i,kF*k);
+		  iA+=1;
+		}
+	    }
+	  if (!bias_)
+	    {
+	      //A=2.0*(A-0.5);
+	      A=alphaZFac*alphaFac*2.0*(A-0.5);
+	    }
+
+	}
+      else
+	{
+	  NotImplemented;
+	  /*for (int i=-iMax_;i<iMax_+1;i++)
+	{
+	  for (int j=-jMax_;j<jMax_+1;j++)
+	    {
+	      for (int k=-kMax_;k<kMax_+1;k++)
+		{
+		  indices_[iA]=stencil_.a3(i,j,k);
+		  iA+=1;
+		}
+	    }
+	    }*/
+	}
+      
+
+      iA=0;
+      for(int i: indices_)
+	{
+	  inputData[iA]=A[i];
+	  iA+=1;
+	}
+      //if (!bias_)
+      //	inputData=2.0*(inputData-0.5);
+      //rec_getStencil+=mesh_.time().cpuTimeIncrement();
+      if (is2D_)
+	{
+	  m.x()=sgnN*mlp_.predict(inputData)[0];
+	  interfaceNormal_[i] = m;
+	}
+      else
+	{
+	  derivatives= mlp_.predict(inputData);
+	  //	  rec_predict+=mesh_.time().cpuTimeIncrement();
+	  m.x()=derivatives[0];m.y()=derivatives[1];
+	  interfaceNormal_[i] = m;
+	}
+    }
+  //Info<<"rec_setStencil="<<rec_setStencil<<endl;
+  //Info<<"rec_getStencil="<<rec_getStencil<<endl;
+  //Info<<"rec_predict="<<rec_predict<<endl;
+}
+
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+Foam::reconstruction::mlpNormal::mlpNormal
+(
+    volScalarField& alpha1,
+    const surfaceScalarField& phi,
+    const volVectorField& U,
+    const dictionary& dict
+)
+:
+    reconstructionSchemes
+    (
+        typeName,
+        alpha1,
+        phi,
+        U,
+        dict
+    ),
+    mesh_(alpha1.mesh()),
+    interfaceNormal_(fvc::grad(alpha1)),
+    isoFaceTol_(modelDict().lookupOrDefault<scalar>("isoFaceTol", 1e-8)),
+    surfCellTol_(modelDict().lookupOrDefault<scalar>("surfCellTol", 1e-8)),
+    sIterPLIC_(mesh_,surfCellTol_),
+    ijkMesh_(mesh_),
+    boundaryCells_(mesh_.nCells(),false),
+    bias_(modelDict().lookupOrDefault<bool>("use_bias",false)),
+    zonalModel_(dict.lookupOrDefault<bool>("zonalModel",false)),
+    //iMax_((modelDict().lookupOrDefault<label>("xStencil", 5)-1)/2),
+    //jMax_((modelDict().lookupOrDefault<label>("yStencil", 5)-1)/2),
+    //kMax_((modelDict().lookupOrDefault<label>("zStencil", 3)-1)/2),
+    iMax_(2),
+    jMax_(2),
+    kMax_(2),
+    // stencil_(mesh_,ijkMesh_,2,2,1)
+    stencil_(mesh_,ijkMesh_,2)
+{
+  if (zonalModel_)
+    Info<<"Using the zonalModel in mlpNormal reconstruction."<<endl;
+  ijkMesh_.markBoundaryCells(boundaryCells_,1);
+
+  std::string fName=mesh_.time().path()/"machineLearningModels/der1";
+  if (Pstream::parRun())
+    fName=mesh_.time().path()/"../machineLearningModels/der1";
+
+  mlp_=Foam::multilayerPerceptron::multilayerPerceptron(fName);
+  NInput_=mlp_.stencilSize();
+
+  is2D_=false;
+  if(ijkMesh_.isEmpty().x() or ijkMesh_.isEmpty().y() or ijkMesh_.isEmpty().z())
+    is2D_=true;
+
+  indices_.resize(NInput_);
+  //int iA=0;
+
+  //if(mlp_.stencilSize()=!(2*iMax_+1)*(2*jMax_+1)*(kMax_+1))
+  //  Foam::FatalErrorInFunction("Dimension mismatch between the MLP and specified stencil size.");
+    
+  
+  /*if(mlp_.stencilSize()==27)
+    {
+      iMax_=1;jMax_=1;kMax_=1;
+      stencil_=Foam::uniformStencil(mesh_,ijkMesh_,iMax_);
+    }
+  else if (mlp_.stencilSize()==75)
+    {
+      iMax_=2;jMax_=2;kMax_=1;
+      stencil_=Foam::uniformStencil(mesh_,ijkMesh_,iMax_,jMax_,kMax_);
+    }
+  else if (mlp_.stencilSize()==125)
+    {
+      iMax_=2;jMax_=2;kMax_=2;
+      stencil_=Foam::uniformStencil(mesh_,ijkMesh_,iMax_);
+    }
+  else
+  Info<<"stencil size cannot be mapped to 3D!"<<endl;*/
+      
+  reconstruct();
+}
+
+
+// * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
+void Foam::reconstruction::mlpNormal::reconstruct(bool forceUpdate)
+{
+    const bool uptodate = alreadyReconstructed(forceUpdate);
+
+    if (uptodate && !forceUpdate)
+    {
+        return;
+    }
+
+    if (mesh_.topoChanging())
+    {
+        // Introduced resizing to cope with changing meshes
+        //if(interfaceCell_.size() != mesh_.nCells())
+        //{
+        //    interfaceCell_.resize(mesh_.nCells());
+        //}
+      Info<<"Dynamic mesh is not supported!"<<endl;
+      Foam::FatalError();
+    }
+    
+    interfaceCell_ = false;
+
+    interfaceLabels_.clear();
+
+    forAll(alpha1_,celli)
+    {
+        if(sIterPLIC_.isASurfaceCell(alpha1_[celli]))
+        {
+            interfaceCell_[celli] = true; // is set to false earlier
+            interfaceLabels_.append(celli);
+        }
+    }
+    interfaceNormal_.setSize(interfaceLabels_.size());
+    centre_ = dimensionedVector("centre", dimLength, vector::zero);
+    normal_ = dimensionedVector("normal", dimArea, vector::zero);
+
+    gradSurf(alpha1_);
+
+    forAll(interfaceLabels_, i)
+    {
+        const label celli = interfaceLabels_[i];
+        if (mag(interfaceNormal_[i]) == 0)
+        {
+            continue;
+        }
+
+        sIterPLIC_.vofCutCell
+        (
+            celli,
+            alpha1_[celli],
+            isoFaceTol_,
+            100,
+            interfaceNormal_[i]
+        );
+
+        if (sIterPLIC_.cellStatus() == 0)
+        {
+            normal_[celli] = sIterPLIC_.surfaceArea();
+            centre_[celli] = sIterPLIC_.surfaceCentre();
+            if (mag(normal_[celli]) == 0)
+            {
+                normal_[celli] = vector::zero;
+                centre_[celli] = vector::zero;
+            }
+
+        }
+        else
+        {
+            normal_[celli] = vector::zero;
+            centre_[celli] = vector::zero;
+        }
+    }
+}
+
+void Foam::reconstruction::mlpNormal::mapAlphaField() const
+{
+    // without it, we seem to get a race condition
+    mesh_.C();
+
+    cutCellPLIC cutCell(mesh_);
+
+    forAll(normal_, celli)
+    {
+        if (mag(normal_[celli]) != 0)
+        {
+            vector n = normal_[celli]/mag(normal_[celli]);
+            scalar cutValue = (centre_[celli] - mesh_.C()[celli]) & (n);
+            cutCell.calcSubCell
+            (
+                celli,
+                cutValue,
+                n
+            );
+            alpha1_[celli] = cutCell.VolumeOfFluid();
+
+        }
+    }
+    alpha1_.correctBoundaryConditions();
+    alpha1_.oldTime () = alpha1_;
+    alpha1_.oldTime().correctBoundaryConditions();
+
+}
+
+
+// ************************************************************************* //

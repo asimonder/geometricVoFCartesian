@@ -1,0 +1,243 @@
+/*---------------------------------------------------------------------------*\
+            Copyright (c) 2021, Asim Onder
+-------------------------------------------------------------------------------
+License
+    OpenFOAM is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+
+Application
+    generateCurvatureData
+
+Description
+
+
+Author
+   Asim Onder
+
+\*---------------------------------------------------------------------------*/
+
+#include "fvCFD.H"
+
+#include "OFstream.H"
+#include "autoPtr.H"
+#include "reconstructionSchemes.H"
+#include "implicitFunction.H"
+#include "cutCellImpFunc.H"
+#include "cutCellIso.H"
+#include "reconstructionError.H"
+#include "writeFile.H"
+//#include "isoCutCell.H"
+
+#include "interfaceForces.H"
+//#include "OBJstream.H"
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+template<class T>
+void setAlpha
+(
+    T& cutCell,
+    const fvMesh& mesh,
+    const dictionary& setAlphaFieldDict,
+    volScalarField& alpha1,
+    bool revAl
+)
+{
+
+    forAll(alpha1,cellI)
+    {
+        label cellStatus = cutCell.calcSubCell(cellI,0.0);
+
+        if(cellStatus == -1)
+        {
+	  if(revAl)
+            alpha1[cellI] = 0;
+	  else
+	    alpha1[cellI] = 1;
+        }
+        else if(cellStatus == 1)
+        {
+	  if(revAl)
+            alpha1[cellI] = 1;
+	  else
+	    alpha1[cellI] = 0;
+        }
+        else if(cellStatus == 0)
+        {
+            if(mag(cutCell.faceArea()) != 0)
+            {
+                alpha1[cellI]= max(min(cutCell.VolumeOfFluid(),1),0);
+            }
+        }
+    }
+
+    alpha1.correctBoundaryConditions();
+
+}
+
+int main(int argc, char *argv[])
+{
+//    #include "addRegionOption.H"
+    #include "setRootCase.H"
+    #include "createTime.H"
+    #include "createMesh.H"
+    #include "createControl.H"
+    #include "createFields.H"
+  
+    ijkZone ijkMesh(mesh);
+    const label NCells=ijkMesh.Nx();
+    //vector Pmin=ijkMesh.Pmin();  
+    //vector Pmax=ijkMesh.Pmax();  
+
+
+    #include "createTimeControls.H"
+    #include "readTimeControls.H"
+    #include "CourantNo.H"
+    #include "setInitialDeltaT.H"
+
+    writeFile writeObj(mesh, "curvatureData", "curvDataSet");
+      
+    Random rndCentre(1234567);
+
+    autoPtr<reconstructionSchemes> surf =
+        reconstructionSchemes::New(alpha1,phi,U,fvSolutionDict);
+    interfaceForces surfForces(alpha1,U,transportProperties);
+
+
+    label nIter = fvSolutionDict.get<label>("nIter");
+    word setAlphaMethod = fvSolutionDict.get<word>("setAlphaMethod");
+    if (setAlphaMethod != "cutCellImpFunc" && setAlphaMethod != "cutCellIso")
+    {
+        FatalError  << "valid choice are only cutCellImpFunc or cutCellIso"
+                    << abort(FatalError);
+    }
+
+    word functionType (setAlphaFieldDict.lookup("type"));
+    bool twoDim = (functionType == "cylinder");
+    Info << "twoDim = " << twoDim << endl;
+    Info << "functionType = " << functionType << endl;
+
+    scalar recTime = 0;
+    //vector centreMin = Pmin+0.2*Pmin;
+    //vector centreMax = Pmax+0.2*Pmax;;
+    //scalar Rmin=0.001;
+    //scalar dR=0.001;
+    //label nIter=5;
+    label nMax=1;
+    boolList interfaceCells(mesh.nCells(),false);
+    uniformStencil stencil(mesh,ijkMesh,nMax);
+    //scalar thr=0.000001;
+    const scalar interfaceTol=setAlphaFieldDict.get<scalar>("interfaceTol");
+
+    
+    FILE *writeTraining;
+    FILE *writeNormals;
+    FILE *writeCurvatures;
+    string strNc=std::to_string(NCells);
+    string strAk=std::to_string(ak);
+    string dictPath=runTime.path()/"trainingData_ak"+strAk+"_N"+strNc+".dat";
+    writeTraining = fopen (dictPath.c_str(),"w");
+    dictPath=runTime.path()/"normalData_ak"+strAk+"_N"+strNc+"_"+reconScheme+".dat";
+    writeNormals = fopen (dictPath.c_str(),"w");
+    dictPath=runTime.path()/"curvatureData_ak"+strAk+"_N"+strNc+"_"+curvModel+"_"+reconScheme+".dat";
+    writeCurvatures = fopen (dictPath.c_str(),"w");
+    
+
+    boolList reverseAlpha(2,false);
+    reverseAlpha[1]=true;
+    
+    while (runTime.run())
+    {
+      scalar R=Rmin+r*dR;
+      scalar curv=1./R;
+      for(int iteration = 0;iteration < nIter;iteration++)
+	{
+	  vector origin = rndCentre.globalPosition < vector > (centreMin,centreMax);
+	  scalar R = rndCentre.globalPosition < scalar > (Rmin,Rmax); 
+	  
+	  setAlphaFieldDict.set<vector>("origin",origin);
+	  setAlphaFieldDict.set<scalar>("radius",radius);
+	  
+	  Info << "origin " <<  centre << endl;
+	  
+	  Foam<implicitFunction> func(Foam::implicitFunction::New
+				      (
+				       setAlphaFieldDict.get<word>("type"),
+				       setAlphaFieldDict
+				       ));
+
+	  scalarField f(mesh.nPoints(),0.0);
+	  forAll(f,pI)
+	    {
+	      f[pI]=func->value(mesh.points()[pI]);
+	    }
+	  
+	  cutCellImpFunc cutCell(mesh,f,func.ref());
+	  setAlpha(cutCell,mesh,setAlphaFieldDict,alpha1,revAl);
+	      
+	      /*surf->reconstruct();	      
+	      surfForces.correct();
+	      surfForces.surfaceTensionForce(); // update curvature
+	      //recTime += mesh.time().cpuTimeIncrement();
+	      volScalarField curv = mesh.lookupObjectRef<volScalarField>("K_");*/
+
+	      //select interfacecells
+	  interfaceCells=false;
+	  if (alpha1,iCell)
+		    {
+		      if (alpha[iCell]>thr and alpha[iCell]<1-thr)
+			interfaceCells[iCell]=true;
+		    }
+		  
+	      
+	  Map<scalar> phiIJK;
+	  Vector<label> stencilSize(nMax,nMax,nMax);
+	  ijkMesh_.getZoneField(interfaceCellw,phiIJK,phi,stencilSize);
+	  
+	  List<scalar> A;
+	  forAll(interfaceCells, i)		
+	    {
+	      if(interfaceCells[iCell])
+		{
+		  stencil_.setStencil(phiIJK,ijkMesh_.ijk3(iCell));
+		  A=stencil_getStencil();
+		}
+	    }
+		  
+	  //write to a file
+	  if (Pstream::master())
+	    {
+	      //writeTime(file());
+	      
+	      writeObj.file()<< curv;
+	      
+	      forAll(A,i)
+		writeObj.file()<< A[i];
+	      
+	      writeObj.file()<< endl;
+	    }
+	  
+	}
+
+      runTime.write();
+
+    }
+
+
+    Info<< "End\n" << endl;
+
+    return 0;
+}
+
+
+// ************************************************************************* //
