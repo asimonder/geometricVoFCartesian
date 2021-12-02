@@ -68,36 +68,32 @@ namespace Foam
   
     const fvMesh& mesh_;
     const ijkZone& ijkMesh_;
-    const label nMax_;
-    label N_;
-    label NS_;
+    int N_;
     bool is2D_;
     List<scalar> A_;
-
+    int iMax_;
+    int jMax_;
+    int kMax_;
+    int NxS_;
+    int NyS_;
+    int NzS_;
 
   //- No copy construct
-    uniformStencil(const uniformStencil&) = delete;
+    //uniformStencil(const uniformStencil&) = delete;
   
     //- No copy assignment
-    void operator=(const uniformStencil&) = delete;
-
-    label a2(const label i, const label j)
-    {
-      return (i+nMax_)+NS_*(j+nMax_);
-    }
-  
-    label a3(const label i, const label j, const label k)
-    {
-      return (i+nMax_)+NS_*(j+nMax_)+NS_*NS_*(k+nMax_);
-    }
+    //void operator=(const uniformStencil&) = delete;
 
   public:
   // Constructors
   // Declare name of the class and its debug switch
-    TypeName("uniformStencil");
+    // TypeName("uniformStencil");
 
+    //uniformStencil();
+    
   //- Construct from fvMesh
-    explicit uniformStencil(const fvMesh&,const ijkZone& ijkMesh,const label nMax);
+    uniformStencil(const fvMesh&,const ijkZone& ijkMesh,int nMax);
+    uniformStencil(const fvMesh&,const ijkZone& ijkMesh,int iMax,int jMax,int kMax);
 
   // Selectors
   //static uniformStencil& New(const fvMesh&);
@@ -109,11 +105,24 @@ namespace Foam
 
     const List<scalar> getStencil(){return A_;};
 
+    scalar estimateSignK();
     vector calcYoungNormal();
     vector calcCCDNormal();
     //scalar calcCurvature(const Map<scalar>& phiIJK,const Vector<label>& ijk,label normalDir);
-    scalar calcCurvature(label normalDir);
+    //scalar calcCurvature(label normalDir);
     
+    label a2(const label i, const label j)
+    {
+      //hardcoded to z!
+      return (i+iMax_)+NxS_*(j+kMax_);
+    }
+  
+    label a3(const label i, const label j, const label k)
+    {
+      return (i+iMax_)+NxS_*(j+jMax_)+NxS_*NyS_*(k+kMax_);
+    }
+
+    //   std::vector<double> getSmallStencil(int iMin, int jMin, int kMin);
   };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

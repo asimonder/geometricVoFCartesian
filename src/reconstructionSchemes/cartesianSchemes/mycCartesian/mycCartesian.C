@@ -45,17 +45,18 @@ namespace reconstruction
 
 void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
 {
-
-  label iMax=1;
   Map<scalar> phiIJK;
-  Vector<label> stencilSize(iMax,iMax,iMax);
+  Vector<label> stencilSize(1,1,1);
   ijkMesh_.getZoneField(interfaceCell_,phiIJK,phi,stencilSize);
 
+  //printf("Proc=%d: Done getZoneField.\n",Pstream::myProcNo());
   label youngCount=0;
   label CCDCount=0;
+  //const scalar eps=10e-14;
   forAll(interfaceLabels_, i)
     {      
-      label celli=interfaceLabels_[i];
+      int celli=interfaceLabels_[i];
+      
       /*if (boundaryCells_[celli])
 	{
 	  FatalErrorInFunction
@@ -66,53 +67,78 @@ void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
       //interfaceNormal_[i] = stencil_.calcCCDNormal();
       
       vector m1=stencil_.calcYoungNormal();
-      m1/=(fabs(m1.x())+fabs(m1.y())+fabs(m1.z()));
       vector m2=stencil_.calcCCDNormal();
       vector m2C=m2;
-      m2/=(fabs(m2.x())+fabs(m2.y())+fabs(m2.z()));
-      //Info<<celli<<", m2C="<<m2C<<endl;
-      //Info<<celli<<", m1="<<m1<<endl;
-      //Info<<celli<<", m2="<<m2<<endl;
+
+      if(Foam::mag(m1)+Foam::mag(m2)==0)
+	{
+	  printf("Proc=%d: Young and CDC normals are zero! Skipping the interface cell=%d!\n",Pstream::myProcNo(),celli);
+	  //Info<< "Young and CDC normals are zero! Skipping the interface cell...";
+	  continue;
+	}
+      
+      if(Foam::mag(m1)>0)
+	{
+	  m1/=(fabs(m1.x())+fabs(m1.y())+fabs(m1.z()));
+	}
+      if(Foam::mag(m2)>0)
+	{
+	  m2/=(fabs(m2.x())+fabs(m2.y())+fabs(m2.z()));
+	}
+
+      //printf("Proc=%d: done scaling normals.\n",Pstream::myProcNo());
+
       if (fabs(m2C.y())==1.0)
 	{
 	  if (fabs(m1.y())<fabs(m2.y()))
-	    interfaceNormal_[i] = m1;
+	    {
+	      interfaceNormal_[i] = m1;
+	      youngCount+=1;
+	    }
 	  else
-	    interfaceNormal_[i] = m2;
+	    {
+	      interfaceNormal_[i] = m2;
+	      CCDCount+=1;
+	    }
 	}
       else if (fabs(m2C.z())==1.0)
 	{
 	  if (fabs(m1.z())<fabs(m2.z()))
 	    {
-	      //Info<<celli<<", choosing Young's method..."<<endl;
 	      interfaceNormal_[i] = m1;
 	      youngCount+=1;
 	    }
 	  else
 	    {
 	      interfaceNormal_[i] = m2;
-	      //Info<<celli<<", choosing CCD..."<<endl;
 	      CCDCount+=1;
 	    }
 	}	  
-      else
+      else if (fabs(m2C.x())==1.0)
 	{
 	  if (fabs(m1.x())<fabs(m2.x()))
 	    {
-	      //Info<<celli<<", choosing Young's method..."<<endl;
 	      interfaceNormal_[i] = m1;
 	      youngCount+=1;
 	    }
 	  else
 	    {
 	      interfaceNormal_[i] = m2;
-	      //Info<<celli<<", choosing CCD..."<<endl;
 	      CCDCount+=1;
 	    }
 	}
+      else
+	FatalErrorInFunction
+	  << "Unity direction cannot be found in CCD scheme!"
+	  << abort(FatalError);
+
+
 
     }
 
+  //printf("Proc=%d: Done gradSurf.\n",Pstream::myProcNo());
+
+  
   if (Pstream::parRun())
       {
 	Foam::reduce(youngCount, sumOp<label>());
@@ -146,13 +172,13 @@ Foam::reconstruction::mycCartesian::mycCartesian
     isoFaceTol_(modelDict().lookupOrDefault<scalar>("isoFaceTol", 1e-8)),
     surfCellTol_(modelDict().lookupOrDefault<scalar>("surfCellTol", 1e-8)),
     sIterPLIC_(mesh_,surfCellTol_),
-    //globalNumbering_(mesh_.nCells()+mesh_.nBoundaryFaces()),
     ijkMesh_(mesh_),
     stencil_(mesh_,ijkMesh_,1),
     boundaryCells_(mesh_.nCells(),false)
 {
-    ijkMesh_.markBoundaryCells(boundaryCells_,1);
-    reconstruct();
+  Info<<"Constructing the interface using mycCartesian method..."<<endl;
+  ijkMesh_.markBoundaryCells(boundaryCells_,1);
+  reconstruct();
 }
 
 
