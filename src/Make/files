@@ -21,13 +21,4 @@ waveFunctions/spectral/spectralWaveFunction.C
 waveFunctions/JONSWAP/JONSWAPWaveFunction.C
 waveFunctions/Stokes3rdOrder/Stokes3rdOrderWaveFunction.C
 
-DLR_TwoPhaseFlow/postProcessing/reconstructionError/reconstructionError.C
-
-DLR_TwoPhaseFlow/curvature/RDF/RDF.C
-DLR_TwoPhaseFlow/curvature/heightFunctionDLR/heightFunctionDLR.C
-DLR_TwoPhaseFlow/curvature/heightFunctionDLR/heightFuncStencil/HFStencil.C
-DLR_TwoPhaseFlow/curvature/heightFunctionDLR/twoDimFDStencil/twoDimFDStencil.C
-DLR_TwoPhaseFlow/cellCuts/cutCell/cutCellImpFunc.C
-DLR_TwoPhaseFlow/cellCuts/cutFace/cutFaceImpFunc.C
-
 LIB = $(FOAM_USER_LIBBIN)/libgeometricVoFCartesian
