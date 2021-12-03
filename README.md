@@ -8,7 +8,7 @@ The methods are designed for uniform Cartesian grids. In cases where the interfa
 In addition to neural-network models, several popular schemes are also implemented: (i) interface normal: Young's method, central-columns differences, mixed Young-central method; (ii) interface curvature: height function method.
 
 ## Example 
-An example for gravity-capillary waves is provided. More examples and benchmark cases will follow.
+Examples and benchmark cases will be provided soon.
 
 ## Prerequisites
 OpenFOAM v2006.
