@@ -1,1 +1,1 @@
-../interfaceForces/curvatureModels/mlpCurvature/.#heightFunctionCartesian.C
+../interfaceForces/curvatureModels/heightFunction/.#heightFunctionCartesian.C
