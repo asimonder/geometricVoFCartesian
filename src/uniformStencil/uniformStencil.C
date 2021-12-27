@@ -214,40 +214,63 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 Foam::scalar Foam::uniformStencil::estimateSignK()
 {
   Foam::vector n=calcYoungNormal();
+  return estimateSignK();
+}
+
+
+Foam::scalar Foam::uniformStencil::estimateSignK(Foam::vector n)
+{
   const List<scalar>& A=A_;
+  const Vector<bool>& isEmpty=ijkMesh_.isEmpty();
+  scalar nN=0;
+  scalar nT=0;
+  label tMax=0;
+  label nMax=0;
   scalar Hxx=0.0;
   if (is2D_)
     {      
       List<scalar> H;
       H.setSize(3,0.0);
       H=0;
-      label dir=2;
-      if (Foam::mag(n.x())>Foam::mag(n.z()))
-	dir=0;
-      
-      if (dir==2)
+
+      if (isEmpty.x())
 	{
-	  for (int i=-1;i<2;i++)
+	  nT=n.y();tMax=jMax_;
+	  nN=n.z();nMax=kMax_;
+	}
+      else if (isEmpty.y())
+	{
+	  nT=n.x();tMax=iMax_;
+	  nN=n.z();nMax=kMax_;
+	}
+      else 
+	{
+	  nT=n.x();tMax=iMax_;
+	  nN=n.y();nMax=jMax_;
+	}
+      
+      if (Foam::mag(nN)>=Foam::mag(nT))
+	{
+	  for (int t=-1;t<2;t++)
 	    {
-	      for (int k=-kMax_;k<kMax_+1;k++)
+	      for (int n=-nMax;n<nMax+1;n++)
 		{
-		  H[i+1]+=A[a2(i,k)];
+		  H[t+1]+=A[a2(t,n)];
 		}
 	    }
 	}
-      else if(dir==0)
+      else
 	{
-	  for (int k=-1;k<2;k++)
+	  for (int n=-1;n<2;n++)
 	    {
-	      for (int i=-iMax_;i<iMax_+1;i++)
+	      for (int t=-tMax;t<tMax+1;t++)
 		{
-		  H[k+1]+=A[a2(i,k)];
+		  H[n+1]+=A[a2(t,n)];
 		}
 	    }
 	}
       
       Hxx=(H[0]-2.*H[1]+H[2]);
-      //posK=!std::signbit(-Hxx);
     }
   else
     NotImplemented;

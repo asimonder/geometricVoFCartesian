@@ -68,8 +68,8 @@ Foam::mlpCurvature::mlpCurvature
     //bias_(dict.lookupOrDefault<bool>("use_bias",false)),
     zonalModel_(dict.lookupOrDefault<bool>("zonalModel",true)),
     iMax_(dict.lookupOrDefault<label>("iMax",1)),
-    jMax_(dict.lookupOrDefault<label>("jMax",1)),
-    kMax_(dict.lookupOrDefault<label>("kMax",2)),
+    jMax_(dict.lookupOrDefault<label>("jMax",2)),
+    kMax_(dict.lookupOrDefault<label>("kMax",1)),
     //stencil_(mesh_,ijkMesh_,2,2,1)
     stencil_(mesh_,ijkMesh_,2)
 {
@@ -107,9 +107,8 @@ Foam::mlpCurvature::mlpCurvature
 
   Info<<"mlpCurvature: grid spacing, dl_="<<dl_<<endl;
 
-  nMax_=max(iMax_,kMax_);
-  if (!is2D_)
-    nMax_=max(nMax_,jMax_);
+  nMax_=max(iMax_,jMax_);
+  nMax_=max(nMax_,kMax_);
   
   ijkMesh_.markBoundaryCells(boundaryCells_,nMax_);
   Info<<"mlpCurvature: done setting up ijkMesh..."<<endl;
@@ -123,7 +122,7 @@ Foam::mlpCurvature::mlpCurvature
   Info<<"mlpCurvature:stencil size="<<NInput_<<endl;
   if (is2D_)
     {
-      if (NInput_!=(2*iMax_+1)*(2*kMax_+1))
+      if (NInput_!=(2*iMax_+1)*(2*jMax_+1))
 	{
 	  Info<<"iMax="<<iMax_<<"; kMax_="<<kMax_<<"; input layer="<<NInput_<<endl;
 	  FatalErrorInFunction
@@ -146,7 +145,8 @@ Foam::mlpCurvature::mlpCurvature
 
   //  std::vector<int>
   indices_.resize(NInput_);
-  int iA=0;
+
+  /*int iA=0;
   if (is2D_)
     {      
       //nMax=max(jMax,kMax);
@@ -174,7 +174,7 @@ Foam::mlpCurvature::mlpCurvature
 		}
 	    }
 	}
-    }
+	}*/
 }
 
 // * * * * * * * * * * * * * * Public Access Member Functions  * * * * * * * * * * * * * * //
@@ -238,48 +238,6 @@ void Foam::mlpCurvature::correctContactAngle
     }
 }
 
-Foam::scalar Foam::mlpCurvature::estimateSignK(const List<scalar>& A, const vector& n)
-{
-  bool posK=false;
-  if (is2D_)
-    {      
-      List<scalar> H;
-      H.setSize(3,0.0);
-      H=0;
-      label dir=2;
-      if (Foam::mag(n.x())>Foam::mag(n.z()))
-	dir=0;
-      
-      if (dir==2)
-	{
-	  for (int i=-1;i<2;i++)
-	    {
-	      for (int k=-kMax_;k<kMax_+1;k++)
-		{
-		  H[i+1]+=A[stencil_.a2(i,k)];
-		}
-	    }
-	}
-      else if(dir==0)
-	{
-	  for (int k=-1;k<2;k++)
-	    {
-	      for (int i=-iMax_;i<iMax_+1;i++)
-		{
-		  H[k+1]+=A[stencil_.a2(i,k)];
-		}
-	    }
-	}
-      
-      scalar Hxx=(H[0]-2.*H[1]+H[2]);
-      posK=!std::signbit(-Hxx);
-    }
-  else
-    NotImplemented;
-
-  return (posK?1.0:-1.0);
-
-}
 
 void Foam::mlpCurvature::calculateK()
 {
@@ -295,6 +253,7 @@ void Foam::mlpCurvature::calculateK()
   const label Nx=ijkMesh_.Nx();
   const label Ny=ijkMesh_.Ny();
   const label Nz=ijkMesh_.Nz();
+  const Vector<bool>& isEmpty=ijkMesh_.isEmpty();
   const labelList& globalIds=ijkMesh_.globalIds(); 
   //modify to dynamic version for speed up
   Map<scalar> alphaIJK;
@@ -319,7 +278,7 @@ void Foam::mlpCurvature::calculateK()
   const boolList& interfaceCells = surf.interfaceCell();
     
   const volVectorField& faceCentre = surf.centre();
-  const volVectorField& faceNormal = surf.normal();
+  //const volVectorField& faceNormal = surf.normal();
 
   Vector<label> stencilSize(nMax_,nMax_,nMax_);
   ijkMesh_.getZoneField(interfaceCells,alphaIJK,alpha1_,stencilSize);
@@ -327,8 +286,7 @@ void Foam::mlpCurvature::calculateK()
   label nInterfaceCells=0;
   forAll(interfaceCells,celli)
     {    
-      vector n = faceNormal[celli];
-      if(interfaceCells[celli] && mag(n)>0)
+      if(interfaceCells[celli]) // && mag(n)>0)
 	{
 	  nInterfaceCells+=1;
 	  if (boundaryCells_[celli])
@@ -345,40 +303,61 @@ void Foam::mlpCurvature::calculateK()
 	  scalar sgnK=1.0;
 	  if (is2D_)
 	    {      
-	      //hard coded using z as 2nd direction
 	      if (zonalModel_)
 		{
-		  //sgnK=estimateSignK(A,n);
-		  sgnK=stencil_.estimateSignK();
-		  int iF=1;int kF=1;
-		  if (-n.x()<0)
-		    iF=-1;
-		  if (-n.z()<0)
-		    kF=-1;
+		  vector n = stencil_.calcYoungNormal();
+		  sgnK=stencil_.estimateSignK(n);
+		  scalar nN=0;
+		  scalar nT=0;
+		  label tMax=0;
+		  label nMax=0;
+		  if (isEmpty.x())
+		    {
+		      nT=n.y();
+		      nN=n.z();
+		    }
+		  else if (isEmpty.y())
+		    {
+		      nT=n.x();
+		      nN=n.z();
+		    }
+		  else 
+		    {
+		      nT=n.x();
+		      nN=n.y();
+		    }
+		  tMax=iMax_;
+		  nMax=jMax_;
+
+		  int tF=1;int nF=1;
+		  if (-nT<0)
+		    tF=-1;
+		  if (-nN<0)
+		    nF=-1;
 		  if (sgnK<0)
 		    {
 		      A=1.-A;
-		      iF*=-1;kF*=-1;
+		      tF*=-1;nF*=-1;
 		    }
 
-		  if (Foam::mag(n.x())<=Foam::mag(n.z()))
+		  if (Foam::mag(nT)<=Foam::mag(nN))
 		    {
-		      for (int i=-iMax_;i<iMax_+1;i++)
+		      for (int t=-tMax;t<tMax+1;t++)
 			{
-			  for (int k=-kMax_;k<kMax_+1;k++)
+			  for (int n=-nMax;n<nMax+1;n++)
 			    {
-			      indices_[iA]=stencil_.a2(iF*i,kF*k);
+			      indices_[iA]=stencil_.a2(tF*t,nF*n);
 			      iA+=1;
 			    }
 			}
 		    }
 		  else 
 		    {
-		      for (int i=-iMax_;i<iMax_+1;i++)
+		      for (int t=-tMax;t<tMax+1;t++)
 			{
-			  for (int k=-kMax_;k<kMax_+1;k++)
+			  for (int n=-nMax;n<nMax+1;n++)
 			    {
-			      indices_[iA]=stencil_.a2(iF*k,kF*i);
+			      indices_[iA]=stencil_.a2(tF*n,nF*t);
 			      iA+=1;
 			    }
 			}
@@ -388,9 +367,9 @@ void Foam::mlpCurvature::calculateK()
 		{
 		  for (int i=-iMax_;i<iMax_+1;i++)
 		    {
-		      for (int k=-kMax_;k<kMax_+1;k++)
+		      for (int j=-jMax_;j<jMax_+1;j++)
 			{
-			  indices_[iA]=stencil_.a2(i,k);
+			  indices_[iA]=stencil_.a2(i,j);
 			  iA+=1;
 			}
 		    }
