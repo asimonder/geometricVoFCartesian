@@ -1,6 +1,6 @@
 
 # machineLearningVOF
-An extension library containing new neural-network based VOF models for two-phase flow simulations in OpenFOAM. This is an alpha pre-release containing only a portion of the package. The whole package along with example cases will be released once testing is complete.  
+An extension library containing new neural-network based VOF models for two-phase flow simulations in OpenFOAM. This is an alpha pre-release containing only a portion of the package. The whole package along with example cases will be released soon.  
 
 ## Description
 New interface reconstruction schemes and surface tension models are provided. The models employ multilayer perceptron (MLP) architectures to estimate interface normal vector and curvarture. Models are developed in three steps. First, MLPs are trained in Tensorflow using synthetic datasets composed of either circles or waves of varying sizes. Subsequently, the weights and biases of Tensorflows models are converted to ascii format. Finally, a newly implemented MLP class in OpenFOAM reads these parameters and constructs the corresponding MLP model. The basic functionalities of MLPs are implemented into OpenFOAM using the C++ Standard Library. Thus, no additional package is required to use new machine learning models.  
