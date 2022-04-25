@@ -18,16 +18,19 @@
         solve
         (
             UEqn
-         ==
+	    ==
             fvc::reconstruct
             (
                 (
-                    interfaceForce.surfaceTensionForce()
-                  - ghf*fvc::snGrad(rho)
-                  - fvc::snGrad(p_rgh)
+		 interfaceForce.surfaceTensionForce()
+		 - ghf*fvc::snGrad(rho)
+                 - fvc::snGrad(p_rgh)
                 ) * mesh.magSf()
             )
+	    //-interfaceForce.sigma()*alpha1*fvc::grad(interfaceForce.K())
+	    //+interfaceForce.sigma()*interfaceForce.K()*fvc::grad(alpha1)
         );
 
         fvOptions.correct(U);
     }
+

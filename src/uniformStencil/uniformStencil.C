@@ -131,6 +131,7 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
   const label Nx=ijkMesh_.Nx();
   const label Ny=ijkMesh_.Ny();
   const label Nz=ijkMesh_.Nz();
+  //const bool isEmpty=ijkMesh_.symXIn();
   //const point cc = C[celli];
   
   const label& iP=ijk.x();
@@ -144,14 +145,18 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
       il=0;
       for (int j=-jMax_;j<jMax_+1;j++)
 	{
+	  if ((jP+j+1>Ny and ijkMesh_.symYOut()) or (jP-j<0 and ijkMesh_.symYIn())) 
+	    jl=jP-j;
+	  else
+	    jl=(jP+j+Ny)%Ny;
 	  for (int k=-kMax_;k<kMax_+1;k++)
 	    {
-	      
-	      jl=(jP+j+Ny)%Ny;
-	      kl=(kP+k+Nz)%Nz;
+	      if ((kP+k+1>Nz and ijkMesh_.symZOut()) or (kP-k<0 and ijkMesh_.symZIn())) 
+		kl=kP-k;
+	      else
+		kl=(kP+k+Nz)%Nz;
 	      label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 	      label gblIdx=globalIds[ijkG];
-	      //label ijkL=(j+nMax_)+NS_*(k+nMax_);
 	      A_[a2(j,k)]=phiIJK[gblIdx];	
 	    }
 	}
@@ -161,13 +166,18 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
       jl=0;
       for (int i=-iMax_;i<iMax_+1;i++)
 	{
+	  if ((iP+i+1>Nx and ijkMesh_.symXOut()) or (iP+i<0 and ijkMesh_.symXIn())) 
+	    il=iP-i;
+	  else
+	    il=(iP+i+Nx)%Nx;
 	  for (int k=-kMax_;k<kMax_+1;k++)
 	    {
-	      il=(iP+i+Nx)%Nx;
-	      kl=(kP+k+Nz)%Nz;
+	      if ((kP+k+1>Nz and ijkMesh_.symZOut()) or (kP+k<0 and ijkMesh_.symZIn())) 
+		kl=kP-k;
+	      else
+		kl=(kP+k+Nz)%Nz;
 	      label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 	      label gblIdx=globalIds[ijkG];
-	      //label ijkL=(i+nMax_)+NS_*(k+nMax_);
 	      A_[a2(i,k)]=phiIJK[gblIdx];
 	    }
 	}
@@ -177,13 +187,18 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
       kl=0;
       for (int i=-iMax_;i<iMax_+1;i++)
 	{
+	  if ((iP+i+1>Nx and ijkMesh_.symXOut()) or (iP+i<0 and ijkMesh_.symXIn())) 
+	    il=iP-i;
+	  else
+	    il=(iP+i+Nx)%Nx;
 	  for (int j=-jMax_;j<jMax_+1;j++)
 	    {
-	      il=(iP+i+Nx)%Nx;
-	      jl=(jP+j+Ny)%Ny;
+	      if ((jP+j+1>Ny and ijkMesh_.symYOut()) or (jP+j<0 and ijkMesh_.symYIn())) 
+		jl=jP-j;
+	      else
+		jl=(jP+j+Ny)%Ny;
 	      label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 	      label gblIdx=globalIds[ijkG];
-	      //label ijkL=(i+nMax_)+NS_*(j+nMax_);
 	      A_[a2(i,j)]=phiIJK[gblIdx];	
 	    }
 	}
@@ -192,13 +207,25 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
     {
       for (int i=-iMax_;i<iMax_+1;i++)
 	{
+	  if ((iP+i+1>Nx and ijkMesh_.symXOut()) or (iP+i<0 and ijkMesh_.symXIn())) 
+	    il=iP-i;
+	  else
+	    il=(iP+i+Nx)%Nx;
 	  for (int j=-jMax_;j<jMax_+1;j++)
 	    {
+	      if ((jP+j+1>Ny and ijkMesh_.symYOut()) or (jP+j<0 and ijkMesh_.symYIn())) 
+		jl=jP-j;
+	      else
+		jl=(jP+j+Ny)%Ny;
 	      for (int k=-kMax_;k<kMax_+1;k++)
 		{
-		  label il=(iP+i+Nx)%Nx;
-		  label jl=(jP+j+Ny)%Ny;
-		  label kl=(kP+k+Nz)%Nz;
+		  if ((kP+k+1>Nz and ijkMesh_.symZOut()) or (kP+k<0 and ijkMesh_.symZIn())) 
+		    kl=kP-k;
+		  else
+		    kl=(kP+k+Nz)%Nz;
+		  //label il=(iP+i+Nx)%Nx;
+		  //label jl=(jP+j+Ny)%Ny;
+		  //label kl=(kP+k+Nz)%Nz;
 		  label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 		  label gblIdx=globalIds[ijkG];
 		  //label ijkL=(i+nMax_)+NS_*(j+nMax_)+NS_*NS_*(k+nMax_);
@@ -207,7 +234,6 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 	    }
 	}
     }
-
 }
 
 

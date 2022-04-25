@@ -1,1 +1,1 @@
-../interfaceForces/curvatureModels/heightFunction/heightFunction.H
+../interfaceForces/curvatureModels/heightFunctionYoung/heightFunction.H

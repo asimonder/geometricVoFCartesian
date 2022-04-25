@@ -1,1 +1,1 @@
-../interfaceForces/curvatureModels/heightFunction/.#heightFunctionCartesian.C
+../interfaceForces/curvatureModels/heightFunctionYoung/.#heightFunctionCartesian.C

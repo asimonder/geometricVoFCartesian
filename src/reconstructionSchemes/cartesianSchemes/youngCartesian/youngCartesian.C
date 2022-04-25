@@ -52,6 +52,17 @@ void Foam::reconstruction::youngCartesian::gradSurf(const volScalarField& phi)
   forAll(interfaceLabels_, i)
     {
       label celli=interfaceLabels_[i];
+
+      if (boundaryCells_[celli])
+	{
+	  printf("Proc=%d: Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment. Setting the normal of the interfacial segment in cell %d with alpha=%.10f to zero!\n",Pstream::myProcNo(),celli,alpha1_[celli]);
+	  //FatalErrorInFunction
+	  //  << "Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment."
+	  //<< abort(FatalError);
+	  interfaceNormal_[i] =vector::zero;
+	  continue;
+	  }
+
       stencil_.setStencil(phiIJK,ijkMesh_.ijk3(celli));
       interfaceNormal_[i] = stencil_.calcYoungNormal();      
     }
@@ -87,6 +98,7 @@ Foam::reconstruction::youngCartesian::youngCartesian
     boundaryCells_(mesh_.nCells(),false)
 {
   ijkMesh_.markBoundaryCells(boundaryCells_,1);
+  interfaceNormal_*=0;
   reconstruct();
 }
 

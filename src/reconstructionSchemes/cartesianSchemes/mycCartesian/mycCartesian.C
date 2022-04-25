@@ -57,12 +57,15 @@ void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
     {      
       int celli=interfaceLabels_[i];
       
-      /*if (boundaryCells_[celli])
+      if (boundaryCells_[celli])
 	{
-	  FatalErrorInFunction
-	    << "Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment."
-	  << abort(FatalError);
-	  }*/
+	  printf("Proc=%d: Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment. Setting the normal of the interfacial the segment in cell %d to zero!\n",Pstream::myProcNo(),celli);
+	  //FatalErrorInFunction
+	  //  << "Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment."
+	  //<< abort(FatalError);
+	  interfaceNormal_[i] =vector::zero;
+	  continue;
+	  }
       stencil_.setStencil(phiIJK,ijkMesh_.ijk3(celli));
       //interfaceNormal_[i] = stencil_.calcCCDNormal();
       

@@ -83,11 +83,35 @@ private:
 
   int NInput_;
 
-  //bool bias_;
-
   bool zonalModel_;
 
-  std::vector<int> indices_;
+  bool averageZones_;
+
+  bool useScaling_;
+
+  label fillNeighbours_;
+
+  bool explicitCurvature_;
+
+  bool rdfMark_;
+
+  scalar KRef_;
+  
+  scalar interfaceTol_;
+  
+  scalar xoffsetInput_;
+
+  scalar gainInput_;
+  
+  scalar yminInput_;
+
+  scalar xoffsetOutput_;
+
+  scalar gainOutput_;
+  
+  scalar yminOutput_;
+
+  std::vector<std::vector<int>> indices_;
   
   //- Disallow copy construct
   mlpCurvature(const mlpCurvature&);

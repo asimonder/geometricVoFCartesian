@@ -73,6 +73,12 @@ private:
 
   scalar dl_;
 
+  label fillNeighbours_;
+
+  bool rdfMark_;
+
+  scalar interfaceTol_;
+  
   //- Disallow copy construct
   heightFunction(const heightFunction&);
 

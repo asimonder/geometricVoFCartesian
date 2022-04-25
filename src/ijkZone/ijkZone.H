@@ -83,6 +83,12 @@ namespace Foam
     const volVectorField& C_;
     Vector<bool> isEmpty_;
     Vector<bool> isCyclic_;
+    bool symXIn_;
+    bool symXOut_;
+    bool symYIn_;
+    bool symYOut_;
+    bool symZIn_;
+    bool symZOut_;
 
   //template<class Type>
   //void collectDataFromOtherProcs(const List<labelHashSet>& commNeeded, Map<Type>& fieldData);
@@ -154,6 +160,12 @@ namespace Foam
     scalar Lx() const {return Lx_;};
     scalar Ly() const {return Ly_;};
     scalar Lz() const {return Lz_;};
+    bool symXIn() const {return symXIn_;};
+    bool symXOut() const {return symXOut_;};
+    bool symYIn() const {return symYIn_;};
+    bool symYOut() const {return symYOut_;};
+    bool symZIn() const {return symZIn_;};
+    bool symZOut() const {return symZOut_;};
     //convert i,j,k addressing to 1D 
     label ijk1(Vector<label> ijk3) const {return ijk3.x()+Nx_*ijk3.y()+Nx_*Ny_*ijk3.z();}
     label ijk1(label i, label j, label k) const {return i+Nx_*j+Nx_*Ny_*k;}

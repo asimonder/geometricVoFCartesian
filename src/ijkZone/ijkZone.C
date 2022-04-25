@@ -61,6 +61,18 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
   if (cellSetName!="domain")
     isDomain=false;
 
+  symXIn_=ijkDict.lookupOrDefault<bool>("symXIn",false);
+  symXOut_=ijkDict.lookupOrDefault<bool>("symXOut",false);
+  symYIn_=ijkDict.lookupOrDefault<bool>("symYIn",false);
+  symYOut_=ijkDict.lookupOrDefault<bool>("symYOut",false);
+  symZIn_=ijkDict.lookupOrDefault<bool>("symZIn",false);
+  symZOut_=ijkDict.lookupOrDefault<bool>("symZOut",false);
+  isCyclic_.x()=ijkDict.lookupOrDefault<bool>("cyclicX",false);
+  isCyclic_.y()=ijkDict.lookupOrDefault<bool>("cyclicY",false);
+  isCyclic_.z()=ijkDict.lookupOrDefault<bool>("cyclicZ",false);
+
+  Info<<"symXIn="<<symXIn_<<endl;
+  
   const  surfaceVectorField&  Cf = mesh_.Cf();
 
   const cellList& cells=mesh_.cells();
@@ -161,6 +173,8 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
     globalIds_=globalIds;
     
     //isCyclic?
+    if (false)
+      {
     forAll(faces,facei)
       {
 	if (!mesh_.isInternalFace(facei))
@@ -210,9 +224,10 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
 	      }
 	  }
       }
-
-    //printf("Proc=%d, isCyclic.x()=%d, isCyclic.y()=%d, isCyclic.z()=%d\n",Pstream::myProcNo(),isCyclic_.x(),isCyclic_.y(),isCyclic_.z());
+      }
     
+    //printf("Proc=%d, isCyclic.x()=%d, isCyclic.y()=%d, isCyclic.z()=%d\n",Pstream::myProcNo(),isCyclic_.x(),isCyclic_.y(),isCyclic_.z());
+    //Info<<"Cyclic BCs are hardcoded in ijkZone.C!"<<endl;    
     if (Pstream::parRun())
       {
 	Foam::reduce(isCyclic_.x(),orOp<bool>());
@@ -234,9 +249,9 @@ void Foam::ijkZone::markBoundaryCells(boolList& atBoundary,label nOffsetCells)
   forAll(C_,celli)
     {
       Vector<label> ijk=ijk3(celli);
-      if ((!isCyclic_.x() and !isEmpty_.x() and (ijk.x()+nOffsetCells>=Nx_ or ijk.x()-nOffsetCells<=0)) or
-	  (!isCyclic_.y() and !isEmpty_.y() and (ijk.y()+nOffsetCells>=Ny_ or ijk.y()-nOffsetCells<=0)) or
-	  (!isCyclic_.z() and !isEmpty_.z() and (ijk.z()+nOffsetCells>=Nz_ or ijk.z()-nOffsetCells<=0)))
+      if ((!isCyclic_.x() and !isEmpty_.x() and ((ijk.x()+nOffsetCells>=Nx_ and !symXOut_) or (ijk.x()-nOffsetCells<=0 and !symXIn_))) or
+	  (!isCyclic_.y() and !isEmpty_.y() and ((ijk.y()+nOffsetCells>=Ny_ and !symYOut_) or (ijk.y()-nOffsetCells<=0 and !symYIn_))) or
+	  (!isCyclic_.z() and !isEmpty_.z() and ((ijk.z()+nOffsetCells>=Nz_ and !symZOut_) or (ijk.z()-nOffsetCells<=0 and !symZIn_))))
 	atBoundary[celli]=true;
     }
 

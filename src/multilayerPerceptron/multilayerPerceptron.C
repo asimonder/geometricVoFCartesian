@@ -132,8 +132,14 @@ std::vector<double> Foam::multilayerPerceptron::predict(const std::vector<double
 	    }
 	  else if (activations_[i]=="sigmoid")
 	    {
-	      Info<<"Calculating sigmoid..."<<endl;
+	      //Info<<"Calculating sigmoid..."<<endl;
 	      sum=1./(1.+exp(-sum));
+	    }
+	  else if (activations_[i]=="symsigmoid")
+	    {
+	      //Info<<"Calculating sigmoid..."<<endl;
+	      //a = 2 ./ (1 + exp(-2*n)) - 1;
+	      sum=2./(1 + exp(-2*sum)) - 1.0;
 	    }
 
 	  outputLayer.push_back(sum);
