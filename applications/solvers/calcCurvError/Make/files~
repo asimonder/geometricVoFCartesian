@@ -1,3 +1,0 @@
-reconstructInterface.C
-
-EXE = $(FOAM_USER_APPBIN)/reconstructInterface
