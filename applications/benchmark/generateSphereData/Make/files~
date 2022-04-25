@@ -1,3 +1,0 @@
-trainCurvature.C
-
-EXE = $(FOAM_USER_APPBIN)/trainCurvature

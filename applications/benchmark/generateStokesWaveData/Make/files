@@ -1,3 +1,0 @@
-generateStokesWaveData.C
-
-EXE = $(FOAM_USER_APPBIN)/generateStokesWaveData
