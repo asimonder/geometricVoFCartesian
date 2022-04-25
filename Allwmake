@@ -2,4 +2,4 @@
 
 wmake libso src
 
-wmake applications/solvers/interIsoCartFoam
+wmake solvers/interIsoCartFoam
