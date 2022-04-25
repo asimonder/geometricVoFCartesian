@@ -576,5 +576,17 @@ $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/calculatedFvsPatchField.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/calculatedFvsPatchField.C \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/fvsPatchFieldsFwd.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/calculatedFvsPatchFields.H \
+$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/surfaceInterpolate.H \
+$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/surfaceInterpolationScheme.H \
+$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/surfaceInterpolationScheme.C \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/geometricOneField.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/oneFieldField.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/oneField.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/oneFieldI.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/geometricOneFieldI.H \
+$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/coupledFvPatchField.H \
+$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/coupledFvPatch.H \
+$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/coupledFvPatchField.C \
+$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/surfaceInterpolate.C \
 
 

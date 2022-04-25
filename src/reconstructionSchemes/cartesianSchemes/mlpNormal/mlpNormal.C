@@ -46,7 +46,10 @@ void Foam::reconstruction::mlpNormal::gradSurf(const volScalarField& phi)
   Vector<label> stencilSize(iMax_,jMax_,kMax_);
   ijkMesh_.getZoneField(interfaceCell_,phiIJK,phi,stencilSize);
   std::vector<double> inputData(NInput_,0.0);
-
+  const Vector<bool>& isEmpty=ijkMesh_.isEmpty();
+  
+  //Info<<"iMax_="<<iMax_<<", kMax_="<<kMax_<<", nMax_="<<kMax_<<endl;
+  
   /*Info<<"iMax_="<<iMax_<<", kMax_="<<kMax_<<", nMax_="<<kMax_<<endl;
   for (int i=-1;i<1+1;i++)
     {
@@ -57,52 +60,76 @@ void Foam::reconstruction::mlpNormal::gradSurf(const volScalarField& phi)
 	}*/
   forAll(interfaceLabels_, iCell)
     {
+      //Info<<"iCell="<<iCell<<endl;
       vector m(0.0,0.0,0.0);
       label celli=interfaceLabels_[iCell];
       stencil_.setStencil(phiIJK,ijkMesh_.ijk3(celli));
       List<scalar> A=stencil_.getStencil();
       int iA=0;	      
-      scalar sgnK=stencil_.estimateSignK();
-      vector n=stencil_.calcYoungNormal();      
+      scalar sgnK=1.0;
       if (is2D_)
 	{      
-	  //hard coded using z as 2nd direction
 	  if (zonalModel_)
-	    {	      
-	      sgnK=stencil_.estimateSignK();
-	      int iF=1;int kF=1;
-	      if (-n.x()<0)
-		iF=-1;
-	      if (-n.z()<0)
-		kF=-1;
+	    {
+	      vector n = stencil_.calcYoungNormal();
+	      sgnK=stencil_.estimateSignK(n);
+	      scalar nN=0;
+	      scalar nT=0;
+	      label tMax=0;
+	      label nMax=0;
+	      if (isEmpty.x())
+		{
+		  nT=n.y();
+		  nN=n.z();
+		}
+	      else if (isEmpty.y())
+		{
+		  nT=n.x();
+		  nN=n.z();
+		}
+	      else 
+		{
+		  nT=n.x();
+		  nN=n.y();
+		}
+	      tMax=iMax_;
+	      nMax=jMax_;
+	      
+	      int tF=1;int nF=1;
+	      if (-nT<0)
+		tF=-1;
+	      if (-nN<0)
+		nF=-1;
 	      if (sgnK<0)
 		{
 		  A=1.-A;
-		  iF*=-1;kF*=-1;
+		  tF*=-1;nF*=-1;
 		}
-	      iA=0;
-	      if (Foam::mag(n.x())<=Foam::mag(n.z()))
+	      
+ 
+	      if (Foam::mag(nT)<=Foam::mag(nN))
 		{
-		  for (int i=-iMax_;i<iMax_+1;i++)
+		  for (int t=-tMax;t<tMax+1;t++)
 		    {
-		      for (int k=-kMax_;k<kMax_+1;k++)
+		      for (int n=-nMax;n<nMax+1;n++)
 			{
-			  indices_[iA]=stencil_.a2(iF*i,kF*k);
+			  indices_[iA]=stencil_.a2(tF*t,nF*n);
 			  iA+=1;
 			}
 		    }
 		}
 	      else 
 		{
-		  for (int i=-iMax_;i<iMax_+1;i++)
+		  for (int t=-tMax;t<tMax+1;t++)
 		    {
-		      for (int k=-kMax_;k<kMax_+1;k++)
+		      for (int n=-nMax;n<nMax+1;n++)
 			{
-			  indices_[iA]=stencil_.a2(iF*k,kF*i);
+			  indices_[iA]=stencil_.a2(tF*n,nF*t);
 			  iA+=1;
 			}
 		    }
 		}
+
 	      
 	      iA=0;
 	      for(int ii: indices_)
@@ -181,7 +208,7 @@ Foam::reconstruction::mlpNormal::mlpNormal
     sIterPLIC_(mesh_,surfCellTol_),
     ijkMesh_(mesh_),
     boundaryCells_(mesh_.nCells(),false),
-    bias_(modelDict().lookupOrDefault<bool>("use_bias",false)),
+    //bias_(modelDict().lookupOrDefault<bool>("use_bias",false)),
     zonalModel_(dict.lookupOrDefault<bool>("zonalModel",true)),
     iMax_(dict.lookupOrDefault<label>("iMax",1)),
     jMax_(dict.lookupOrDefault<label>("jMax",1)),
@@ -217,7 +244,7 @@ Foam::reconstruction::mlpNormal::mlpNormal
   //stencil_=Foam::uniformStencil::uniformStencil(mesh_,ijkMesh_,nMax_);
 
   if (zonalModel_)
-    Info<<"Using the zonalModel for reconstruction with the mlpNormal model."<<endl;
+    Info<<"zonalModel=true."<<endl;
   ijkMesh_.markBoundaryCells(boundaryCells_,nMax_);
 
   std::string fName=mesh_.time().path()/"machineLearningModels/der1";
@@ -276,6 +303,8 @@ Foam::reconstruction::mlpNormal::mlpNormal
     }
   else
   Info<<"stencil size cannot be mapped to 3D!"<<endl;*/
+
+  Info<<"Reconstructing the interface..."<<endl;
       
   reconstruct();
 }

@@ -62,6 +62,7 @@ protected:
 
         //- curvature field
         volScalarField K_;
+  surfaceScalarField Kf_;
 
 
 private:
@@ -137,6 +138,11 @@ public:
   const volScalarField& K() const
   {
     return K_;
+  }
+
+  const surfaceScalarField& Kf() const
+  {
+    return Kf_;
   }
 
   void correct()

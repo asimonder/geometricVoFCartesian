@@ -86,10 +86,8 @@ namespace Foam
 
   public:
   // Constructors
-  // Declare name of the class and its debug switch
-    // TypeName("uniformStencil");
-
     //uniformStencil();
+    uniformStencil() = default;
     
   //- Construct from fvMesh
     uniformStencil(const fvMesh&,const ijkZone& ijkMesh,int nMax);
@@ -99,7 +97,7 @@ namespace Foam
   //static uniformStencil& New(const fvMesh&);
 
   //- Destructor
-    virtual ~uniformStencil() = default;      
+    // virtual ~uniformStencil() = default;      
 
     void setStencil(const Map<scalar>& phiIJK,const Vector<label>& ijk);
 

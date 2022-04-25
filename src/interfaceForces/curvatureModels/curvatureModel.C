@@ -18,7 +18,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "curvatureModel.H"
-
+#include "surfaceInterpolate.H"
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 namespace Foam
@@ -39,7 +39,6 @@ Foam::curvatureModel::curvatureModel
 :
     alpha1_(alpha1),
     U_(U),
-
     K_
     (
         IOobject
@@ -55,8 +54,8 @@ Foam::curvatureModel::curvatureModel
         dimensionedScalar("K", dimless/dimLength, 0.0)//,
         //"zeroGradient"
 	//"cyclic"
-    )
-
+     ),
+    Kf_(fvc::interpolate(K_))
 {
 
 }

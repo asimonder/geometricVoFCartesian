@@ -63,6 +63,9 @@ Foam::heightFunction::heightFunction
     ijkMesh_(alpha1.mesh()),
     globalNumbering_(ijkMesh_.globalNumbering()),
     nMax_(3),
+    fillNeighbours_(dict.lookupOrDefault<label>("fillNeighbours",-1)),
+    interfaceTol_(1e-12),
+    rdfMark_(dict.lookupOrDefault<bool>("rdfMark",false)),
     boundaryCells_(mesh_.nCells(),false)
 {
   
@@ -192,10 +195,18 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 	 il=0;
 	 for (int j=-nMax[1];j<nMax[1]+1;j++)
 	   {
+	     if ((jP+j+1>Ny and ijkMesh_.symYOut()) or (jP-j<0 and ijkMesh_.symYIn())) 
+	       jl=jP-j;
+	     else
+	       jl=(jP+j+Ny)%Ny;
 	     for (int k=-nMax[2];k<nMax[2]+1;k++)
 	       {		 
-		 jl=(jP+j+Ny)%Ny;
-		 kl=(kP+k+Nz)%Nz;
+		 //jl=(jP+j+Ny)%Ny;
+		 //kl=(kP+k+Nz)%Nz;
+		 if ((kP+k+1>Nz and ijkMesh_.symZOut()) or (kP-k<0 and ijkMesh_.symZIn())) 
+		   kl=kP-k;
+		 else
+		   kl=(kP+k+Nz)%Nz;
 		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 		 label gblIdx=globalIds[ijkG];
 		 if (dir==1)
@@ -210,10 +221,18 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 	 jl=0;
 	 for (int i=-nMax[0];i<nMax[0]+1;i++)
 	   {
+	     if ((iP+i+1>Nx and ijkMesh_.symXOut()) or (iP+i<0 and ijkMesh_.symXIn())) 
+	       il=iP-i;
+	     else
+	       il=(iP+i+Nx)%Nx;
 	     for (int k=-nMax[2];k<nMax[2]+1;k++)
 	       {
-		 il=(iP+i+Nx)%Nx;
-		 kl=(kP+k+Nz)%Nz;
+		 //il=(iP+i+Nx)%Nx;
+		 //kl=(kP+k+Nz)%Nz;
+		 if ((kP+k+1>Nz and ijkMesh_.symZOut()) or (kP-k<0 and ijkMesh_.symZIn())) 
+		   kl=kP-k;
+		 else
+		   kl=(kP+k+Nz)%Nz;
 		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 		 label gblIdx=globalIds[ijkG];
 		 if (dir==0)
@@ -228,10 +247,18 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 	 kl=0;
 	 for (int i=-nMax[0];i<nMax[0]+1;i++)
 	   {
+	     if ((iP+i+1>Nx and ijkMesh_.symXOut()) or (iP+i<0 and ijkMesh_.symXIn())) 
+	       il=iP-i;
+	     else
+	       il=(iP+i+Nx)%Nx;
 	     for (int j=-nMax[1];j<nMax[1]+1;j++)
 	       {
-		 il=(iP+i+Nx)%Nx;
-		 jl=(jP+j+Ny)%Ny;
+		 //il=(iP+i+Nx)%Nx;
+		 //jl=(jP+j+Ny)%Ny;
+		 if ((jP+j+1>Ny and ijkMesh_.symYOut()) or (jP+j<0 and ijkMesh_.symYIn())) 
+		   jl=jP-j;
+		 else
+		   jl=(jP+j+Ny)%Ny;
 		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 		 label gblIdx=globalIds[ijkG];
 		 if (dir==0)
@@ -295,6 +322,7 @@ void Foam::heightFunction::calculateK()
   const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
   surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
   surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
+  //const volVectorField nHat(gradAlpha/(mag(gradAlpha) + deltaN_));
   correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
 
   forAll(K_,celli)
@@ -319,6 +347,11 @@ void Foam::heightFunction::calculateK()
     {
       vector n = faceNormal[celli];
       if(interfaceCells[celli] && mag(n)>0)
+	//vector n = nHat[celli];
+      //RDF_.correctBoundaryConditions();
+      //RDF_.markCellsNearSurf(interfaceCells,1);
+      //const boolList& nextToInterface =RDF_.nextToInterface(); 
+      //if(interfaceCells[celli] or nextToInterface[celli])
 	{
 	  label dir=-1;
 	  if (mag(n.x())>0.0 and !ijkMesh_.isEmpty().x())
@@ -329,6 +362,7 @@ void Foam::heightFunction::calculateK()
 	    dir=2;
 	  if (dir==-1)
 	    {
+	      Info<<"n="<<n<<endl;
 	      FatalErrorInFunction
 	      << "Normal direction cannot be identified."
 	     << abort(FatalError);
@@ -375,89 +409,126 @@ void Foam::heightFunction::calculateK()
 	    }	  	      
 	}      
     }
-
-  K_.correctBoundaryConditions();
-  
-  label neiMax=1;
-  //this one can cause problems at cyclic BC!
-  RDF_.correctBoundaryConditions();
-  RDF_.markCellsNearSurf(interfaceCells,neiMax);
-  const boolList& nextToInterface =RDF_.nextToInterface(); 
-  
-  boolList neiInterface(mesh.nCells(),false);
-
-  forAll(neiInterface,celli)
-    {
-      if (nextToInterface[celli] and !interfaceCells[celli] and !boundaryCells_[celli])
-	  neiInterface[celli]=true;
-    }
-
-  neiMax+=1;
-  stencilSize=Vector<label>(neiMax,neiMax,neiMax);
-  ijkMesh_.getZoneField(neiInterface,faceCentreIJK,faceCentre,stencilSize);
-  ijkMesh_.getZoneField(neiInterface,curvIJK,K_,stencilSize);
-
-
+  label neiMax;
   label iMax,jMax,kMax;
-
-  if (ijkMesh_.isEmpty().x())
+  label il,jl,kl;
+  boolList neiInterface(mesh.nCells(),false);
+  if (true) //rdfMark_)
     {
-      iMax=0;jMax=neiMax;kMax=neiMax;
-    }
-  else if (ijkMesh_.isEmpty().y())
-    {
-      iMax=neiMax;jMax=0;kMax=neiMax;
-    }
-  else if (ijkMesh_.isEmpty().z())
-    {
-      iMax=neiMax;jMax=neiMax;kMax=0;
-    }
-  else
-    {
-      iMax=neiMax;jMax=neiMax;kMax=neiMax;
-    }
-    
-  //label nCount=0;  
-  forAll(neiInterface,celli)
-    {
-      if (neiInterface[celli])
+      Info<<"Marking nei cells using RDF..."<<endl;
+      neiMax=3;
+      K_.correctBoundaryConditions();
+      //this one can cause problems at cyclic BC!
+      RDF_.correctBoundaryConditions();
+      RDF_.markCellsNearSurf(interfaceCells,neiMax);
+      const boolList& nextToInterface =RDF_.nextToInterface(); 
+  
+      forAll(nextToInterface,celli)
 	{
-	  const point cc = C[celli];
-
-	  label i=round((cc.x()-Pmin.x())/dl_);
-	  label j=round((cc.y()-Pmin.y())/dl_);
-	  label k=round((cc.z()-Pmin.z())/dl_);
-
-	  label gblIdMin=-1;
-	  scalar distMin=GREAT;
-	  for (int ii=-iMax;ii<iMax+1;ii++)
-	    {
-	      for (int jj=-jMax;jj<jMax+1;jj++)
-		{
-		  for (int kk=-kMax;kk<kMax+1;kk++)
-		    {
-		      label il=(i+ii+Nx)%Nx;
-		      label jl=(j+jj+Ny)%Ny;
-		      label kl=(k+kk+Nz)%Nz; 
-		      label ijk=il+Nx*jl+Nx*Ny*kl;
-		      label gblId=globalIds[ijk];
-		      vector faceCentre=faceCentreIJK[gblId];
-		      scalar dist = mag(cc-faceCentre);
-		      if (dist < distMin && mag(faceCentre)>0)
-			{
-			  distMin = dist;
-			  gblIdMin = gblId;
-			}
-		      
-		    }
-		}
-	    }
-	  
-	  K_[celli]=curvIJK[gblIdMin];
+	  //if (nextToInterface[celli] and !interfaceCells[celli] and !boundaryCells_[celli])
+	  if (nextToInterface[celli] and interfaceCells[celli] and !boundaryCells_[celli])
+	    neiInterface[celli]=true;
+	  //if (interfaceCells[celli] and (alpha1_[celli]<interfaceTol_ or alpha1_[celli]>1-interfaceTol_))
+	  // neiInterface[celli]=true;
 	}
     }
 
+  if (fillNeighbours_==0)
+    {
+      Info<<"Neighbouring cells of the interface are left zero."<<endl;
+      curvIJK.clear();
+      ijkMesh_.getZoneField(neiInterface,curvIJK,K_,stencilSize);
+    }
+  else
+    Info<<"fillNeighbours should be defined in transportDict!"<<endl;
+      
   K_.correctBoundaryConditions();
+
+  const surfaceVectorField& Cf = mesh.Cf();
+  Kf_=fvc::interpolate(K_);
+  const Foam::labelList& nei=alpha1_.mesh().faceNeighbour();
+  const Foam::labelList& own=alpha1_.mesh().faceOwner();
+  Info<<"nei="<<nei.size()<<endl;
+  Info<<"own="<<own.size()<<endl;
+  Info<<"Kf_.internal="<<Kf_.internalField().size()<<endl;  
+  //Info<<"Kf_.boundary="<<Kf_.boundaryField()[0].type()<<endl;
+  Info<<"mesh.boundaryMesh="<<mesh.boundaryMesh().size()<<endl;
+  forAll(Kf_,iFace)
+    {
+      if (Kf_[iFace]!=0)
+	{
+	  scalar K1=K_[own[iFace]];      
+	  scalar K2=K_[nei[iFace]];
+	  if (K1*K2==0 and Kf_[iFace]!=0)
+	    {
+	      if (mag(K1)>mag(K2))
+		Kf_[iFace]=K1;
+	      else
+		Kf_[iFace]=K2;
+	    }
+	}
+    }
+  forAll(mesh.boundaryMesh(),iPatch)
+    {
+      word pType=Kf_.boundaryField()[iPatch].type();
+      if(pType!="empty")
+	{	  
+	  const polyPatch& cPatch = mesh.boundaryMesh()[iPatch];
+	  label iFaceStart = cPatch.start();
+	  const labelUList& faceCells = cPatch.faceCells();
+	  forAll(faceCells,iFace)
+	    {
+	      label iCell=faceCells[iFace];
+	      if(neiInterface[iCell])
+		{
+		  //Info<<"Kf_.boundaryField()[iPatch][iFace]="<<Kf_.boundaryField()[iPatch][iFace]<<endl;
+		  const point cc = C[iCell];
+		  label iP=round((cc.x()-Pmin.x())/dl_);
+		  label jP=round((cc.y()-Pmin.y())/dl_);
+		  label kP=round((cc.z()-Pmin.z())/dl_);
+		  label ijk=iP+Nx*jP+Nx*Ny*kP;
+		  label gblId=globalIds[ijk];
+		  scalar Kp=curvIJK[gblId];
+		  const point R = Cf.boundaryField()[iPatch][iFace]-cc;
+		  label iN,jN,kN;
+		  iN=round(2.0*R.x()/dl_);
+		  jN=round(2.0*R.y()/dl_);
+		  kN=round(2.0*R.z()/dl_);
+		  //Info<<"R="<<R<<";r=("<<iN<<","<<jN<<","<<kN<<")"<<endl;				  
+		  if(pType=="symmetry" or pType=="wall")
+		    continue; //iN=iP-iN;jN=jP-jN;kN=kP-kN;
+		  else if (pType=="cyclic")
+		    {
+		      iN=(iP+iN+Nx)%Nx;
+		      jN=(jP+jN+Ny)%Ny;
+		      kN=(kP+kN+Nz)%Nz;
+		    }
+		  /*else
+		    {
+		      iN+=iP;
+		      jN+=jP;
+		      kN+=kP;
+		      }*/
+		  ijk=iN+Nx*jN+Nx*Ny*kN;
+		  gblId=globalIds[ijk];
+		  scalar Kn=curvIJK[gblId];
+		  if (Kn*Kp==0)
+		    {
+		      //Kf_.boundaryFieldRef()[iPatch][iFace]*=2.0;
+		      if (mag(Kn)>mag(Kp))
+			Kf_.boundaryFieldRef()[iPatch][iFace]=Kn;
+		      else
+			Kf_.boundaryFieldRef()[iPatch][iFace]=Kp;
+		      //if(Kf_.boundaryField()[iPatch][iFace]!=0)
+		      //	printf("Patch: %s; Kf(%f,%f,%f)=%f; in proc=%d\n",pType,cfp.x(),cfp.y(),cfp.z(),Kf_.boundaryField()[iPatch][iFace],Pstream::myProcNo());
+			//Info<<"Patch: "<<pType<<" ;Kf_.boundaryField()[iPatch][iFace]="<<Kf_.boundaryField()[iPatch][iFace]<<endl;
+		    }
+		  
+		}
+	    }
+	}
+    }
+
 }
 
 

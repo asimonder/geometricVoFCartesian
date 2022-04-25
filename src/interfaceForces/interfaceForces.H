@@ -129,8 +129,11 @@ public:
   tmp<volScalarField> sigma() const;
 
   tmp<volScalarField> K() const;
+
+  tmp<surfaceScalarField> Kf() const;
   
   tmp<surfaceScalarField> surfaceTensionForce() const;
+  //tmp<volVectorField> surfaceTensionForce() const;
 
   //- Indicator of the proximity of the interface
   //  Field values are 1 near and 0 away for the interface.

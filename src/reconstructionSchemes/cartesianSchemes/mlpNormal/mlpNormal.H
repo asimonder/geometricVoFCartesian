@@ -97,7 +97,7 @@ class mlpNormal
 
   bool is2D_;
 
-  bool bias_;
+  //bool bias_;
 
   bool zonalModel_;
 
