@@ -251,7 +251,7 @@ Foam::reconstruction::mlpNormal::mlpNormal
   if (Pstream::parRun())
     fName=mesh_.time().path()/"../machineLearningModels/der1";
 
-  mlp_=Foam::multilayerPerceptron::multilayerPerceptron(fName);
+  mlp_=multilayerPerceptron(fName);
   NInput_=mlp_.stencilSize();
 
   is2D_=false;
