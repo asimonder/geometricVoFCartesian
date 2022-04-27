@@ -134,7 +134,7 @@ Foam::mlpCurvature::mlpCurvature
   if (Pstream::parRun())
     fName=mesh_.time().path()/"../machineLearningModels/curv";
 
-  mlp_=Foam::multilayerPerceptron::multilayerPerceptron(fName);
+  mlp_=multilayerPerceptron(fName);
   NInput_=mlp_.stencilSize();
   Info<<"mlpCurvature:stencil size="<<NInput_<<endl;
   if (is2D_)
