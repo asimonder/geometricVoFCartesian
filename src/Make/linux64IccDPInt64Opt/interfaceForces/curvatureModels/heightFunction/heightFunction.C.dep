@@ -706,5 +706,9 @@ $(WM_PROJECT_DIR)/src/surfMesh/lnInclude/MeshedSurfaceIO.C \
 $(WM_PROJECT_DIR)/src/surfMesh/lnInclude/MeshedSurfaceNew.C \
 $(WM_PROJECT_DIR)/src/surfMesh/lnInclude/MeshedSurfacesFwd.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/unitConversion.H \
+interfaceForces/curvatureModels/heightFunction/../mlpCurvature/fill0.H \
+interfaceForces/curvatureModels/heightFunction/../mlpCurvature/fill10.H \
+interfaceForces/curvatureModels/heightFunction/../mlpCurvature/fill11.H \
+interfaceForces/curvatureModels/heightFunction/../mlpCurvature/fill12.H \
 
 
