@@ -410,7 +410,7 @@ void Foam::heightFunction::calculateK()
 	}      
     }
 
-  label neiMax=3;
+  label neiMax=1;
   stencilSize=Vector<label>(1,1,1);
   label iMax,jMax,kMax;
   label il,jl,kl;
