@@ -31,6 +31,28 @@ forAll(interfaceCells,iCell)
     }
 }
 
+
+forAll(mesh.boundaryMesh(),iPatch)
+{
+  word pType=Kf_.boundaryField()[iPatch].type();
+  if(pType!="empty")
+    {	  
+      const polyPatch& cPatch = mesh.boundaryMesh()[iPatch];
+      const labelUList& faceCells = cPatch.faceCells();
+      forAll(faceCells,iFace)
+	{
+	  label iCell=faceCells[iFace];
+	  if (Kf_.boundaryFieldRef()[iPatch][iFace]!=0)
+	    {
+	      if (!interfaceCells[iCell])
+		{
+		  neiInterface[iCell]=true;
+		}
+	    }
+	}
+    }
+}
+
 forAll(mesh.boundaryMesh(),iPatch)
 {
   word pType=Kf_.boundaryField()[iPatch].type();
@@ -78,6 +100,7 @@ forAll(Kf_,iFace)
       label kP=round((cc.z()-Pmin.z())/dl_);
       
       scalar sumW=0;
+      label count=0;
       for (int i=-iMax;i<iMax+1;i++)
 	{
 	  for (int j=-jMax;j<jMax+1;j++)
@@ -105,17 +128,22 @@ forAll(Kf_,iFace)
 		  label gblId=globalIds[ijk];
 		  //vector faceCentre=faceCentreIJK[gblId];
 		  //scalar dist = mag(Cfp-faceCentre);
-		  if (alphaIJK[gblId]>interfaceTol_ && alphaIJK[gblId]<1-interfaceTol_)
+		  if (alphaIJK[gblId]>interfaceTol_ && alphaIJK[gblId]<1-interfaceTol_ && curvIJK[gblId]!=0)
 		    {
 		      scalar weight=1./Foam::pow(distCell,d);
 		      sumW+= weight;
+		      count+=1;
 		      Kf_[iFace]+=weight*curvIJK[gblId];
 		    }
 		}
 	    }
 	}
       if (sumW>0)
-	Kf_[iFace]/=sumW;
+	{
+	  Kf_[iFace]/=sumW;
+	  //printf("Face (%f,%f) in proc=%d. Kf_=%.2f. count=%d. sum of weights=%.2f\n",Cfp.x(),Cfp.z(),Pstream::myProcNo(),Kf_[iFace],count,sumW);
+	}
+
     }
 }
 
@@ -170,7 +198,7 @@ forAll(mesh.boundaryMesh(),iPatch)
 			  label gblId=globalIds[ijk];
 			  //vector faceCentre=faceCentreIJK[gblId];
 			  //scalar dist = mag(Cfp-faceCentre);
-			  if (alphaIJK[gblId]>interfaceTol_ && alphaIJK[gblId]<1-interfaceTol_)
+			  if (alphaIJK[gblId]>interfaceTol_ && alphaIJK[gblId]<1-interfaceTol_ && curvIJK[gblId]!=0)
 			    {
 			      scalar weight=1./Foam::pow(distCell,d);
 			      sumW+= weight;
