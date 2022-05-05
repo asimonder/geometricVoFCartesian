@@ -66,6 +66,7 @@ Foam::heightFunction::heightFunction
     fillNeighbours_(dict.lookupOrDefault<label>("fillNeighbours",-1)),
     interfaceTol_(1e-12),
     rdfMark_(dict.lookupOrDefault<bool>("rdfMark",false)),
+    extendInterface_(false),
     boundaryCells_(mesh_.nCells(),false)
 {
   
@@ -195,16 +196,18 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 	 il=0;
 	 for (int j=-nMax[1];j<nMax[1]+1;j++)
 	   {
-	     if ((jP+j+1>Ny and ijkMesh_.symYOut()) or (jP-j<0 and ijkMesh_.symYIn())) 
-	       jl=jP-j;
+	     if (jP+j+1>Ny and ijkMesh_.symYOut()) 
+	       jl=jP+1-j;
+	     else if (jP+j<0 and ijkMesh_.symYIn())
+	       jl=jP-1-j;
 	     else
 	       jl=(jP+j+Ny)%Ny;
 	     for (int k=-nMax[2];k<nMax[2]+1;k++)
-	       {		 
-		 //jl=(jP+j+Ny)%Ny;
-		 //kl=(kP+k+Nz)%Nz;
-		 if ((kP+k+1>Nz and ijkMesh_.symZOut()) or (kP-k<0 and ijkMesh_.symZIn())) 
-		   kl=kP-k;
+	       {
+		 if (kP+k+1>Nz and ijkMesh_.symZOut()) 
+		   kl=kP+1-k;
+		 else if (kP-k<0 and ijkMesh_.symZIn())
+		   kl=kP-1-k;
 		 else
 		   kl=(kP+k+Nz)%Nz;
 		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
@@ -221,16 +224,18 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 	 jl=0;
 	 for (int i=-nMax[0];i<nMax[0]+1;i++)
 	   {
-	     if ((iP+i+1>Nx and ijkMesh_.symXOut()) or (iP+i<0 and ijkMesh_.symXIn())) 
-	       il=iP-i;
+	     if (iP+i+1>Nx and ijkMesh_.symXOut())
+	       il=iP+1-i;
+	     else if (iP+i<0 and ijkMesh_.symXIn())
+	       il=iP-1-i;
 	     else
 	       il=(iP+i+Nx)%Nx;
 	     for (int k=-nMax[2];k<nMax[2]+1;k++)
 	       {
-		 //il=(iP+i+Nx)%Nx;
-		 //kl=(kP+k+Nz)%Nz;
-		 if ((kP+k+1>Nz and ijkMesh_.symZOut()) or (kP-k<0 and ijkMesh_.symZIn())) 
-		   kl=kP-k;
+		 if (kP+k+1>Nz and ijkMesh_.symZOut()) 
+		   kl=kP+1-k;
+		 else if (kP-k<0 and ijkMesh_.symZIn())
+		   kl=kP-1-k;
 		 else
 		   kl=(kP+k+Nz)%Nz;
 		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
@@ -247,16 +252,18 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 	 kl=0;
 	 for (int i=-nMax[0];i<nMax[0]+1;i++)
 	   {
-	     if ((iP+i+1>Nx and ijkMesh_.symXOut()) or (iP+i<0 and ijkMesh_.symXIn())) 
-	       il=iP-i;
+	     if (iP+i+1>Nx and ijkMesh_.symXOut())
+	       il=iP+1-i;
+	     else if (iP+i<0 and ijkMesh_.symXIn())
+	       il=iP-1-i;
 	     else
 	       il=(iP+i+Nx)%Nx;
 	     for (int j=-nMax[1];j<nMax[1]+1;j++)
 	       {
-		 //il=(iP+i+Nx)%Nx;
-		 //jl=(jP+j+Ny)%Ny;
-		 if ((jP+j+1>Ny and ijkMesh_.symYOut()) or (jP+j<0 and ijkMesh_.symYIn())) 
-		   jl=jP-j;
+		 if (jP+j+1>Ny and ijkMesh_.symYOut()) 
+		   jl=jP+1-j;
+		 else if (jP+j<0 and ijkMesh_.symYIn())
+		   jl=jP-1-j;
 		 else
 		   jl=(jP+j+Ny)%Ny;
 		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
@@ -274,13 +281,28 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
       H.setSize(9,0.0);
       for (int i=-nMax[0];i<nMax[0]+1;i++)
 	{
+	  if (iP+i+1>Nx and ijkMesh_.symXOut())
+	    il=iP+1-i;
+	  else if (iP+i<0 and ijkMesh_.symXIn())
+	    il=iP-1-i;
+	  else
+	    il=(iP+i+Nx)%Nx;
 	  for (int j=-nMax[1];j<nMax[1]+1;j++)
 	    {
+	      if (jP+j+1>Ny and ijkMesh_.symYOut()) 
+		jl=jP+1-j;
+	      else if (jP+j<0 and ijkMesh_.symYIn())
+		jl=jP-1-j;
+	      else
+		jl=(jP+j+Ny)%Ny;
 	      for (int k=-nMax[2];k<nMax[2]+1;k++)
 		{
-		  label il=(iP+i+Nx)%Nx;
-		  label jl=(jP+j+Ny)%Ny;
-		  label kl=(kP+k+Nz)%Nz;
+		  if (kP+k+1>Nz and ijkMesh_.symZOut()) 
+		    kl=kP+1-k;
+		  else if (kP-k<0 and ijkMesh_.symZIn())
+		    kl=kP-1-k;
+		  else
+		    kl=(kP+k+Nz)%Nz;
 		  label ijkG=ijkMesh_.ijk1(il,jl,kl); 
 		  label gblIdx=globalIds[ijkG];
 		  if (dir==0)
