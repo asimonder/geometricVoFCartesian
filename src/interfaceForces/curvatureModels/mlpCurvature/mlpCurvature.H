@@ -95,6 +95,8 @@ private:
 
   bool rdfMark_;
 
+  bool extendInterface_;
+
   scalar KRef_;
   
   scalar interfaceTol_;

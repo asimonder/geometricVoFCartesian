@@ -476,7 +476,7 @@ void Foam::RDF::calculateK()
 
     K_.correctBoundaryConditions();
 
-    //Kf_ = fvc::interpolate(K_);
+    Kf_ = fvc::interpolate(K_);
 }
 
 

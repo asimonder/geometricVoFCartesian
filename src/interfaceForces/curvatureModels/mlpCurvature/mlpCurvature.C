@@ -72,6 +72,7 @@ Foam::mlpCurvature::mlpCurvature
     averageZones_(dict.lookupOrDefault<bool>("averageZones",true)),
     explicitCurvature_(dict.lookupOrDefault<bool>("explicitCurvature",false)),
     rdfMark_(dict.lookupOrDefault<bool>("rdfMark",false)),
+    extendInterface_(dict.lookupOrDefault<bool>("extendInterface",false)),
     KRef_(dict.lookupOrDefault<scalar>("KRef",0.0)),
     interfaceTol_(dict.lookupOrDefault<scalar>("interfaceTol",1e-6)),
     xoffsetInput_(dict.lookupOrDefault<scalar>("xoffsetInput",0)),
@@ -362,6 +363,7 @@ void Foam::mlpCurvature::calculateK()
 
 		  int tF=1;int nF=1;
 		  if (Foam::mag(nT)<=Foam::mag(nN))
+		  //if (Foam::mag(nT)<Foam::mag(nN))
 		    {
 		      for (int t=-tMax;t<tMax+1;t++)
 			{
@@ -625,6 +627,10 @@ void Foam::mlpCurvature::calculateK()
   else if (fillNeighbours_==12)
     {
 #include "fill12.H"
+    }
+  else if (fillNeighbours_==13)
+    {
+#include "fill13.H"
     }
   else
     Info<<"fillNeighbours should be defined in transportDict!"<<endl;

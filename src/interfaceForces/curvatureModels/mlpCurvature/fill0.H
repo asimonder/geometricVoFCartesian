@@ -6,10 +6,15 @@ forAll(interfaceCells,iCell)
       neiInterface[iCell]=true;
       if (alpha1_[iCell]<interfaceTol_ or alpha1_[iCell]>1-interfaceTol_) //mag(faceCentre)>
 	{
-	  K_[iCell]=0.0;
+	    K_[iCell]=0.0;
 	}
     }
 }
+
+if (extendInterface_)
+  {
+#include "extendInterface.H"
+  }
 
 forAll(mesh.boundaryMesh(),iPatch)
 {
@@ -23,10 +28,7 @@ forAll(mesh.boundaryMesh(),iPatch)
 	  label iCell=faceCells[iFace];
 	  if (Kf_.boundaryFieldRef()[iPatch][iFace]!=0)
 	    {
-	      if (!interfaceCells[iCell])
-		{
-		  neiInterface[iCell]=true;
-		}
+	      neiInterface[iCell]=true;
 	    }
 	}
     }

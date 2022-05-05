@@ -77,6 +77,8 @@ private:
 
   bool rdfMark_;
 
+  bool extendInterface_;
+
   scalar interfaceTol_;
   
   //- Disallow copy construct
