@@ -916,6 +916,8 @@ $(WM_PROJECT_DIR)/src/dynamicMesh/lnInclude/hexRef8.H \
 $(WM_PROJECT_DIR)/src/dynamicMesh/lnInclude/removeFaces.H \
 $(WM_PROJECT_DIR)/src/dynamicMesh/lnInclude/refinementHistory.H \
 $(WM_PROJECT_DIR)/src/dynamicFvMesh/lnInclude/dynamicRefineFvMeshTemplates.C \
+../../src/lnInclude/interfaceForces.H \
+../../src/lnInclude/curvatureModel.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/postProcess.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/addRegionOption.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/addFunctionObjectOptions.H \
@@ -961,5 +963,6 @@ alphaSuSp.H \
 rhofs.H \
 UEqn.H \
 pEqn.H \
+calculateCurvatureError.H \
 
 
