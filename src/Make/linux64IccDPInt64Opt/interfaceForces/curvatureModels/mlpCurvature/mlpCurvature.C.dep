@@ -711,8 +711,11 @@ $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/unitConversion.H \
 interfaceForces/curvatureModels/mlpCurvature/fill0.H \
 interfaceForces/curvatureModels/mlpCurvature/extendInterface.H \
 interfaceForces/curvatureModels/mlpCurvature/fill1.H \
+interfaceForces/curvatureModels/mlpCurvature/extendInterface1.H \
 interfaceForces/curvatureModels/mlpCurvature/fill2.H \
+interfaceForces/curvatureModels/mlpCurvature/extendInterface2.H \
 interfaceForces/curvatureModels/mlpCurvature/fill3.H \
+interfaceForces/curvatureModels/mlpCurvature/extendInterface3.H \
 interfaceForces/curvatureModels/mlpCurvature/fill4.H \
 interfaceForces/curvatureModels/mlpCurvature/fill5.H \
 interfaceForces/curvatureModels/mlpCurvature/fill6.H \
