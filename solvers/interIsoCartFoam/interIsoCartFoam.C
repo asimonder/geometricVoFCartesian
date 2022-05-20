@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
             }
         }
 
-#include "calculateCurvatureError.H"
+	//#include "calculateCurvatureError.H"
 
 	runTime.write();
 
