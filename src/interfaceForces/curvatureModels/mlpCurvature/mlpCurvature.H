@@ -105,15 +105,15 @@ private:
   
   scalar xoffsetInput_;
 
-  scalar gainInput_;
-  
   scalar yminInput_;
+
+  scalar gainInput_;
 
   scalar xoffsetOutput_;
 
-  scalar gainOutput_;
-  
   scalar yminOutput_;
+  
+  scalar gainOutput_; 
 
   std::vector<std::vector<int>> indices_;
   
