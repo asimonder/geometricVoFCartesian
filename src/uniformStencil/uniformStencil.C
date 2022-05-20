@@ -371,7 +371,12 @@ Foam::vector Foam::uniformStencil::calcCCDNormal()
   if (is2D_)
     {
       Foam::vector m(0.0,0.0,0.0);
-      scalar mxc,myc,mxb,myb,mxf,myf=0;
+      scalar mxc=0;
+      scalar myc=0;
+      scalar mxb=0;
+      scalar myb=0;
+      scalar mxf=0;
+      scalar myf=0;
       scalar mx,my=0;
       scalar sgn_mx=0;
       scalar sgn_my=0;

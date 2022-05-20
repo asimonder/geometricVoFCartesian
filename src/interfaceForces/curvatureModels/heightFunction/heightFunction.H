@@ -34,7 +34,7 @@ SourceFiles
 #include "autoPtr.H"
 #include "curvatureModel.H"
 #include "globalIndex.H"
-#include "reconstructedDistanceFunction.H"
+//#include "reconstructedDistanceFunction.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -59,27 +59,20 @@ private:
 
   const dimensionedScalar deltaN_;
 
-  reconstructedDistanceFunction RDF_;
-  
-  label nMax_;
-
-  boolList boundaryCells_;
-
   ijkZone ijkMesh_;
 
   const globalIndex globalNumbering_;
+
+  label nMax_;
 
   bool is2D_;
 
   scalar dl_;
 
-  label fillNeighbours_;
-
-  bool rdfMark_;
-
-  bool extendInterface_;
-
   scalar interfaceTol_;
+
+  boolList boundaryCells_;
+
   
   //- Disallow copy construct
   heightFunction(const heightFunction&);
