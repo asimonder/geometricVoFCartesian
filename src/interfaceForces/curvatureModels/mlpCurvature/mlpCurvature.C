@@ -60,20 +60,15 @@ Foam::mlpCurvature::mlpCurvature
         1e-8/pow(average(alpha1.mesh().V()), 1.0/3.0)
      ),
     mesh_(alpha1.mesh()),
-    RDF_(alpha1.mesh()),
-    //ijkMesh_(alpha1.mesh()),
     ijkMesh_(mesh_),
     globalNumbering_(ijkMesh_.globalNumbering()),
     boundaryCells_(mesh_.nCells(),false),
-    //bias_(dict.lookupOrDefault<bool>("use_bias",false)),
     zonalModel_(dict.lookupOrDefault<bool>("zonalModel",true)),
     useScaling_(dict.lookupOrDefault<bool>("useScaling",true)),
     fillNeighbours_(dict.lookupOrDefault<label>("fillNeighbours",-1)),
     averageZones_(dict.lookupOrDefault<bool>("averageZones",true)),
-    explicitCurvature_(dict.lookupOrDefault<bool>("explicitCurvature",false)),
-    rdfMark_(dict.lookupOrDefault<bool>("rdfMark",false)),
-    extendInterface_(dict.lookupOrDefault<bool>("extendInterface",false)),
-    KRef_(dict.lookupOrDefault<scalar>("KRef",0.0)),
+    //extendInterface_(dict.lookupOrDefault<bool>("extendInterface",false)),
+    mlpModel_(dict.lookupOrDefault<word>("mlpModel","machineLearningModels")),
     interfaceTol_(dict.lookupOrDefault<scalar>("interfaceTol",1e-6)),
     xoffsetInput_(dict.lookupOrDefault<scalar>("xoffsetInput",0)),
     yminInput_(dict.lookupOrDefault<scalar>("yminInput",0)),
@@ -131,9 +126,9 @@ Foam::mlpCurvature::mlpCurvature
   ijkMesh_.markBoundaryCells(boundaryCells_,nMax_);
   Info<<"mlpCurvature: done setting up ijkMesh..."<<endl;
 
-  std::string fName=mesh_.time().path()/"machineLearningModels/curv";
+  std::string fName=mesh_.time().path()/mlpModel_+"/curv";
   if (Pstream::parRun())
-    fName=mesh_.time().path()/"../machineLearningModels/curv";
+    fName=mesh_.time().path()+"/../"+mlpModel_+"/curv";
 
   mlp_=multilayerPerceptron(fName);
   NInput_=mlp_.stencilSize();
@@ -306,11 +301,6 @@ void Foam::mlpCurvature::calculateK()
 
   forAll(interfaceCells,celli)
     {
-      if (explicitCurvature_)
-	{
-	  K_[celli]=KRef_;
-	  continue;
-	}
       vector n = faceNormal[celli];
       scalar K1=0.;
       scalar K2=0.;
@@ -473,167 +463,9 @@ void Foam::mlpCurvature::calculateK()
   if(nBoundaryCells>0)
     printf("%d of %d interface cells were at the boundary in proc=%d\n",nBoundaryCells,nInterfaceCells,Pstream::myProcNo());
 
-  label neiMax=3;
-  stencilSize=Vector<label>(1,1,1);
-  label iMax,jMax,kMax;
-  label il,jl,kl;
-  boolList neiInterface(mesh.nCells(),false);
-  if (false) //fillNeighbours_!=0)
-    {
-  if (rdfMark_)
-    {
-      Info<<"Marking nei cells using RDF..."<<endl;
-      K_.correctBoundaryConditions();
-      //this one can cause problems at cyclic BC!
-      RDF_.correctBoundaryConditions();
-      RDF_.markCellsNearSurf(interfaceCells,neiMax);
-      const boolList& nextToInterface =RDF_.nextToInterface(); 
-  
-      forAll(nextToInterface,celli)
-	{
-	  //if (nextToInterface[celli] and !interfaceCells[celli] and !boundaryCells_[celli])
-	  if (nextToInterface[celli] and !interfaceCells[celli] and !boundaryCells_[celli])
-	    neiInterface[celli]=true;
-	  if (interfaceCells[celli] and (alpha1_[celli]<interfaceTol_ or alpha1_[celli]>1-interfaceTol_))
-	    neiInterface[celli]=true;
-	  if(fillNeighbours_==0 or fillNeighbours_==10)
-	    if (interfaceCells[celli])
-	      neiInterface[celli]=true;
-	}
-    }
-  else
-    {
-      if (ijkMesh_.isEmpty().x())
-	{
-	  iMax=0;jMax=neiMax;kMax=neiMax;
-	}
-      else if (ijkMesh_.isEmpty().y())
-	{
-	  iMax=neiMax;jMax=0;kMax=neiMax;
-	}
-      else if (ijkMesh_.isEmpty().z())
-	{
-	  iMax=neiMax;jMax=neiMax;kMax=0;
-	}
-      else
-	{
-	  iMax=neiMax;jMax=neiMax;kMax=neiMax;
-	}
-      forAll(interfaceCells,celli)
-	{
-	  if(interfaceCells[celli])
-	    {
-	      if (alpha1_[celli]<interfaceTol_ or alpha1_[celli]>1-interfaceTol_) //mag(faceCentre)>
-		{
-		  neiInterface[celli]=true;
-		  continue;
-		}
-	      const point cc = C[celli];
-	      label iP=round((cc.x()-Pmin.x())/dl_);
-	      label jP=round((cc.y()-Pmin.y())/dl_);
-	      label kP=round((cc.z()-Pmin.z())/dl_);
-	  
-	      label gblIdMin=-1;
-	      for (int i=-iMax;i<iMax+1;i++)
-		{
-		  for (int j=-jMax;j<jMax+1;j++)
-		    {
-		      for (int k=-kMax;k<kMax+1;k++)
-			{
-			  label sum=mag(i)+mag(j)+mag(k);
-			  //if (mag(sum)!=1 and mag(sum)!=3)
-			  if (mag(sum)==0) // or mag(sum)==4)
-			    continue;
-			  if ((iP+i+1>Nx and ijkMesh_.symXOut()) or (iP+i<0 and ijkMesh_.symXIn())) 
-			    il=iP-i;
-			  else
-			    il=(iP+i+Nx)%Nx;
-			  if ((jP+j+1>Ny and ijkMesh_.symYOut()) or (jP+j<0 and ijkMesh_.symYIn())) 
-			    jl=jP-j;
-			  else
-			    jl=(jP+j+Ny)%Ny;
-			  if ((kP+k+1>Nz and ijkMesh_.symZOut()) or (kP+k<0 and ijkMesh_.symZIn())) 
-			    kl=kP-k;
-			  else
-			    kl=(kP+k+Nz)%Nz;
-			  
-			  label ijk=il+Nx*jl+Nx*Ny*kl;
-			  label gblId=globalIds[ijk];
-			  if (globalNumbering.isLocal(gblId))
-			    {
-			      label iLoc=globalNumbering.toLocal(gblId);
-			      if (!(alpha1_[iLoc]>interfaceTol_ and alpha1_[iLoc]<1-interfaceTol_))
-				{
-				  neiInterface[globalNumbering.toLocal(gblId)]=true;
-				}
-			    }
-			  
-			}
-		    }
-		}
-	    }
-	}
-    }
-    }
 
-  if (fillNeighbours_==0)
-    {
-#include "fill0.H"
-    }
-  else if (fillNeighbours_==1)
-    {
-#include "fill1.H"
-    }
-  else if (fillNeighbours_==2)
-    {
-#include "fill2.H"
-    }
-  else if (fillNeighbours_==3)
-    {
-#include "fill3.H"
-    }
-  else if (fillNeighbours_==4)
-    {
-#include "fill4.H"
-    }
-  else if (fillNeighbours_==5)
-    {
-#include "fill5.H"
-    }
-  else if (fillNeighbours_==6)
-    {
-#include "fill6.H"
-    }
-  else if (fillNeighbours_==7)
-    {
-#include "fill7.H"
-    }
-  else if (fillNeighbours_==8)
-    {
-#include "fill8.H"
-    }
-  else if (fillNeighbours_==9)
-    {
-#include "fill9.H"
-    }
-  else if (fillNeighbours_==10)
-    {
-#include "fill10.H"
-    }
-  else if (fillNeighbours_==11)
-    {
-#include "fill11.H"
-    }
-  else if (fillNeighbours_==12)
-    {
-#include "fill12.H"
-    }
-  else if (fillNeighbours_==13)
-    {
-#include "fill13.H"
-    }
-  else
-    Info<<"fillNeighbours should be defined in transportDict!"<<endl;
+  #include "../interpolateCutCellsToFaces.H"
+  
       
 }
 
