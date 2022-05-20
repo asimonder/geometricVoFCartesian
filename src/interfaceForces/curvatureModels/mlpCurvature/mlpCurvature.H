@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------*\
-            Copyright (c) 2021 Asim Onder
+            Copyright (c) 2021-2022 Asim Onder
 -------------------------------------------------------------------------------
 License
     OpenFOAM is free software: you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ private:
 
   multilayerPerceptron mlp_;
 
-  reconstructedDistanceFunction RDF_;
+  //reconstructedDistanceFunction RDF_;
   
   label nMax_;
 
@@ -91,14 +91,16 @@ private:
 
   label fillNeighbours_;
 
-  bool explicitCurvature_;
+  //bool explicitCurvature_;
 
-  bool rdfMark_;
+  //bool rdfMark_;
 
-  bool extendInterface_;
+  //bool extendInterface_;
 
-  scalar KRef_;
+  //scalar KRef_;
   
+  word mlpModel_;
+
   scalar interfaceTol_;
   
   scalar xoffsetInput_;
