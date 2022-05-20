@@ -1,1 +1,1 @@
-../waveFunctions/JONSWAPTemporal/JONSWAPWaveFunction.C
+../waveFunctions/JONSWAP/JONSWAPWaveFunction.C
