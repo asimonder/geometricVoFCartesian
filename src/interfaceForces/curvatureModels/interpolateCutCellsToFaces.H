@@ -1,7 +1,17 @@
 K_.correctBoundaryConditions();
 Kf_=fvc::interpolate(K_);
+
+const scalar Lx=ijkMesh_.Lx()+dl_;
+const scalar Ly=ijkMesh_.Ly()+dl_;
+const scalar Lz=ijkMesh_.Lz()+dl_;
+
+label neiMax=1;
+stencilSize=Vector<label>(1,1,1);
+label iMax,jMax,kMax;
+label il,jl,kl;
+boolList neiInterface(mesh.nCells(),false);
+
 const scalar d=2.;
-neiMax=1;
 if (ijkMesh_.isEmpty().x())
   {
     iMax=0;jMax=neiMax;kMax=neiMax;
@@ -31,6 +41,11 @@ forAll(interfaceCells,iCell)
     }
 }
 
+/*if (extendInterface_)
+  {
+#include "extendInterface3.H"
+  }
+*/
 
 forAll(mesh.boundaryMesh(),iPatch)
 {
@@ -53,29 +68,9 @@ forAll(mesh.boundaryMesh(),iPatch)
     }
 }
 
-forAll(mesh.boundaryMesh(),iPatch)
-{
-  word pType=Kf_.boundaryField()[iPatch].type();
-  if(pType!="empty")
-    {	  
-      const polyPatch& cPatch = mesh.boundaryMesh()[iPatch];
-      const labelUList& faceCells = cPatch.faceCells();
-      forAll(faceCells,iFace)
-	{
-	  label iCell=faceCells[iFace];
-	  if (Kf_.boundaryFieldRef()[iPatch][iFace]!=0)
-	    {
-	      if (!interfaceCells[iCell])
-		{
-		  neiInterface[iCell]=true;
-		}
-	    }
-	}
-    }
-}
 
 alphaIJK.clear();
-ijkMesh_.getZoneField(neiInterface,alphaIJK,alpha1_,stencilSize);
+//ijkMesh_.getZoneField(neiInterface,alphaIJK,alpha1_,stencilSize);
 ijkMesh_.getZoneField(neiInterface,curvIJK,K_,stencilSize);
 ijkMesh_.getZoneField(neiInterface,faceCentreIJK,faceCentre,stencilSize);
 const scalar distMax=1.01*sqrt(1.25)*dl_;
@@ -111,28 +106,51 @@ forAll(Kf_,iFace)
 		  pos+=cc;
 		  scalar distCell = mag(pos-Cfp);
 		  if (distCell>distMax)
-		    continue;			  
-		  if ((iP+i+1>Nx and ijkMesh_.symXOut()) or (iP+i<0 and ijkMesh_.symXIn())) 
-		    il=iP-i;
+		    continue;
+		  if (iP+i+1>Nx and ijkMesh_.symXOut())
+		    il=iP+1-i;
+		  else if (iP+i<0 and ijkMesh_.symXIn())
+		    il=iP-1-i;
 		  else
 		    il=(iP+i+Nx)%Nx;
-		  if ((jP+j+1>Ny and ijkMesh_.symYOut()) or (jP+j<0 and ijkMesh_.symYIn())) 
-		    jl=jP-j;
+		  if (jP+j+1>Ny and ijkMesh_.symYOut()) 
+		    jl=jP+1-j;
+		  else if (jP+j<0 and ijkMesh_.symYIn())
+		    jl=jP-1-j;
 		  else
 		    jl=(jP+j+Ny)%Ny;
-		  if ((kP+k+1>Nz and ijkMesh_.symZOut()) or (kP+k<0 and ijkMesh_.symZIn())) 
-		    kl=kP-k;
+		  if (kP+k+1>Nz and ijkMesh_.symZOut()) 
+		    kl=kP+1-k;
+		  else if (kP-k<0 and ijkMesh_.symZIn())
+		    kl=kP-1-k;
 		  else
 		    kl=(kP+k+Nz)%Nz;
 		  label ijk=il+Nx*jl+Nx*Ny*kl;
 		  label gblId=globalIds[ijk];
-		  //vector faceCentre=faceCentreIJK[gblId];
-		  //scalar dist = mag(Cfp-faceCentre);
-		  if (alphaIJK[gblId]>interfaceTol_ && alphaIJK[gblId]<1-interfaceTol_ && curvIJK[gblId]!=0)
+		  if (curvIJK[gblId]!=0)
 		    {
-		      scalar weight=1./Foam::pow(distCell,d);
+		      vector fC=faceCentreIJK[gblId];
+		      vector dist = fC-Cfp;
+			      
+		      if (dist.x()>2*dl_)
+			dist.x()-=Lx;
+		      else if (dist.x()<-2*dl_)
+			dist.x()+=Lx;
+		      if (dist.y()>2*dl_)
+			dist.y()-=Ly;
+		      else if (dist.y()<-2*dl_)
+			dist.y()+=Ly;
+		      if (dist.z()>2*dl_)
+			dist.z()-=Lz;
+		      else if (dist.z()<-2*dl_)
+			dist.z()+=Lz;
+		      scalar distI= Foam::mag(dist);
+		      if (distI>2*dl_)
+			FatalErrorInFunction
+			  << "Extrapolation to neightbouring cell has failed! Distance is too large. d="<<distI
+			  << abort(FatalError);
+		      scalar weight=1./Foam::pow(distI,d);
 		      sumW+= weight;
-		      count+=1;
 		      Kf_[iFace]+=weight*curvIJK[gblId];
 		    }
 		}
@@ -170,7 +188,6 @@ forAll(mesh.boundaryMesh(),iPatch)
 	      kP=round((cc.z()-Pmin.z())/dl_);
 	      
 	      scalar sumW=0;
-	      label count=0;
 	      for (int i=-iMax;i<iMax+1;i++)
 		{
 		  for (int j=-jMax;j<jMax+1;j++)
@@ -182,27 +199,51 @@ forAll(mesh.boundaryMesh(),iPatch)
 			  scalar distCell = mag(pos-Cfp);
 			  if (distCell>distMax)
 			    continue;			  
-			  if ((iP+i+1>Nx and ijkMesh_.symXOut()) or (iP+i<0 and ijkMesh_.symXIn())) 
-			    il=iP-i;
+			  if (iP+i+1>Nx and ijkMesh_.symXOut())
+			    il=iP+1-i;
+			  else if (iP+i<0 and ijkMesh_.symXIn())
+			    il=iP-1-i;
 			  else
 			    il=(iP+i+Nx)%Nx;
-			  if ((jP+j+1>Ny and ijkMesh_.symYOut()) or (jP+j<0 and ijkMesh_.symYIn())) 
-			    jl=jP-j;
+			  if (jP+j+1>Ny and ijkMesh_.symYOut()) 
+			    jl=jP+1-j;
+			  else if (jP+j<0 and ijkMesh_.symYIn())
+			    jl=jP-1-j;
 			  else
 			    jl=(jP+j+Ny)%Ny;
-			  if ((kP+k+1>Nz and ijkMesh_.symZOut()) or (kP+k<0 and ijkMesh_.symZIn())) 
-			    kl=kP-k;
+			  if (kP+k+1>Nz and ijkMesh_.symZOut()) 
+			    kl=kP+1-k;
+			  else if (kP-k<0 and ijkMesh_.symZIn())
+			    kl=kP-1-k;
 			  else
 			    kl=(kP+k+Nz)%Nz;
 			  label ijk=il+Nx*jl+Nx*Ny*kl;
 			  label gblId=globalIds[ijk];
-			  //vector faceCentre=faceCentreIJK[gblId];
-			  //scalar dist = mag(Cfp-faceCentre);
-			  if (alphaIJK[gblId]>interfaceTol_ && alphaIJK[gblId]<1-interfaceTol_ && curvIJK[gblId]!=0)
+			  //if (alphaIJK[gblId]>interfaceTol_ && alphaIJK[gblId]<1-interfaceTol_ && curvIJK[gblId]!=0)
+			  if (curvIJK[gblId]!=0)
 			    {
-			      scalar weight=1./Foam::pow(distCell,d);
+			      vector fC=faceCentreIJK[gblId];
+			      vector dist = fC-Cfp;
+			      
+			      if (dist.x()>2*dl_)
+				dist.x()-=Lx;
+			      else if (dist.x()<-2*dl_)
+				dist.x()+=Lx;
+			      if (dist.y()>2*dl_)
+				dist.y()-=Ly;
+			      else if (dist.y()<-2*dl_)
+				dist.y()+=Ly;
+			      if (dist.z()>2*dl_)
+				dist.z()-=Lz;
+			      else if (dist.z()<-2*dl_)
+				dist.z()+=Lz;
+			      scalar distI= Foam::mag(dist);
+			      if (distI>2*dl_)
+				FatalErrorInFunction
+				  << "Extrapolation to neightbouring cell has failed! Distance is too large. d="<<distI
+				  << abort(FatalError);
+			      scalar weight=1./Foam::pow(distI,d);
 			      sumW+= weight;
-			      count+=1;
 			      Kf_.boundaryFieldRef()[iPatch][iFace]+=weight*curvIJK[gblId];
 			    }
 			}

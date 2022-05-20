@@ -62,7 +62,7 @@ Foam::heightFunction::heightFunction
     RDF_(alpha1.mesh()),
     ijkMesh_(alpha1.mesh()),
     globalNumbering_(ijkMesh_.globalNumbering()),
-    nMax_(3),
+    nMax_(dict.lookupOrDefault<label>("nMax",3)),
     fillNeighbours_(dict.lookupOrDefault<label>("fillNeighbours",-1)),
     interfaceTol_(1e-12),
     rdfMark_(dict.lookupOrDefault<bool>("rdfMark",false)),
@@ -341,11 +341,11 @@ void Foam::heightFunction::calculateK()
   Map<scalar> curvIJK;
 
   // where to put this one?
-  const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
-  surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
-  surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
-  //const volVectorField nHat(gradAlpha/(mag(gradAlpha) + deltaN_));
-  correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
+  //const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
+  //surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
+  //surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
+  // //const volVectorField nHat(gradAlpha/(mag(gradAlpha) + deltaN_));
+  //correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
 
   forAll(K_,celli)
     K_[celli]=0;
@@ -432,32 +432,7 @@ void Foam::heightFunction::calculateK()
 	}      
     }
 
-  label neiMax=1;
-  stencilSize=Vector<label>(1,1,1);
-  label iMax,jMax,kMax;
-  label il,jl,kl;
-  boolList neiInterface(mesh.nCells(),false);
-
-  if (fillNeighbours_==0)
-    {
-#include "../mlpCurvature/fill0.H"
-    }
-  else if (fillNeighbours_==10)
-    {
-#include "../mlpCurvature/fill10.H"
-    }
-  else if (fillNeighbours_==11)
-    {
-#include "../mlpCurvature/fill11.H"
-    }
-  else if (fillNeighbours_==12)
-    {
-#include "../mlpCurvature/fill12.H"
-    }
-  else
-    Info<<"fillNeighbours should be defined in transportDict!"<<endl;
-      
-
+#include "../interpolateCutCellsToFaces.H"
 }
 
 
