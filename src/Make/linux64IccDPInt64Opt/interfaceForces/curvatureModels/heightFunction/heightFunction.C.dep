@@ -592,16 +592,6 @@ $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/calculatedFvsPatchField.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/calculatedFvsPatchField.C \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/fvsPatchFieldsFwd.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/calculatedFvsPatchFields.H \
-$(WM_PROJECT_DIR)/src/transportModels/geometricVoF/lnInclude/reconstructedDistanceFunction.H \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/zoneDistribute.H \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/zoneCPCStencil.H \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/zoneCellStencils.H \
-$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/zoneDistributeI.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/DynamicField.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/DynamicFieldI.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/DynamicField.C \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/syncTools.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/syncToolsTemplates.C \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/addToRunTimeSelectionTable.H \
 $(WM_PROJECT_DIR)/src/transportModels/interfaceProperties/lnInclude/alphaContactAngleTwoPhaseFvPatchScalarField.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/fixedGradientFvPatchFields.H \
@@ -641,6 +631,9 @@ $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/gradScheme.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/gradScheme.C \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/gaussGrad.C \
 $(WM_PROJECT_DIR)/src/transportModels/geometricVoF/lnInclude/reconstructionSchemes.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/DynamicField.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/DynamicFieldI.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/DynamicField.C \
 $(WM_PROJECT_DIR)/src/surfMesh/lnInclude/MeshedSurface.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/PatchTools.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/PatchTools.C \
@@ -706,9 +699,6 @@ $(WM_PROJECT_DIR)/src/surfMesh/lnInclude/MeshedSurfaceIO.C \
 $(WM_PROJECT_DIR)/src/surfMesh/lnInclude/MeshedSurfaceNew.C \
 $(WM_PROJECT_DIR)/src/surfMesh/lnInclude/MeshedSurfacesFwd.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/unitConversion.H \
-interfaceForces/curvatureModels/heightFunction/../mlpCurvature/fill0.H \
-interfaceForces/curvatureModels/heightFunction/../mlpCurvature/fill10.H \
-interfaceForces/curvatureModels/heightFunction/../mlpCurvature/fill11.H \
-interfaceForces/curvatureModels/heightFunction/../mlpCurvature/fill12.H \
+interfaceForces/curvatureModels/heightFunction/../interpolateCutCellsToFaces.H \
 
 

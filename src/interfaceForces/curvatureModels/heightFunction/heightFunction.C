@@ -53,20 +53,19 @@ Foam::heightFunction::heightFunction
         alpha1,
         U
     ),
+    mesh_(alpha1.mesh()),
     deltaN_
     (
         "deltaN",
         1e-8/pow(average(alpha1.mesh().V()), 1.0/3.0)
      ),
-    mesh_(alpha1.mesh()),
-    RDF_(alpha1.mesh()),
     ijkMesh_(alpha1.mesh()),
     globalNumbering_(ijkMesh_.globalNumbering()),
     nMax_(dict.lookupOrDefault<label>("nMax",3)),
-    fillNeighbours_(dict.lookupOrDefault<label>("fillNeighbours",-1)),
+    //fillNeighbours_(dict.lookupOrDefault<label>("fillNeighbours",-1)),
     interfaceTol_(1e-12),
-    rdfMark_(dict.lookupOrDefault<bool>("rdfMark",false)),
-    extendInterface_(false),
+    //rdfMark_(dict.lookupOrDefault<bool>("rdfMark",false)),
+    //extendInterface_(false),
     boundaryCells_(mesh_.nCells(),false)
 {
   
@@ -340,7 +339,7 @@ void Foam::heightFunction::calculateK()
   Map<vector> faceCentreIJK;
   Map<scalar> curvIJK;
 
-  // where to put this one?
+  // no solid boundaries yet
   //const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
   //surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
   //surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
