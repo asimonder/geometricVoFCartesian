@@ -78,7 +78,7 @@ namespace Foam
     label Nx_;label Ny_;label Nz_;
     scalar Lx_;scalar Ly_;scalar Lz_;
     labelList globalIds_;
-    bool is2D_;
+    //bool is2D_;
     const globalIndex globalNumbering_;
     const volVectorField& C_;
     Vector<bool> isEmpty_;

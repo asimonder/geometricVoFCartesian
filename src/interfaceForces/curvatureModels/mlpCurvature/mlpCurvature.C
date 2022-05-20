@@ -54,12 +54,12 @@ Foam::mlpCurvature::mlpCurvature
         alpha1,
         U
     ),
+    mesh_(alpha1.mesh()),
     deltaN_
     (
         "deltaN",
         1e-8/pow(average(alpha1.mesh().V()), 1.0/3.0)
      ),
-    mesh_(alpha1.mesh()),
     ijkMesh_(mesh_),
     globalNumbering_(ijkMesh_.globalNumbering()),
     boundaryCells_(mesh_.nCells(),false),
@@ -76,10 +76,10 @@ Foam::mlpCurvature::mlpCurvature
     xoffsetOutput_(dict.lookupOrDefault<scalar>("xoffsetOutput",0)),
     yminOutput_(dict.lookupOrDefault<scalar>("yminOutput",0)),
     gainOutput_(dict.lookupOrDefault<scalar>("gainOutput",1.)),
+    nMax_(dict.lookupOrDefault<label>("nMax",1)),
     iMax_(dict.lookupOrDefault<label>("iMax",1)),
     jMax_(dict.lookupOrDefault<label>("jMax",1)),
     kMax_(dict.lookupOrDefault<label>("kMax",1)),
-    nMax_(dict.lookupOrDefault<label>("nMax",2)),
     //stencil_(mesh_,ijkMesh_,2,2,1)
     stencil_(mesh_,ijkMesh_,nMax_) //Fix this later! Cannot instantiate the object!!!!
 {
@@ -260,9 +260,6 @@ void Foam::mlpCurvature::calculateK()
   //const surfaceVectorField& Sf = mesh.Sf();
   point Pmin=ijkMesh_.Pmin();
   point Pmax=ijkMesh_.Pmax();
-  const scalar dx=ijkMesh_.dx();
-  const scalar dy=ijkMesh_.dy();
-  const scalar dz=ijkMesh_.dz();
   const label Nx=ijkMesh_.Nx();
   const label Ny=ijkMesh_.Ny();
   const label Nz=ijkMesh_.Nz();
