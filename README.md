@@ -1,6 +1,6 @@
 
 # geometricVoFCartesian
-geometricVoFCartesian is an extension library for two-phase modelling in OpenFOAM. It features conventional and machine-learning models to estimate the normal vector and curvature of the fluid-fluid interfaces in geometric Volume-of-Fluid (VOF) framework. 
+The geometricVoFCartesian is an extension library for the simulation of two-phase flows in OpenFOAM. It features conventional and machine-learning models to estimate the normal vector and curvature of the fluid-fluid interfaces in geometric Volume-of-Fluid (VOF) framework. 
 
 ### General Description
 The methods are designed for uniform (isotropic) Cartesian grids. In cases where the interface is restricted to a subset of the domain, e.g., deep water waves, the uniform grid can be restricted to a smaller zone containing the interface. This is currently achieved using the cellSet functionality. The rest of the domain can use unstructured grids. 
