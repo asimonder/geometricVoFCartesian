@@ -10,13 +10,13 @@ Available methods are as follows:
 - **Interface curvature**: Height Function Method, Multilayer-Perceptron (MLP) models (only in 2D currently)
 
 #### Fundamental Classes
-- **ijkZone**: 
-- **multilayerPerceptron**: Basic functionalities and data structures for a MLP. The basic functionalities of MLPs are implemented into OpenFOAM using the C++ Standard Library. Thus, no additional package is required to use new machine learning models.  
-- **uniformStencil**: 
+- **ijkZone**: Creation and manipulation of the interface zone with regular Cartesian grid.
+- **multilayerPerceptron**: Basic functionalities and data structures for an MLP. Implementation uses the C++ Standard Library. Thus, no additional package is required to use new machine learning models.  
+- **uniformStencil**: Parallel operations on local cell blocks.
 - **interfaceForce**: Base class for new curvature models.
 
 
-
+#### Machine Learning
 Machine learning models employ multilayer perceptron (MLP) architectures to estimate interface normal vector and curvarture. 
 Models are developed in three steps. First, MLPs are trained in Tensorflow using synthetic datasets composed of either circles or waves of varying sizes. Subsequently, the weights and biases of Tensorflows models are converted to ascii format. Finally, a newly implemented MLP class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
 
