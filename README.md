@@ -20,11 +20,11 @@ Available methods are as follows:
 **interIsoCartFoam**: Extension to *interIsoFoam* to feature newly implemented schemes.
 
 ### Machine Learning
-Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. Models are developed in three steps. First, a synthetic dataset composed of either circular arcs of varying sizes is generated. Subsequently, about hundred MLPs are trained in Tensorflow using synthetic datasets composed of either circles or waves of varying sizes. Subsequently,the weights and biases of Tensorflows models are converted to ascii format. Finally, a newly implemented MLP class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
+Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. Models are developed in three steps. First, a synthetic dataset composed of circular arcs of varying sizes is generated. Subsequently, about hundred MLP models are trained in TensorFlow for each hyperparameters configuration. There is a scatter in model performance due to inherent stochasticity involved in training process. Finally, the best performing models are selected, and their weights and biases of Tensorflows models are converted to standard ascii format. The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
 
 
 ## Example 
-Benchmark cases are provided in soon.
+Benchmark cases are provided only for 2D currently.
 
 ## Prerequisites
 OpenFOAM v2006.
