@@ -1,0 +1,5 @@
+{
+cellSet domain;
+cyclicX true;
+cyclicY true;
+}

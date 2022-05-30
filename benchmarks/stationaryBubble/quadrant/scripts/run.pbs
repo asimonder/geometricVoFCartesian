@@ -1,0 +1,20 @@
+#!/bin/bash -l   
+#PBS -N qAv32
+#PBS -r n
+#PBS -j oe
+#PBS -l walltime=24:00:00
+#PBS -l select=1:ncpus=1:mem=4gb
+#PBS -P 11001025
+ 
+#module load mpi/intel
+cd $PBS_O_WORKDIR
+
+#blockMesh
+#topoSet
+#decomposePar
+
+source /home/projects/11001025/OpenFOAM/OpenFOAM-v2006/etc/bashrc
+
+./Allclean
+./Allrun
+#interIsoCartFoam &>>log.interIsoCartFoam

@@ -1,0 +1,7 @@
+{
+cellSet domain;
+symXIn true;
+symXOut true;
+symYIn true;
+symYOut true;
+}

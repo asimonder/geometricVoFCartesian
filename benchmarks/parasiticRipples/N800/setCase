@@ -1,0 +1,21 @@
+#!/bin/sh
+cd ${0%/*} || exit 1    # Run from this directory
+
+
+rm -r 0
+cp -r 0.orig 0
+blockMesh 
+topoSet -dict system/topoSetDict.c0 
+refineMesh -overwrite -dict system/refineMeshDict.c0
+topoSet -dict system/topoSetDict.c1
+refineMesh -overwrite -dict system/refineMeshDict.c1
+topoSet -dict system/topoSetDict.c2
+refineMesh -overwrite -dict system/refineMeshDict.c2
+#topoSet -dict system/topoSetDict.c3
+#refineMesh -overwrite -dict system/refineMeshDict.c3
+#topoSet -dict system/topoSetDict.c4
+#refineMesh -overwrite -dict system/refineMeshDict.c4
+#setExprFields -dict system/setExprUFieldDict
+setWaveField
+
+#------------------------------------------------------------------------------

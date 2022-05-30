@@ -1,0 +1,167 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  plus                                  |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    "alpha.phase1.*"
+    {
+
+      //advectionScheme isoAdvection;
+      //reconstructionScheme mycCartesian; //youngCartesian; //plicRDF; // isoAlpha; // isoAlpha
+
+      //advectionScheme MULESScheme;
+      //reconstructionScheme isoSurface;
+      reconstructionScheme mycCartesian;
+
+	//vof2IsoTol 1e-8;
+	//surfCellTol 1e-8;
+      writeVTK false;
+
+      isoFaceTol      1e-10;
+      surfCellTol     1e-8;
+      nAlphaBounds    3;
+      snapTol         1e-12;
+      clip            true;
+      
+      nAlphaSubCycles 1;
+      nAlphaCorr 1;
+      cAlpha          1;
+      writeIsoFaces false;
+
+      // isoAdvector parameters
+	/*        isoFaceTol      1e-6;
+        surfCellTol     1e-6;
+        nAlphaBounds    3;
+        snapTol         1e-12;
+        clip            true;
+        gradAlphaNormal false;
+        reconstructionScheme isoAlpha;*/
+
+        // MULES parameters
+        /*nAlphaCorr      2;
+        cAlpha          1;
+        icAlpha         0;
+        MULESCorr       yes;
+        nLimiterIter    3;
+        alphaApplyPrevCorr yes;
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-8;
+        relTol          0;
+        minIter         1;*/
+
+        // parameters read by both isoAdvector and MULES
+        //nAlphaSubCycles 1;
+    }
+
+    /* pcorr
+    {
+        solver          GAMG;
+        smoother        DIC;
+        tolerance       1e-10;
+        relTol          0;
+    }
+
+    pcorrFinal
+    {
+        $pcorr;
+        relTol          0;
+    }
+
+    p_rgh
+    {
+        solver          GAMG;
+        smoother        DIC;
+        tolerance       1e-07;
+        relTol          0.001;
+    }
+
+    p_rghFinal
+    {
+        $p_rgh;
+        tolerance       1e-12; 
+	relTol          0;
+	maxIter 200;
+    }*/
+
+    "pcorr.*"
+    {
+        solver          PCG;
+        preconditioner  DIC;
+        tolerance       1e-10;
+        relTol          0;
+    }
+
+    p_rgh
+    {
+        solver          GAMG;
+        tolerance       1e-09;
+        relTol          0.001;
+        smoother        DIC;
+    }
+
+    p_rghFinal
+    {
+        solver          PCG;
+        preconditioner
+        {
+            preconditioner  GAMG;
+            tolerance       1e-07;
+            relTol          0;
+            nVcycles        2;
+            smoother        DICGaussSeidel;
+            nPreSweeps      2;
+        }
+        tolerance       1e-12;
+        relTol          0;
+        maxIter         100;
+    }
+
+
+    "(U|k|epsilon).*"
+    {
+      solver          PBiCGStab;
+      preconditioner  DILU;
+      tolerance       1e-10;
+      relTol          0;
+      minIter 5;
+	// solver          smoothSolver;
+        //smoother        symGaussSeidel;
+	// tolerance       1e-10;
+        //relTol          0;
+    }
+}
+
+PIMPLE
+{
+    momentumPredictor   yes;
+    nOuterCorrectors    1;
+    nCorrectors         4;
+    nNonOrthogonalCorrectors 0;
+    pRefCell            0;
+    pRefValue           0;
+}
+
+relaxationFactors
+{
+    equations
+    {
+        ".*"            1;
+    }
+}
+
+// ************************************************************************* //
