@@ -377,7 +377,12 @@ Foam::vector Foam::uniformStencil::calcCCDNormal()
       scalar myb=0;
       scalar mxf=0;
       scalar myf=0;
+<<<<<<< HEAD
+      scalar mx=0;
+      scalar my=0;
+=======
       scalar mx,my=0;
+>>>>>>> bda4b3c3e6c846fc10f827a79e1b5a71010dee14
       scalar sgn_mx=0;
       scalar sgn_my=0;
 
