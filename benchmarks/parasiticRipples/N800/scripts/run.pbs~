@@ -1,0 +1,18 @@
+#!/bin/bash -l   
+#PBS -N circ30_55
+#PBS -r n
+#PBS -j oe
+#PBS -l walltime=4:00:00
+#PBS -l select=2:ncpus=24:mem=96gb
+#PBS -P 11001025
+ 
+#module load mpi/intel
+cd $PBS_O_WORKDIR
+
+#blockMesh
+#topoSet
+#decomposePar
+
+source /home/projects/11001025/OpenFOAM/OpenFOAM-v2006/etc/bashrc
+
+mpirun -np 48 interIsoCartFoam -parallel

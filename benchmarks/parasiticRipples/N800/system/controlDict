@@ -1,0 +1,163 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     interFlow;
+
+startFrom       latestTime;
+//startFrom       startTime;
+//startFrom       writeNow;
+
+startTime       0.0; 
+
+stopAt          endTime; 
+//stopAt          writeNow; //endTime;
+
+endTime         1.08;
+
+deltaT          1e-15;
+
+//writeControl    timeStep;
+writeControl  adjustableRunTime;
+
+//writeInterval   100;
+// T/8
+//writeInterval   5;
+writeInterval 0.0178953597; //0.0005;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  8;
+
+writeCompression on;
+
+timeFormat      general;
+
+timePrecision   10;
+
+runTimeModifiable true;
+
+adjustTimeStep yes;
+
+maxCo           0.4;
+
+maxAlphaCo      0.02;
+
+maxDeltaT       0.1;
+
+maxCapillaryNum 0.2; //0.5;
+
+libs
+(
+    "libtwoPhaseProperties.so"
+);
+
+
+functions
+{
+  
+    vorticity1
+    {
+      type            vorticity;
+      libs            ("libfieldFunctionObjects.so");
+      field           U;
+      enabled true;
+      writeControl outputTime; // write scalar field results
+      log yes;
+    }
+
+    grad1
+    {
+      type            grad;
+      libs            ("libfieldFunctionObjects.so");
+      field           U;
+      enabled true;
+      writeControl outputTime; // write scalar field results
+      log yes;
+      }
+
+  /*minMax1
+    {
+      type            fieldMinMax;
+      libs            (fieldFunctionObjects);
+      fields          (U);
+      executeControl  timeStep;
+      writeInterval   5;
+      }*/
+
+  
+  surface1
+    {
+      #includeEtc "caseDicts/postProcessing/visualization/surfaces.cfg"
+      
+      //fields       (p_rgh U alpha.water reconstructedDistanceFunction centre.water normal.water);
+      fields       (K_ U alpha.water vorticity recon::normal grad(U));
+      //writeControl  writeTime;
+      writeControl  adjustableRunTime;
+      writeInterval 0.178953597;
+
+      //surfaceFormat vtk;
+      surfaces
+	(	 
+	 yNormal
+	 {
+	   $cuttingPlane;
+	   cell true;
+	   pointAndNormalDict
+	     {
+	       point    (0.025 0.00025 0); // location of the streamwise spanwise plane
+	       normal $y;       // Overrides default normalVector (0 1 0)
+	     }                       
+	 }
+
+	 /*freeSurface1
+	 {
+	   type isoSurface;
+	   cell false;
+	   isoField alpha.water;
+	   isoValue 0.5;
+	   interpolate true;
+	   //writeControl  writeTime;
+	   }*/
+	 
+	 );
+    }
+
+  freeSurface
+    {
+      #includeEtc "caseDicts/postProcessing/visualization/surfaces.cfg"
+      fields       (U K_ vorticity recon::normal grad(U));
+      writeControl  writeTime;
+      surfaceFormat raw;
+      surfaces
+	(	 
+	 freeSurface1
+	 {
+	   type isoSurface;
+	   cell false;
+	   isoField alpha.water;
+	   isoValue 0.5;
+	   interpolate true;
+	   }
+	 );
+    }
+
+}
+
+
+// ************************************************************************* //

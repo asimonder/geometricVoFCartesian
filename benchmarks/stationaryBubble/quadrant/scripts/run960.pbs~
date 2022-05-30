@@ -1,0 +1,107 @@
+#!/bin/bash -l   
+#PBS -N awIso
+#PBS -r n
+#PBS -j oe
+#PBS -M ceeao@nus.edu.sg
+#PBS -m abe
+#PBS -l walltime=24:00:00
+#PBS -l select=25:ncpus=24:mem=96gb
+#PBS -P 11001025
+ 
+#module load mpi/intel
+cd $PBS_O_WORKDIR
+
+#blockMesh
+#topoSet
+#decomposePar
+
+source /home/projects/11001025/OpenFOAM/OpenFOAM-v2006/etc/bashrc
+
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel
+mpirun -np 600 interIsoFoam -parallel

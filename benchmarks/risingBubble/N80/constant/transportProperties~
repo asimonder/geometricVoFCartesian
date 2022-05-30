@@ -1,0 +1,67 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  plus                                  |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+phases (phase1 phase2);
+
+// Phase properties for liquid
+phase1
+{
+    transportModel  Newtonian;
+    nu              nu [0 2 -1 0 0 0 0] 1e-02;
+    rho             rho [1 -3 0 0 0 0 0] 1000;
+}
+
+// Phase properties for gaz
+phase2
+{
+    transportModel  Newtonian;
+    nu              nu [0 2 -1 0 0 0 0] 1e-1;
+    rho             rho [1 -3 0 0 0 0 0] 1;
+}
+
+// Surface tension ( expressed in N/m = (kg m /s²) / m = kg/s² )
+sigma           sigma [ 1 0 -2 0 0 0 0 ] 1.96;
+
+curvatureModel mlpCurvature;
+
+zonalModel yes;
+fillNeighbours 4;
+useScaling true;
+iMax 1;
+jMax 1;
+nMax 1;
+interfaceTol 1e-3;
+extendInterface false;
+
+xoffsetInput 0;
+gainInput 2;
+yminInput -1;
+yminOutput 0.;
+gainOutput 1.0;
+xoffsetOutput 0.0;
+
+// Entries for interFlow only
+/*surfaceForces
+{
+  sigma 1.96;
+  surfaceTensionForceModel RDF;
+  accelerationModel gravity;
+  gravity (0 -0.98 0);
+  deltaFunctionModel alphaCSF;
+}
+*/
+// ************************************************************************* //

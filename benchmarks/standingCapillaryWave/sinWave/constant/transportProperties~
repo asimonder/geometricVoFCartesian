@@ -1,0 +1,61 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.3.0                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+phases (water air);
+
+water
+{
+    transportModel  Newtonian;
+    nu              nu [ 0 2 -1 0 0 0 0 ] 0.001;
+    rho             rho [ 1 -3 0 0 0 0 0 ] 1;
+}
+
+air
+{
+    transportModel  Newtonian;
+    nu              nu [ 0 2 -1 0 0 0 0 ] 0.001;
+    rho             rho [ 1 -3 0 0 0 0 0 ] 1;
+
+}
+
+sigma           sigma [ 1 0 -2 0 0 0 0 ] 1;
+
+curvatureModel gradAlpha;
+fillNeighbours 0;
+zonalModel false;
+useScaling true;
+iMax 2;
+jMax 1;
+nMax 2;
+interfaceTol 1e-4;
+extendInterface false;
+
+/*xoffsetInput 0;
+gainInput 2;
+yminInput -1;
+yminOutput 0.;
+gainOutput 1.0;
+xoffsetOutput 0.0;*/
+
+xoffsetInput 0;
+gainInput 2;
+yminInput -1;
+yminOutput -1;
+gainOutput 4.49775;
+xoffsetOutput -0.222333388916681;
+
+// ************************************************************************* //
