@@ -8,14 +8,14 @@ Available methods are as follows:
 - **Interface normal vector**: Youngs' Method, Central-Columns Differences Method, Mixed Youngs-Central (MYC) Method
 - **Interface curvature**: Height Function Method, Multilayer-Perceptron (MLP) models (only in 2D currently)
 
-#### Fundamental Classes
+### Fundamental Classes
 - **ijkZone**: Creation and manipulation of the interface zone with regular Cartesian grid.
 - **multilayerPerceptron**: Basic functionalities and data structures for an MLP. Implementation uses the C++ Standard Library. Thus, no additional package is required to use new machine learning models.  
 - **uniformStencil**: Parallel operations on local cell blocks.
 - **interfaceForce**: Base class for new curvature models.
 
 
-#### Machine Learning
+### Machine Learning
 Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. Models are developed in three steps. First, a synthetic dataset composed of either circular arcs of varying sizes is generated. Subsequently, about hundred MLPs are trained in Tensorflow using synthetic datasets composed of either circles or waves of varying sizes. Subsequently,the weights and biases of Tensorflows models are converted to ascii format. Finally, a newly implemented MLP class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
 
 
