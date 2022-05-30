@@ -1,16 +1,30 @@
 
-# machineLearningVOF
-An extension library containing new neural-network based VOF models for two-phase flow simulations in OpenFOAM. This is an alpha pre-release containing only a portion of the package. The whole package along with example cases will be released soon.  
+# geometricVoFCartesian
+The *geometricVoFCartesian* is an extension library for simulating two-phase flows in OpenFOAM. It features conventional and machine-learning models to estimate the normal vector and curvature of the fluid-fluid interfaces in geometric Volume-of-Fluid (VOF) framework. 
 
-## Description
-New interface reconstruction schemes and surface tension models are provided. The models employ multilayer perceptron (MLP) architectures to estimate interface normal vector and curvarture. Models are developed in three steps. First, MLPs are trained in Tensorflow using synthetic datasets composed of either circles or waves of varying sizes. Subsequently, the weights and biases of Tensorflows models are converted to ascii format. Finally, a newly implemented MLP class in OpenFOAM reads these parameters and constructs the corresponding MLP model. The basic functionalities of MLPs are implemented into OpenFOAM using the C++ Standard Library. Thus, no additional package is required to use new machine learning models.  
+## General Description
+The methods are designed for uniform (isotropic) Cartesian grids. In cases where the interface motion occurs in a smaller subset of the domain, the uniform grid can also be restricted to a smaller zone containing the interface. This is currently achieved using the cellSet functionality. The rest of the domain can use generic unstructured grids. 
 
-The methods are designed for uniform Cartesian grids. In cases where the interface is restricted to a subset of the domain, e.g., deep water waves, the uniform grid can also be restricted to a smaller zone containing the interface. This is currently achieved using the cellSet functionality. The rest of the domain can use unstructured grids. Such an approach offers the best of both worlds: the accuracy and speed of Cartesian methods around the interface where they are needed, and the flexibility of the unstructured grids elsewhere. 
+Available methods are as follows:
+- **Interface normal vector**: Youngs' Method, Central-Columns Differences Method, Mixed Youngs-Central (MYC) Method
+- **Interface curvature**: Height Function Method, Multilayer-Perceptron (MLP) models (only in 2D currently)
 
-In addition to neural-network models, several popular conentional schemes are also implemented: (i) interface normal: Youngs' Method, Central-Columns Differences Method, Mixed Youngs-Central Method; (ii) interface curvature: the Height Function Method.
+### Fundamental Classes
+- **ijkZone**: Creation and manipulation of the regular-grid zone containing the interface motions.
+- **multilayerPerceptron**: Basic functionalities and data structures for an MLP. Implementation is done only using the C++ Standard Library. Thus, no additional package is required to use new machine learning models.  
+- **uniformStencil**: Parallel operations on local cell blocks.
+- **interfaceForce**: Base class for new curvature models.
 
-## Example 
-Examples and benchmark cases will be provided soon.
+
+### Solver
+**interIsoCartFoam**: Extension to *interIsoFoam* to feature newly implemented schemes.
+
+### Machine Learning
+Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. Models are developed in three steps. First, a synthetic dataset composed of circular arcs of varying sizes is generated. Subsequently, about hundred MLP models are trained in TensorFlow for each hyperparameters configuration. There is a scatter in model performance due to inherent stochasticity involved in training process. Finally, the best performing models are selected, and their weights and biases of Tensorflows models are converted to standard ascii format. The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
+
+
+## Examples 
+Several 2D test cases are provided.
 
 ## Prerequisites
 OpenFOAM v2006.
