@@ -10,7 +10,7 @@ Available methods are as follows:
 - **Interface curvature**: Height Function Method, Multilayer-Perceptron (MLP) models (only in 2D currently)
 
 ### Fundamental Classes
-- **ijkZone**: Creation and manipulation of the interface zone with regular Cartesian grid.
+- **ijkZone**: Creation and manipulation of the regular-grid zone containing the interface motions.
 - **multilayerPerceptron**: Basic functionalities and data structures for an MLP. Implementation uses the C++ Standard Library. Thus, no additional package is required to use new machine learning models.  
 - **uniformStencil**: Parallel operations on local cell blocks.
 - **interfaceForce**: Base class for new curvature models.
