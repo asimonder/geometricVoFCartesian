@@ -24,7 +24,7 @@ Machine learning models employ deep MLP architectures to estimate the interfacia
 
 
 ## Example 
-Benchmark cases are provided only for 2D currently.
+Several 2D test cases are provided.
 
 ## Prerequisites
 OpenFOAM v2006.
