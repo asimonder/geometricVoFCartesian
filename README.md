@@ -25,7 +25,7 @@ Machine learning models employ deep MLP architectures to estimate the interfacia
 ## Intallation
 Make sure you have installed OpenFOAM v2006 and run the script in the project directory:
 ```
-./Allrun
+./Allwmake
 ```
 
 ## Examples 
