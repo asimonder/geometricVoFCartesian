@@ -376,7 +376,8 @@ void Foam::RDF::calculateK()
         1e-14/pow(average(mesh.V()), 1.0/3.0)
     );
 
-    volVectorField gradRDF = fvc::grad(RDF_);
+    //volVectorField gradRDF = fvc::grad(RDF_);
+    volVectorField gradRDF(fvc::grad(RDF_));
 
     gradRDF /= (mag(gradRDF)+deltaN*dimensionedScalar("0", dimLength, 1));
 
@@ -402,7 +403,8 @@ void Foam::RDF::calculateK()
     }
 
     // Face unit interface normal flux
-    surfaceScalarField nHatf = normalVec & Sf;
+    //surfaceScalarField nHatf = normalVec & Sf;
+    surfaceScalarField nHatf(normalVec & Sf);
 
     // Simple expression for curvature
     if (curvFromTr_)
