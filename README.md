@@ -13,7 +13,7 @@ Available methods are as follows:
 - **ijkZone**: Creation and manipulation of the regular-grid zone containing the interface motions.
 - **multilayerPerceptron**: Basic functionalities and data structures for an MLP. Implementation is done using exclusively the C++ Standard Library. Thus, no additional package is required to use new machine learning models.  
 - **uniformStencil**: Parallel operations on local cell blocks.
-- **interfaceForce**: Base class for new curvature models.
+- **interfaceForces**: Base class for new curvature models.
 
 
 ### Solver
