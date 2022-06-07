@@ -17,7 +17,7 @@ Available methods are as follows:
 
 
 ### Solver
-**interIsoCartFoam**: Extension to *interIsoFoam* to feature newly implemented schemes.
+**interIsoCartFoam**: Extension to ```interIsoFoam``` to feature newly implemented schemes.
 
 ### Machine Learning
 Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. Models are developed in three steps. First, a synthetic dataset composed of circular arcs of varying sizes is generated. Subsequently, about hundred MLP models are trained in TensorFlow for each hyperparameters configuration. There is a scatter in model performance due to inherent stochasticity involved in training process. Finally, the best performing models are selected, and their weights and biases of Tensorflows models are converted to standard ascii format. The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
