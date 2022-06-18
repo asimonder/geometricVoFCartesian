@@ -74,6 +74,7 @@ alphaIJK.clear();
 ijkMesh_.getZoneField(neiInterface,curvIJK,K_,stencilSize);
 ijkMesh_.getZoneField(neiInterface,faceCentreIJK,faceCentre,stencilSize);
 const scalar distMax=1.01*sqrt(1.25)*dl_;
+const scalar distInterfaceMax=4.0*dl_; 
 const surfaceVectorField& Cf = mesh.Cf();
 const Foam::labelList& nei=alpha1_.mesh().faceNeighbour();
 const Foam::labelList& own=alpha1_.mesh().faceOwner();
@@ -132,23 +133,24 @@ forAll(Kf_,iFace)
 		      vector fC=faceCentreIJK[gblId];
 		      vector dist = fC-Cfp;
 			      
-		      if (dist.x()>2*dl_)
+		      if (dist.x()>distInterfaceMax)
 			dist.x()-=Lx;
-		      else if (dist.x()<-2*dl_)
+		      else if (dist.x()<-distInterfaceMax)
 			dist.x()+=Lx;
-		      if (dist.y()>2*dl_)
+		      if (dist.y()>distInterfaceMax)
 			dist.y()-=Ly;
-		      else if (dist.y()<-2*dl_)
+		      else if (dist.y()<-distInterfaceMax)
 			dist.y()+=Ly;
-		      if (dist.z()>2*dl_)
+		      if (dist.z()>distInterfaceMax)
 			dist.z()-=Lz;
-		      else if (dist.z()<-2*dl_)
+		      else if (dist.z()<-distInterfaceMax)
 			dist.z()+=Lz;
 		      scalar distI= Foam::mag(dist);
-		      if (distI>2*dl_)
-			FatalErrorInFunction
-			  << "Extrapolation to neightbouring cell has failed! Distance is too large. d="<<distI
-			  << abort(FatalError);
+		      if (distI>3*dl_)
+			{
+			  FatalErrorInFunction
+			    << "Extrapolation to neightbouring cell has failed! Distance is too large. i="<<i<<"; j="<<j<<"; k="<<k<<"; Cfp="<<Cfp<<"; fC="<<fC<<"; distCell/dl="<<distCell/dl_<<"; distI/dl="<<distI/dl_<<"; dist="<<dist/dl_<< abort(FatalError);
+			}
 		      scalar weight=1./Foam::pow(distI,d);
 		      sumW+= weight;
 		      Kf_[iFace]+=weight*curvIJK[gblId];
@@ -225,23 +227,22 @@ forAll(mesh.boundaryMesh(),iPatch)
 			      vector fC=faceCentreIJK[gblId];
 			      vector dist = fC-Cfp;
 			      
-			      if (dist.x()>2*dl_)
+			      if (dist.x()>distInterfaceMax)
 				dist.x()-=Lx;
-			      else if (dist.x()<-2*dl_)
+			      else if (dist.x()<-distInterfaceMax)
 				dist.x()+=Lx;
-			      if (dist.y()>2*dl_)
+			      if (dist.y()>distInterfaceMax)
 				dist.y()-=Ly;
-			      else if (dist.y()<-2*dl_)
+			      else if (dist.y()<-distInterfaceMax)
 				dist.y()+=Ly;
-			      if (dist.z()>2*dl_)
+			      if (dist.z()>distInterfaceMax)
 				dist.z()-=Lz;
-			      else if (dist.z()<-2*dl_)
+			      else if (dist.z()<-distInterfaceMax)
 				dist.z()+=Lz;
 			      scalar distI= Foam::mag(dist);
-			      if (distI>2*dl_)
+			      if (distI>3*dl_)
 				FatalErrorInFunction
-				  << "Extrapolation to neightbouring cell has failed! Distance is too large. d="<<distI
-				  << abort(FatalError);
+				  << "Extrapolation to neightbouring cell has failed! Distance is too large. fC="<<fC<<"; distCell="<<distCell<<"; distI="<<distI<<"; dist="<<dist<< abort(FatalError);
 			      scalar weight=1./Foam::pow(distI,d);
 			      sumW+= weight;
 			      Kf_.boundaryFieldRef()[iPatch][iFace]+=weight*curvIJK[gblId];
@@ -259,3 +260,4 @@ forAll(mesh.boundaryMesh(),iPatch)
     }
 }  
 
+ 

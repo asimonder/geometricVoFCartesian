@@ -963,6 +963,5 @@ alphaSuSp.H \
 rhofs.H \
 UEqn.H \
 pEqn.H \
-calculateCurvatureError.H \
 
 
