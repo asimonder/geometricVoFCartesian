@@ -22,9 +22,14 @@ Available methods are as follows:
 ### Machine Learning
 Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. Models are developed in three steps. First, a synthetic dataset composed of circular arcs of varying sizes is generated. Subsequently, about hundred MLP models are trained in TensorFlow for each hyperparameters configuration. There is a scatter in model performance due to inherent stochasticity involved in training process. Finally, the best performing models are selected, and the weights and biases of these Tensorflows models are converted to standard ascii format. The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
 
+The details of MLP models are discussed here:
+Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. In arXiv [physics.flu-dyn]. arXiv. http://arxiv.org/abs/2206.06041
+
+
 ## Getting Started
 ## Prerequisites
 OpenFOAM v2006 must be installed:
+
 https://www.openfoam.com/news/main-news/openfoam-v20-06
 ## Installation
 ```
