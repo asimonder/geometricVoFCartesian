@@ -22,18 +22,20 @@ Available methods are as follows:
 ### Machine Learning
 Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. Models are developed in three steps. First, a synthetic dataset composed of circular arcs of varying sizes is generated. Subsequently, about hundred MLP models are trained in TensorFlow for each hyperparameters configuration. There is a scatter in model performance due to inherent stochasticity involved in training process. Finally, the best performing models are selected, and the weights and biases of these Tensorflows models are converted to standard ascii format. The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
 
+##Getting Started
+## Prerequisites
+OpenFOAM v2006 must be installed:
+https://www.openfoam.com/news/main-news/openfoam-v20-06
 ## Installation
-Make sure you have installed OpenFOAM v2006 and run the following scripts in the project directory:
 ```
+git clone https://github.com/asimonder/geometricVoFCartesian.git
+cd geometricVoFCartesian
 ./Allwclean
 ./Allwmake
 ```
 
 ## Examples 
 Several 2D benchmark cases are provided.
-
-## Prerequisites
-OpenFOAM v2006.
 
 ## Author
 Asim Önder
