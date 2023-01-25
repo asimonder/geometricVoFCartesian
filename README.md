@@ -2,12 +2,12 @@
 # geometricVoFCartesian
 The *geometricVoFCartesian* is an extension library for simulating two-phase flows in OpenFOAM. It features conventional and machine-learning methods to estimate the normal vector and curvature of the fluid-fluid interfaces in geometric Volume-of-Fluid (VoF) framework. 
 
-## General Description
-The methods are designed for uniform (isotropic) Cartesian grids. In cases where the interface motion occurs in a smaller subset of the domain, the uniform grid can also be restricted to a smaller zone containing the interface. This is currently achieved using the cellSet functionality. The rest of the domain can use generic unstructured grids. 
-
+## Feature Overview
 Available methods are as follows:
 - **Interface normal vector**: Youngs' Method, Central-Columns Differences Method, Mixed Youngs-Central Method
 - **Interface curvature**: Height Function Method, Multilayer-Perceptron (MLP) models (only in 2D currently)
+
+The methods are designed for uniform (isotropic) Cartesian grids. In cases where the interface motion occurs in a smaller subset of the domain, the uniform grid can also be restricted to a smaller zone containing the interface. This is currently achieved using the cellSet functionality. The rest of the domain can use generic unstructured grids. 
 
 ### Fundamental Classes
 - **ijkZone**: Creation and manipulation of the regular-grid zone containing the interface motions.
@@ -15,27 +15,39 @@ Available methods are as follows:
 - **uniformStencil**: Parallel operations on local cell blocks.
 - **interfaceForces**: Base class for new curvature models.
 
-
 ### Solver
 **interIsoCartFoam**: Extension to ```interIsoFoam``` to feature newly implemented schemes.
 
+<<<<<<< HEAD
 ### Machine Learning
 Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. The code to develop these models can be found in tensorflow directory. Models are developed in three steps:
 1. A synthetic dataset composed of circular arcs of varying sizes is generated with *tensorflow/scripts/genCircles.sh*.
 2. Models are trained with mini-batch optimization using the script *tensorflow/scripts/mlpTrain.sh*.
 3. The best performing models are selected, and the weights and biases of these Tensorflows models are converted to standard ascii format. The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
+=======
+## Machine Learning
+Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. Models are developed in three steps. First, a synthetic dataset composed of circular arcs of varying sizes is generated. Subsequently, about hundred MLP models are trained in TensorFlow for each hyperparameters configuration. There is a scatter in model performance due to inherent stochasticity involved in training process. Finally, the best performing models are selected, and the weights and biases of these Tensorflows models are converted to standard ascii format. The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
+>>>>>>> 58ae49f055e8120e7fdfe84e5e4436d6f3722c4d
 
+The details of MLP models can be found in:
+
+Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
+
+
+## Getting Started
+## Prerequisites
+OpenFOAM v2006 must be installed:
+
+https://www.openfoam.com/news/main-news/openfoam-v20-06
 ## Installation
-Make sure you have installed OpenFOAM v2006 and run the following scripts in the project directory:
 ```
+git clone https://github.com/asimonder/geometricVoFCartesian.git
+cd geometricVoFCartesian
 ./Allwclean
 ./Allwmake
 ```
 ## Examples 
 - Several 2D benchmark cases for curvature estimation are provided. 
-
-## Prerequisites
-OpenFOAM v2006.
 
 ## Author
 Asim Önder
