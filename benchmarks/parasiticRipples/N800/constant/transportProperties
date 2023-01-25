@@ -36,7 +36,11 @@ air
 sigma           sigma [ 1 0 -2 0 0 0 0 ] 0.073;
 
 curvatureModel mlpCurvature;
+<<<<<<< HEAD
 mlpModel "../../../mlpCurvatureModels/SymMLP";
+=======
+mlpModel AvOdd-30x4;
+>>>>>>> 58ae49f055e8120e7fdfe84e5e4436d6f3722c4d
 zonalModel true;
 useScaling true;
 iMax 1;
