@@ -19,7 +19,11 @@ The methods are designed for uniform (isotropic) Cartesian grids. In cases where
 **interIsoCartFoam**: Extension to ```interIsoFoam``` to feature newly implemented schemes.
 
 ## Machine Learning
-Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. Models are developed in three steps. First, a synthetic dataset composed of circular arcs of varying sizes is generated. Subsequently, about hundred MLP models are trained in TensorFlow for each hyperparameters configuration. There is a scatter in model performance due to inherent stochasticity involved in training process. Finally, the best performing models are selected, and the weights and biases of these Tensorflows models are converted to standard ascii format. The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model. 
+Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. The code to develop these models can be found in tensorflow directory. Models are developed in \
+three steps:
+1. A synthetic dataset composed of circular arcs of varying sizes is generated with *tensorflow/scripts/genCircles.sh*.
+2. Models are trained with mini-batch optimization using the script *tensorflow/scripts/mlpTrain.sh*.
+3. The best performing models are selected, and the weights and biases of these Tensorflows models are converted to standard ascii format. The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model.
 
 The details of MLP models can be found in:
 
