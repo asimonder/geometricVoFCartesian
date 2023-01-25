@@ -2,7 +2,7 @@
 
 conda activate tf
 
-
+#specify the synthetic dataset
 dataFile=circleOrgCentroidAllNormalExp_R_2.0_4096.0.pkl
 #dataFile=circleOrgCentroidRawExp_R_2.0_4096.0.pkl
 
