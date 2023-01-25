@@ -1,0 +1,2 @@
+To choose the curvature model, copy the corresponding file in /constant, e.g.:
+cp constant/transportProperties.SymMLP constant/transportProperties

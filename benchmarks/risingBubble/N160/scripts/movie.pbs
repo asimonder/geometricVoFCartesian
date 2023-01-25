@@ -1,0 +1,49 @@
+#!/bin/bash -l   
+#PBS -N movie
+#PBS -r n
+#PBS -j oe
+#PBS -m abe
+#PBS -lwalltime=2:00:00
+# PBS -q largemem
+#PBS -l select=1:ncpus=24:mem=96gb
+#PBS -P 11001025
+
+#module load mpi/intel
+cd $PBS_O_WORKDIR/postProcessing/surface1
+
+#source /home/projects/11001025/OpenFOAM/OpenFOAM-v2006/etc/bashrc
+
+#pvpython snapShots.py 1.20 1.50 --use-offscreen-rendering
+#pvpython snapShots.py 1.50 1.70 --use-offscreen-rendering
+#pvpython snapShots.py 1.70 1.90 --use-offscreen-rendering
+#pvpython snapShots.py 1.90 2.10 --use-offscreen-rendering
+#pvpython snapShots.py 2.10 2.30 --use-offscreen-rendering
+#pvpython snapShots.py 2.30 2.50 --use-offscreen-rendering
+#pvpython snapShots.py 2.50 2.70 --use-offscreen-rendering
+#pvpython snapShots.py 2.70 2.90 --use-offscreen-rendering
+#pvpython snapShots.py 2.90 3.10 --use-offscreen-rendering
+#pvpython snapShots.py 3.10 3.30 --use-offscreen-rendering
+#pvpython snapShots.py 1.0 1.20 --use-offscreen-rendering
+#pvpython snapShots.py 3.355 3.42 --use-offscreen-rendering
+#pvpython snapShots.py 3.42 3.52 --use-offscreen-rendering
+#pvpython snapShots.py 3.48 3.52 --use-offscreen-rendering
+#pvpython snapShots.py 3.52 3.62 --use-offscreen-rendering
+#pvpython snapShots.py 3.62 3.72 --use-offscreen-rendering
+#pvpython snapShots.py 3.72 3.82 --use-offscreen-rendering
+#pvpython snapShots.py 3.82 3.92 --use-offscreen-rendering
+#pvpython snapShots.py 3.942 4.0 --use-offscreen-rendering
+#pvpython snapShots.py 4.0 4.1 --use-offscreen-rendering
+#pvpython snapShots.py 4.1 4.14 --use-offscreen-rendering
+#pvpython snapShots.py 4.14 4.2 --use-offscreen-rendering
+#pvpython snapShots.py 4.195 4.2 --use-offscreen-rendering
+#pvpython snapShots.py 4.2 4.3 --use-offscreen-rendering
+#pvpython snapShots.py 4.3 4.4 --use-offscreen-rendering
+#pvpython snapShots.py 4.4 4.5 --use-offscreen-rendering
+#pvpython snapShots.py 4.5 4.6 --use-offscreen-rendering
+#pvpython snapShots.py 4.6 4.7 --use-offscreen-rendering
+#pvpython snapShots.py 4.7 4.8 --use-offscreen-rendering
+#pvpython snapShots.py 4.861 4.96 --use-offscreen-rendering
+#pvpython snapShots.py 4.96 5.06 --use-offscreen-rendering
+#pvpython snapShots.py 5.06 5.16 --use-offscreen-rendering
+#pvpython snapShots.py 5.16 5.26 --use-offscreen-rendering
+pvpython snapShots.py 5.26 5.36 --use-offscreen-rendering
