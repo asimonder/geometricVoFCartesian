@@ -25,7 +25,7 @@ Machine learning models employ deep MLP architectures to estimate the interfacia
 
 The details of MLP models can be found in:
 
-Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
+Onder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
 
 
 ## Getting Started
@@ -45,8 +45,4 @@ cd geometricVoFCartesian
 Several 2D benchmark cases are provided.
 
 ## Author
-Asim Önder
-
-
-
->>>>>>> 48213f9314f23dce8ff8ec055953c7d74b8ab89e
+Asim Onder
