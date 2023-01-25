@@ -36,7 +36,7 @@ air
 sigma           sigma [ 1 0 -2 0 0 0 0 ] 0.073;
 
 curvatureModel mlpCurvature;
-mlpModel QLSZT2019;
+mlpModel "../../../mlpCurvatureModels/QLSZT2019";
 zonalModel false;
 useScaling true;
 iMax 1;

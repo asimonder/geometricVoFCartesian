@@ -68,7 +68,8 @@ Foam::mlpCurvature::mlpCurvature
     fillNeighbours_(dict.lookupOrDefault<label>("fillNeighbours",-1)),
     averageZones_(dict.lookupOrDefault<bool>("averageZones",true)),
     //extendInterface_(dict.lookupOrDefault<bool>("extendInterface",false)),
-    mlpModel_(dict.lookupOrDefault<word>("mlpModel","machineLearningModels")),
+    // mlpModel_(dict.lookupOrDefault<fileName>("mlpModel","machineLearningModels")),
+    mlpModel_(dict.lookup("mlpModel")),
     interfaceTol_(dict.lookupOrDefault<scalar>("interfaceTol",1e-6)),
     xoffsetInput_(dict.lookupOrDefault<scalar>("xoffsetInput",0)),
     yminInput_(dict.lookupOrDefault<scalar>("yminInput",0)),
@@ -126,9 +127,10 @@ Foam::mlpCurvature::mlpCurvature
   ijkMesh_.markBoundaryCells(boundaryCells_,nMax_);
   Info<<"mlpCurvature: done setting up ijkMesh..."<<endl;
 
-  std::string fName=mesh_.time().path()/mlpModel_+"/curv";
-  if (Pstream::parRun())
-    fName=mesh_.time().path()+"/../"+mlpModel_+"/curv";
+  //std::string fName=mesh_.time().path()/mlpModel_+"/curv";
+  //if (Pstream::parRun())
+  //  fName=mesh_.time().path()+"/../"+mlpModel_+"/curv";
+  std::string fName=mlpModel_+"/curv";
 
   mlp_=multilayerPerceptron(fName);
   NInput_=mlp_.stencilSize();

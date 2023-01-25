@@ -1,5 +1,0 @@
-tanh
-tanh
-tanh
-tanh
-linear

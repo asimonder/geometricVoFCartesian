@@ -34,7 +34,7 @@ phase2
 sigma           sigma [ 1 0 -2 0 0 0 0 ] 1;
 
 curvatureModel mlpCurvature;
-mlpModel AvOdd-30x4;
+mlpModel "../../../mlpCurvatureModels/SymMLP";
 zonalModel true;
 useScaling true;
 iMax 1;

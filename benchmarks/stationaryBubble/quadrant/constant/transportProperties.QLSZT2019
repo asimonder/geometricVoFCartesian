@@ -34,7 +34,7 @@ phase2
 sigma           sigma [ 1 0 -2 0 0 0 0 ] 1;
 
 curvatureModel mlpCurvature;
-mlpModel QLSZT2019;
+mlpModel "../../../mlpCurvatureModels/QLSZT2019";
 zonalModel false;
 useScaling true;
 iMax 1;

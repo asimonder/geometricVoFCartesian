@@ -99,7 +99,9 @@ private:
 
   //scalar KRef_;
   
-  word mlpModel_;
+  // mlpDir_;
+  
+  fileName mlpModel_;
 
   scalar interfaceTol_;
   
