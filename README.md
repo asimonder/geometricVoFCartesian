@@ -18,7 +18,7 @@ The methods are designed for uniform (isotropic) Cartesian grids. In cases where
 **interIsoCartFoam**: Extension to ```interIsoFoam``` to feature newly implemented schemes.
 
 ## Machine Learning
-Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. The code to develop these models can be found in ```tensorflow``` directory. Models are developed in three steps:
+Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. The code to develop these models can be found in ```tensorflow``` directory. Models are developed as follows:
 1. A synthetic dataset composed of circular arcs of varying sizes is generated with:
 
 ```bash tensorflow/scripts/genCircles.sh```
