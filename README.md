@@ -54,7 +54,7 @@ cd geometricVoFCartesian
 ```
 
 ## Usage
-- The library exclusively works on Cartesian zones. Class ```ijkZone``` handles the regular-grid functionality. It requires the cellset where the interface is located to be specified. If cyclic BCs are considered, they need to defined as well. The dictionary is located in ```system/ijkDict```:
+The library exclusively works on Cartesian zones. Class ```ijkZone``` handles the regular-grid functionality. It requires the cellset where the interface is located to be specified. If cyclic BCs are considered, they need to defined as well. The dictionary is located in ```system/ijkDict```:
 
 ```
 {
@@ -62,7 +62,7 @@ cellSet refinedCells;
 cyclicX true;
 }
 ```
-If the grid is uniform everywhere in the domain then simply use ```cellSet domain```.
+If the grid is uniform everywhere in the domain then simply use "```cellSet domain;```".
 
 ## Examples 
 Several 2D benchmark cases are provided.
