@@ -32,7 +32,7 @@ The ```multilayerPerceptron``` class in OpenFOAM reads these parameters and cons
 
 The details of MLP models can be found in:
 
-Onder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
+Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
 
 
 ## Getting Started
