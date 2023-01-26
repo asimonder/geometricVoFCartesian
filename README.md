@@ -25,7 +25,8 @@ Machine learning models employ deep MLP architectures to estimate the interfacia
 
 2. About hundred Models are trained with mini-batch optimization using the script:
 
-```bash tensorflow/scripts/mlpTrain.sh```.
+```bash tensorflow/scripts/mlpTrain.sh```
+
 3. The best performing models are selected, and stored in *mlpCurvatureModels*. Two different types of models are developed: 
 - **SymMLP**: the symmetry-preserving MLP model using bias-free neurons
 - **StdMLP**: the standard MLP model
