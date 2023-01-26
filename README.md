@@ -20,8 +20,15 @@ The methods are designed for uniform (isotropic) Cartesian grids. In cases where
 ## Machine Learning
 Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. The code to develop these models can be found in tensorflow directory. Models are developed in three steps:
 1. A synthetic dataset composed of circular arcs of varying sizes is generated with *tensorflow/scripts/genCircles.sh*.
-2. Models are trained with mini-batch optimization using the script *tensorflow/scripts/mlpTrain.sh*.
-3. The best performing models are selected, and the weights and biases of these Tensorflows models are converted to standard ascii format. The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model.
+2. About hundred Models are trained with mini-batch optimization using the script *tensorflow/scripts/mlpTrain.sh*.
+3. The best performing models are selected, and stored in *mlpCurvatureModels*. Two different types of models are developed: 
+- **SymMLP**: the symmetry-preserving MLP model using bias-free neurons
+- **StdMLP**: the standard MLP model
+4. The weights and biases of the Tensorflows models are converted to raw text format, e.g.,
+
+``` python tensorflow/TfToTxt.py mlpCurvatureModels SymMLP```
+
+The *multilayerPerceptron* class in OpenFOAM reads these parameters and constructs the corresponding MLP model.
 
 The details of MLP models can be found in:
 
