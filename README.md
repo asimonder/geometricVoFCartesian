@@ -24,7 +24,7 @@ Machine learning models employ deep MLP architectures to estimate the interfacia
 3. The best performing models are selected, and stored in *mlpCurvatureModels*. Two different types of models are developed: 
 - **SymMLP**: the symmetry-preserving MLP model using bias-free neurons
 - **StdMLP**: the standard MLP model
-4. The weights and biases of the Tensorflows models are converted to raw text format, e.g.,
+4. The weights and biases of the TensorFlow models are converted to raw text format, e.g.,
 
 ``` python tensorflow/TfToTxt.py mlpCurvatureModels SymMLP```
 
