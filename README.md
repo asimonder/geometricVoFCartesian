@@ -62,9 +62,10 @@ cellSet refinedCells;
 cyclicX true;
 }
 ```
+If the grid is uniform everywhere in the domain then simply use ```cellSet domain```.
 
 ## Examples 
 Several 2D benchmark cases are provided.
 
 ## Author
-Asim Önder
+Asim Önder (asim.onder[at]gmail.com)
