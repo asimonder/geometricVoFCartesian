@@ -45,4 +45,4 @@ cd geometricVoFCartesian
 Several 2D benchmark cases are provided.
 
 ## Author
-Asim Onder
+Asim Önder
