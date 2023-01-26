@@ -19,8 +19,13 @@ The methods are designed for uniform (isotropic) Cartesian grids. In cases where
 
 ## Machine Learning
 Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. The code to develop these models can be found in ```tensorflow``` directory. Models are developed in three steps:
-1. A synthetic dataset composed of circular arcs of varying sizes is generated with ```tensorflow/scripts/genCircles.sh```.
-2. About hundred Models are trained with mini-batch optimization using the script ```tensorflow/scripts/mlpTrain.sh```.
+1. A synthetic dataset composed of circular arcs of varying sizes is generated with:
+
+```bash tensorflow/scripts/genCircles.sh```
+
+2. About hundred Models are trained with mini-batch optimization using the script:
+
+```bash tensorflow/scripts/mlpTrain.sh```.
 3. The best performing models are selected, and stored in *mlpCurvatureModels*. Two different types of models are developed: 
 - **SymMLP**: the symmetry-preserving MLP model using bias-free neurons
 - **StdMLP**: the standard MLP model
