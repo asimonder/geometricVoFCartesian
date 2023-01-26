@@ -93,7 +93,7 @@ yminOutput 0.;
 gainOutput 1.0;
 xoffsetOutput 0.0;
 ```
-mlpModel specifies the full path where txt files for weights and biases of the model are located. zonalModel needs to be set true for symmetry-preserving MLP. iMax and jMax, kMax specify the stencil in each directions. 
+mlpModel specifies the full path to txt files for weights and biases of the model. zonalModel has to be set true for symmetry-preserving MLP. iMax and jMax specify the stencil in each direction, i.e., 3x3. interfaceTol is the volume-fraction threshold for curvature to be non-zero. 
 
 ## Examples 
 Several 2D benchmark cases are provided.
