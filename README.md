@@ -41,7 +41,6 @@ The details of MLP models can be found in:
 Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
 
 
-## Getting Started
 ## Prerequisites
 OpenFOAM v2006 must be installed:
 
@@ -52,6 +51,16 @@ git clone https://github.com/asimonder/geometricVoFCartesian.git
 cd geometricVoFCartesian
 ./Allwclean
 ./Allwmake
+```
+
+## Usage
+- The library exclusively works on Cartesian zones. Class ```ijkZone``` handles the regular-grid functionality. It requires the cellset where the interface is located to be specified. If cyclic BCs are considered, they need to defined as well. The dictionary is located in ```system/ijkDict```:
+
+```
+{
+cellSet refinedCells;
+cyclicX true;
+}
 ```
 
 ## Examples 
