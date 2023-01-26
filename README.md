@@ -75,7 +75,7 @@ nMax 3;
 
 Here, nMax is the number of cells neighbouring the central cell in one direction. For instance, if the height function is obtained from 7 cells along the height, then nMax=3 so that 3+1+3=7. 
 
-MLP models require additional parameters to be defined such as input scaling factors, symmetry:
+MLP models require additional parameters to be defined:
 
 ```
 curvatureModel mlpCurvature;
@@ -93,6 +93,7 @@ yminOutput 0.;
 gainOutput 1.0;
 xoffsetOutput 0.0;
 ```
+Here, the path to MLP model is specified where txt files for weights and biases of model are located. zonalModel needs to be set true for symmetry-preserving MLP. iMax, jMax, kMax specifies the stencil in each directions.
 
 ## Examples 
 Several 2D benchmark cases are provided.
