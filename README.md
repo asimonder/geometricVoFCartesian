@@ -54,6 +54,7 @@ cd geometricVoFCartesian
 ```
 
 ## Usage
+### Regular-grid zones
 The library exclusively works on Cartesian zones. Class ```ijkZone``` handles the regular-grid functionality. It requires the cellset where the interface is located to be specified. If cyclic BCs are considered, they need to defined as well. The dictionary is located in ```system/ijkDict```:
 
 ```
@@ -62,7 +63,36 @@ cellSet refinedCells;
 cyclicX true;
 }
 ```
-If the grid is uniform everywhere in the domain then simply use "```cellSet domain;```".
+If the grid is uniform everywhere in the domain, then simply use "```cellSet domain;```".
+
+### New curvature models
+New curvature-estimation models need to defined in ```constant/transportDict```. Numerical stencils are configurable. e.g., for the height function method:
+
+```
+curvatureModel heightfunction;
+nMax 3;
+```
+
+Here, nMax is the number of cells neighbouring the central cell in one direction. For instance, if the height function is obtained from 7 cells along the height, then nMax=3 so that 3+1+3=7. 
+
+MLP models require additional parameters to be defined such as input scaling factors, symmetry:
+
+```
+curvatureModel mlpCurvature;
+mlpModel "../../../mlpCurvatureModels/SymMLP";
+zonalModel true;
+useScaling true;
+iMax 1;
+jMax 1;
+nMax 1;
+interfaceTol 1e-3;
+xoffsetInput 0;
+gainInput 2;
+yminInput -1;
+yminOutput 0.;
+gainOutput 1.0;
+xoffsetOutput 0.0;
+```
 
 ## Examples 
 Several 2D benchmark cases are provided.
