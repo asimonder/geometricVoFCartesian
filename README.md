@@ -93,7 +93,7 @@ yminOutput 0.;
 gainOutput 1.0;
 xoffsetOutput 0.0;
 ```
-Here, the path to MLP model is specified where txt files for weights and biases of model are located. zonalModel needs to be set true for symmetry-preserving MLP. iMax, jMax, kMax specifies the stencil in each directions.
+mlpModel specifies the full path where txt files for weights and biases of the model are located. zonalModel needs to be set true for symmetry-preserving MLP. iMax and jMax, kMax specify the stencil in each directions. 
 
 ## Examples 
 Several 2D benchmark cases are provided.
