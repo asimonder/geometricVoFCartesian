@@ -79,7 +79,7 @@ MLP models require additional parameters to be defined:
 
 ```
 curvatureModel mlpCurvature;
-mlpModel "./mlpCurvatureModels/SymMLP";
+mlpModel "mlpCurvatureModels/SymMLP";
 zonalModel true;
 useScaling true;
 iMax 1;
