@@ -9,10 +9,10 @@ Available methods are as follows:
 The methods are designed for uniform (isotropic) Cartesian grids. In cases where the interface motion occurs in a smaller subset of the domain, the uniform grid can also be restricted to a smaller zone containing the interface. This is currently achieved using the cellSet functionality. The rest of the domain can use generic unstructured grids. 
 
 ### Fundamental Classes
-- **ijkZone**: Creation and manipulation of the regular-grid zone containing the interface motions.
-- **multilayerPerceptron**: Basic functionalities and data structures for an MLP. Implementation is done using exclusively the C++ Standard Library. Thus, no additional package is required to use new machine learning models.  
-- **uniformStencil**: Parallel operations on local cell blocks.
-- **interfaceForces**: Base class for new curvature models.
+- ```ijkZone```: Creation and manipulation of the regular-grid zone containing the interface motions.
+- ```multilayerPerceptron```: Basic functionalities and data structures for an MLP. Implementation is done using exclusively the C++ Standard Library. Thus, no additional package is required to use new machine learning models.  
+- ```uniformStencil```: Parallel operations on local cell blocks.
+- ```interfaceForces```: Base class for new curvature models.
 
 ### Solver
 **interIsoCartFoam**: Extension to ```interIsoFoam``` to feature newly implemented schemes.
