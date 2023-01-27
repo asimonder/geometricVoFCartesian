@@ -15,7 +15,7 @@ The methods are designed for uniform (isotropic) Cartesian grids. In cases where
 - ```interfaceForces```: Base class for new curvature models.
 
 ### Solver
-**interIsoCartFoam**: Extension to ```interIsoFoam``` to feature newly implemented schemes.
+```interIsoCartFoam```: Extension to ```interIsoFoam``` to feature newly implemented schemes.
 
 ## Machine Learning
 Machine learning models employ deep MLP architectures to estimate the interfacial curvarture. The code to develop these models can be found in ```tensorflow``` directory. Models are developed as follows:
