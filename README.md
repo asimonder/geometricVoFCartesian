@@ -99,4 +99,4 @@ xoffsetOutput 0.0;
 Several 2D benchmark cases are provided.
 
 ## Author
-Asim Önder (asim.onder[at]gmail.com)
+Asim Önder (asim.onder@gmail.com)
