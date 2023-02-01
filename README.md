@@ -36,9 +36,7 @@ Machine learning models employ deep MLP architectures to estimate the interfacia
 
 The ```multilayerPerceptron``` class in OpenFOAM reads these parameters and constructs the corresponding MLP model.
 
-The details of MLP models can be found in:
-
-Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
+The details of MLP models can be found in Ref. 1.
 
 
 ## Prerequisites
@@ -96,7 +94,10 @@ xoffsetOutput 0.0;
 ```mlpModel``` specifies the full path to txt files containing weights and biases of the model. ```zonalModel``` has to be set true for symmetry-preserving MLP. iMax and jMax specify the stencil in each direction, i.e., 3x3. ```interfaceTol``` is the volume-fraction threshold for curvature to be non-zero. 
 
 ## Examples 
-Several 2D benchmark cases are provided.
+Several 2D benchmark cases are provided in ``benchmarks``.
+
+## Publications 
+1. Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
 
 ## Author
 Asim Önder (asim.onder@gmail.com)
