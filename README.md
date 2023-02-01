@@ -97,7 +97,7 @@ xoffsetOutput 0.0;
 Several 2D benchmark cases are provided. See Sec. 5 in Ref. 1.
 
 ## Publications 
- Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
+ 1. Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
 
 ## Author
 Asim Önder (asim.onder@gmail.com)
