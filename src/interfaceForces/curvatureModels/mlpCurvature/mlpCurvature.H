@@ -99,13 +99,7 @@ private:
 
   //scalar KRef_;
   
-<<<<<<< HEAD:src/interfaceForces/curvatureModels/mlpCurvature/mlpCurvature.H
-  // mlpDir_;
-  
   fileName mlpModel_;
-=======
-  word mlpModel_;
->>>>>>> 58ae49f055e8120e7fdfe84e5e4436d6f3722c4d:src/interfaceForces/curvatureModels/mlpCurvature/mlpCurvature.H
 
   scalar interfaceTol_;
   
