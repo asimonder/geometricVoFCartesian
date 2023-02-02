@@ -1,4 +1,4 @@
 {
-cellSet domain;
+cellSet refinedCells;
 cyclicX true;
 }
