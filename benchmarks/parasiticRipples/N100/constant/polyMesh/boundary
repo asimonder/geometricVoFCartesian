@@ -22,35 +22,35 @@ FoamFile
         type            wall;
         inGroups        1(wall);
         nFaces          100;
-        startFace       559196;
+        startFace       59600;
     }
     topWall
     {
         type            wall;
         inGroups        1(wall);
         nFaces          100;
-        startFace       559296;
+        startFace       59700;
     }
     sides1
     {
         type            empty;
         inGroups        1(empty);
-        nFaces          279600;
-        startFace       559396;
+        nFaces          30000;
+        startFace       59800;
     }
     sides2
     {
         type            empty;
         inGroups        1(empty);
-        nFaces          279600;
-        startFace       838996;
+        nFaces          30000;
+        startFace       89800;
     }
     inout1
     {
         type            cyclic;
         inGroups        1(cyclic);
-        nFaces          604;
-        startFace       1118596;
+        nFaces          300;
+        startFace       119800;
         matchTolerance  0.0001;
         transform       unknown;
         neighbourPatch  inout2;
@@ -59,8 +59,8 @@ FoamFile
     {
         type            cyclic;
         inGroups        1(cyclic);
-        nFaces          604;
-        startFace       1119200;
+        nFaces          300;
+        startFace       120100;
         matchTolerance  0.0001;
         transform       unknown;
         neighbourPatch  inout1;
