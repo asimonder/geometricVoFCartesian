@@ -64,37 +64,42 @@ cyclicX true;
 If the grid is uniform everywhere in the domain, then simply use "```cellSet domain;```".
 
 ### New curvature models
-New curvature-estimation models need to defined in ```constant/transportDict```. Numerical stencils are configurable. e.g., for the height function method:
+New curvature-estimation models need to defined in ```system/curvatureDict```, e.g., for the height function method,
 
 ```
-curvatureModel heightfunction;
-nMax 3;
+curvatureModel heightFunction;
+heightFunctionParams
+{
+  nMax 3;
+}
 ```
 
 Here, nMax is the number of cells neighbouring the central cell in one direction. For instance, if the height function is obtained from 7 cells along the height, then nMax=3 so that 3+1+3=7. 
 
-MLP models require additional parameters to be defined:
+MLP model is selected as follows:
 
 ```
 curvatureModel mlpCurvature;
-mlpModel "mlpCurvatureModels/SymMLP";
-zonalModel true;
-useScaling true;
-iMax 1;
-jMax 1;
-nMax 1;
-interfaceTol 1e-3;
-xoffsetInput 0;
-gainInput 2;
-yminInput -1;
-yminOutput 0.;
-gainOutput 1.0;
-xoffsetOutput 0.0;
+mlpParams
+{
+  mlpModel "../../mlpCurvatureModels/SymMLP";
+  interfaceTol 1e-3;
+  zonalModel true;
+  useScaling true;
+  xoffsetInput 0;
+  gainInput 2;
+  yminInput -1;
+  yminOutput 0.;
+  gainOutput 1.0;
+  xoffsetOutput 0.0;
+}
 ```
-```mlpModel``` specifies the full path to txt files containing weights and biases of the model. ```zonalModel``` has to be set true for symmetry-preserving MLP. iMax and jMax specify the stencil in each direction, i.e., 3x3. ```interfaceTol``` is the volume-fraction threshold for curvature to be non-zero. 
+```mlpModel``` specifies the full path to txt files containing weights and biases of the model. ```interfaceTol``` is the volume-fraction threshold for curvature to be non-zero. ```zonalModel``` has to be set ```true``` for symmetry-preserving MLP. If the MLP model uses input-output scaling, then ```useScaling``` is set to ```true```, and ```xoffsetInput```, ```gainInput```, ```yminInput```, ```yminOutput```, ```gainOutput``` and ```xoffsetOutput``` have to be specified.
 
 ## Examples 
-Several 2D benchmark cases are provided. See Sec. 5 in Ref. [1].
+Several benchmark cases are provided:
+- 2D: stationary bubble, rising bubble, standing capillary wave, parasitic capillary ripples. See Sec. 5 in Ref. [1].
+- 3D: stationary bubble (work in progress)
 
 ## Publications 
  [1] Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
