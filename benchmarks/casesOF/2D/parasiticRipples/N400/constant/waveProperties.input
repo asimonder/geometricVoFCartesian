@@ -1,0 +1,45 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.5                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fenton4Foam;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+seaLevel	0.00;
+
+relaxationNames ();
+
+initializationName init;
+
+initCoeffs
+{
+  waveType      stokesFifth; //potentialCurrent;
+  Tsoft       0;
+  //N		32;
+  //Niter	2000;
+  height 0.0039788735772973835; //0.0019894367886486917;
+  depth	1.0;
+  phi		3.14159265359;
+  //specifyPeriod true;
+  //period 0.17344863560408899;
+  period 0.17348915;
+  //period 0.178953597183;
+  //specifyPeriod false;
+  //waveLength 0.05;
+  //waveNumber 125; 
+  direction (1 0 0);
+  stokesDrift 0.0;
+  //specifyEuler true;
+  //eulerVelocity 0.0; 
+}
+
+// ************************************************************************* //

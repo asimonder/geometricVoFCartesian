@@ -1,0 +1,41 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      curvatureDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+curvatureModel mlpCurvature; 
+
+heightFunctionParams
+{
+  nMax 3;
+}
+
+//SymMLP
+mlpParams
+{
+  mlpModel "../../../../../mlpCurvatureModels/SymMLP";
+  interfaceTol 1e-3;
+  zonalModel true;
+  useScaling true;
+  xoffsetInput 0;
+  gainInput 2;
+  yminInput -1;
+  yminOutput 0.;
+  gainOutput 1.0;
+  xoffsetOutput 0.0;
+}
+
+
+// ************************************************************************* //

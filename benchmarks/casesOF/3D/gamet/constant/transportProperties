@@ -1,0 +1,40 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  plus                                  |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+phases (phase1 phase2);
+
+// Phase properties for liquid
+phase1
+{
+    transportModel  Newtonian;
+    nu              nu [0 2 -1 0 0 0 0] 100.;
+    rho             rho [1 -3 0 0 0 0 0] 1;
+}
+
+// Phase properties for gaz
+phase2
+{
+    transportModel  Newtonian;
+    nu              nu [0 2 -1 0 0 0 0] 100.;
+    rho             rho [1 -3 0 0 0 0 0] 1;
+}
+
+// Surface tension ( expressed in N/m = (kg m /s²) / m = kg/s² )
+sigma           sigma [ 1 0 -2 0 0 0 0 ] 1;
+
+
+// ************************************************************************* //
