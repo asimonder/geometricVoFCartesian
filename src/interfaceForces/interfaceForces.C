@@ -51,14 +51,15 @@ Foam::interfaceForces::interfaceForces
 (
     const volScalarField& alpha1,
     const volVectorField& U,
-    const IOdictionary& dict
+    const IOdictionary& dict,
+    const IOdictionary& curvDict
 )
 :
     transportPropertiesDict_(dict),
 
     sigmaPtr_(surfaceTensionModel::New(dict,alpha1.mesh())),
 
-    curvature_(curvatureModel::New(dict,alpha1,U)),
+    curvature_(curvatureModel::New(curvDict,alpha1,U)),
 
     alpha1_(alpha1),
     U_(U)

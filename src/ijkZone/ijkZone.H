@@ -45,6 +45,7 @@ SourceFiles
 #include "volMesh.H"
 
 #include "IOobject.H"
+#include "IOdictionary.H"
 #include "MeshObject.H"
 #include "IFstream.H"
 #include "cellSet.H"

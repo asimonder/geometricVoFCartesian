@@ -49,13 +49,18 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
 {
 
   Info<<"Building the ijkZone..."<<endl;
-  fileName dictPath=mesh_.time().path()/"system/ijkDict";
-  if (Pstream::parRun())
-    dictPath=mesh_.time().path()/"../system/ijkDict";
-
-  IFstream is(dictPath);
-  dictionary ijkDict(is);
-
+  IOdictionary ijkDict
+    (
+     IOobject
+     (
+      "ijkDict",
+      mesh_.time().system(),
+      mesh_.time().db(),
+      IOobject::MUST_READ,
+      IOobject::NO_WRITE
+      )
+     );
+  
   word cellSetName=ijkDict.get<word>("cellSet");
   bool isDomain=true;
   if (cellSetName!="domain")

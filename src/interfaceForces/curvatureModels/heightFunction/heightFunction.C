@@ -61,7 +61,7 @@ Foam::heightFunction::heightFunction
      ),
     ijkMesh_(alpha1.mesh()),
     globalNumbering_(ijkMesh_.globalNumbering()),
-    nMax_(dict.lookupOrDefault<label>("nMax",3)),
+    nMax_(dict.subDict("heightFunctionParams").lookupOrDefault<label>("nMax",3)),
     //fillNeighbours_(dict.lookupOrDefault<label>("fillNeighbours",-1)),
     interfaceTol_(1e-12),
     //rdfMark_(dict.lookupOrDefault<bool>("rdfMark",false)),

@@ -104,7 +104,8 @@ public:
   (
    const volScalarField& alpha1,
    const volVectorField& U,
-   const IOdictionary&
+   const IOdictionary& dict,
+   const IOdictionary& curvDict
    );
   
   
