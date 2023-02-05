@@ -99,7 +99,7 @@ mlpParams
 ## Examples 
 Several benchmark cases are provided:
 - 2D: stationary bubble, rising bubble, standing capillary wave, parasitic capillary ripples. See Sec. 5 in Ref. [1] for results.
-- 3D: stationary bubble (work in progress)
+- 3D: stationary bubble, translating bubble
 
 ## Publications 
  [1] Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
