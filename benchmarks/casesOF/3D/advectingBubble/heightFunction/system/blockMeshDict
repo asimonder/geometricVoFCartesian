@@ -17,7 +17,7 @@ FoamFile
 convertToMeters 1;
 
 //- Number of cells along x direction
-nx 32;
+nx 64;
 
 //- Number of cells along y direction = nx
 
@@ -25,14 +25,14 @@ nx 32;
 
 vertices        
 (
-    (0 0 0)
-    (1 0 0)
-    (1 1 0)
-    (0 1 0)
-    (0 0 1)
-    (1 0 1)
+    (-1 -1 -1)
+    (1 -1 -1)
+    (1 1 -1)
+    (-1 1 -1)
+    (-1 -1 1)
+    (1 -1 1)
     (1 1 1)
-    (0 1 1)
+    (-1 1 1)
 );
 
 blocks          
@@ -48,51 +48,57 @@ boundary
 (
     xMin
     {
-        type symmetry;
-        faces
+      type cyclic;
+      neighbourPatch xMax;
+      faces
         (
-          (0 4 7 3)
-        );
+	 (0 4 7 3)
+	 );
     }
     xMax
     {
-        type symmetry;
-        faces
+      type cyclic;
+      neighbourPatch xMin;
+      faces
         (
-          (2 6 5 1)
-        );
+	 (2 6 5 1)
+	 );
     }
     yMin
     {
-        type symmetry;
-        faces
+      type cyclic;
+      neighbourPatch yMax;
+      faces
         (
-          (1 5 4 0)
-        );
+	 (1 5 4 0)
+	 );
     }
     yMax
     {
-        type symmetry;
-        faces
+      type cyclic;
+      neighbourPatch yMin;
+      faces
         (
-          (3 7 6 2)
-        );
+	 (3 7 6 2)
+	 );
     }
     zMin
     {
-        type symmetry;
-        faces
+      type cyclic;
+      neighbourPatch zMax;
+      faces
         (
-          (0 3 2 1)
-        );
+	 (0 3 2 1)
+	 );
     }
     zMax
     {
-        type symmetry;
-        faces
+      type cyclic;
+      neighbourPatch zMin;
+      faces
         (
-          (4 5 6 7)
-        );
+	 (4 5 6 7)
+	 );
     }
 );
 

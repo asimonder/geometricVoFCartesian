@@ -9,15 +9,48 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       dictionary;
-    location    "system";
-    object      ijkDict;
+    class       volVectorField;
+    location    "0";
+    object      U;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
 {
-cellSet domain;
-symXIn true;
-symXOut true;
-symYIn true;
-symYOut true;
+    xMin
+    {
+        type            cyclic;
+    }
+
+    xMax
+    {
+        type            cyclic;
+    }
+
+    yMin
+    {
+        type            cyclic;
+    }
+
+    yMax
+    {
+        type            cyclic;
+    }
+
+    zMin
+    {
+        type            cyclic;
+    }
+
+    zMax
+    {
+        type            cyclic;
+    }
 }
+
+
+// ************************************************************************* //

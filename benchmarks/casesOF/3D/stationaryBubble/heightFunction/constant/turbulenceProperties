@@ -10,14 +10,12 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "system";
-    object      ijkDict;
+    location    "constant";
+    object      turbulenceProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-{
-cellSet domain;
-symXIn true;
-symXOut true;
-symYIn true;
-symYOut true;
-}
+
+simulationType  laminar;
+
+
+// ************************************************************************* //

@@ -9,32 +9,48 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       dictionary;
-    location    "constant";
-    object      transportProperties;
+    class       volVectorField;
+    location    "0";
+    object      U;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-phases (phase1 phase2);
+dimensions      [0 1 -1 0 0 0 0];
 
-// Phase properties for liquid
-phase1
+internalField   uniform (1 0 0);
+
+boundaryField
 {
-    transportModel  Newtonian;
-    nu              nu [0 2 -1 0 0 0 0] 99.9999;
-    rho             rho [1 -3 0 0 0 0 0] 1;
-}
+    xMin
+    {
+        type            cyclic;
+    }
 
-// Phase properties for gaz
-phase2
-{
-    transportModel  Newtonian;
-    nu              nu [0 2 -1 0 0 0 0] 99.9999;
-    rho             rho [1 -3 0 0 0 0 0] 1;
-}
+    xMax
+    {
+        type            cyclic;
+    }
 
-// Surface tension ( expressed in N/m = (kg m /s²) / m = kg/s² )
-sigma           sigma [ 1 0 -2 0 0 0 0 ] 1;
+    yMin
+    {
+        type            cyclic;
+    }
+
+    yMax
+    {
+        type            cyclic;
+    }
+
+    zMin
+    {
+        type            cyclic;
+    }
+
+    zMax
+    {
+        type            cyclic;
+    }
+}
 
 
 // ************************************************************************* //

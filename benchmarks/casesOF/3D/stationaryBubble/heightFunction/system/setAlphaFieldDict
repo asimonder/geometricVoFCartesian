@@ -11,13 +11,13 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "system";
-    object      ijkDict;
+    object      fvSolution;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-{
-cellSet domain;
-symXIn true;
-symXOut true;
-symYIn true;
-symYOut true;
-}
+
+field           alpha.phase1;
+type            sphere;
+radius          0.4;
+origin          (0 0 0);
+
+// ************************************************************************* //

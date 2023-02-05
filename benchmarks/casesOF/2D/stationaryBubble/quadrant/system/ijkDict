@@ -16,6 +16,8 @@ FoamFile
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 {
 cellSet domain;
-cyclicX true;
-cyclicY true;
+symXIn true;
+symXOut true;
+symYIn true;
+symYOut true;
 }

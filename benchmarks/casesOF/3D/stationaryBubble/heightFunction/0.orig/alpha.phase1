@@ -1,7 +1,7 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v1906                                 |
+|  \\    /   O peration     | Version:  plus                                  |
 |   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
@@ -9,17 +9,47 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       dictionary;
-    location    "system";
-    object      curvatureDict;
+    class       volScalarField;
+    location    "0";
+    object      alpha.phase1;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-curvatureModel heightFunction; //RDF //divGradAlpha
+dimensions      [0 0 0 0 0 0 0];
 
-heightFunctionParams
+internalField   uniform 0;
+
+boundaryField
 {
-  nMax 3;
+    xMin
+    {
+        type            cyclic;
+    }
+
+    xMax
+    {
+        type            cyclic;
+    }
+
+    yMin
+    {
+        type            cyclic;
+    }
+
+    yMax
+    {
+        type            cyclic;
+    }
+
+    zMin
+    {
+        type            cyclic;
+    }
+
+    zMax
+    {
+        type            cyclic;
+    }
 }
 
 // ************************************************************************* //

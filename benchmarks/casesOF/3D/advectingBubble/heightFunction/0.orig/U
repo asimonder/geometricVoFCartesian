@@ -17,38 +17,38 @@ FoamFile
 
 dimensions      [0 1 -1 0 0 0 0];
 
-internalField   uniform (0 0 0);
+internalField   uniform (1 0 0);
 
 boundaryField
 {
     xMin
     {
-        type            symmetry;
+        type            cyclic;
     }
 
     xMax
     {
-        type            symmetry;
+        type            cyclic;
     }
 
     yMin
     {
-        type            symmetry;
+        type            cyclic;
     }
 
     yMax
     {
-        type            symmetry;
+        type            cyclic;
     }
 
     zMin
     {
-        type            symmetry;
+        type            cyclic;
     }
 
     zMax
     {
-        type            symmetry;
+        type            cyclic;
     }
 }
 

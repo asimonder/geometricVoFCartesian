@@ -9,47 +9,32 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       volScalarField;
-    location    "0";
-    object      p_rgh;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [1 -1 -2 0 0 0 0];
+phases (phase1 phase2);
 
-internalField   uniform 0;
-
-boundaryField
+// Phase properties for liquid
+phase1
 {
-    xMin
-    {
-        type            symmetry;
-    }
-
-    xMax
-    {
-        type            symmetry;
-    }
-
-    yMin
-    {
-        type            symmetry;
-    }
-
-    yMax
-    {
-        type            symmetry;
-    }
-
-    zMin
-    {
-        type            symmetry;
-    }
-
-    zMax
-    {
-        type            symmetry;
-    }
+    transportModel  Newtonian;
+    nu              nu [0 2 -1 0 0 0 0] 100.;
+    rho             rho [1 -3 0 0 0 0 0] 1;
 }
+
+// Phase properties for gaz
+phase2
+{
+    transportModel  Newtonian;
+    nu              nu [0 2 -1 0 0 0 0] 100.;
+    rho             rho [1 -3 0 0 0 0 0] 1;
+}
+
+// Surface tension ( expressed in N/m = (kg m /s²) / m = kg/s² )
+sigma           sigma [ 1 0 -2 0 0 0 0 ] 1;
+
 
 // ************************************************************************* //

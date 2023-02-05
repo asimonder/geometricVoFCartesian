@@ -1,0 +1,311 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  plus                                  |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     interIsoCartFoam;
+
+startFrom       latestTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         2;
+
+deltaT          2e-4;
+
+writeControl    adjustableRunTime;
+
+writeInterval   0.01;
+
+purgeWrite      0;
+
+writeFormat     binary;
+
+writePrecision  12;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   16;
+
+runTimeModifiable yes;
+
+adjustTimeStep  no;
+
+maxCo           0.2;
+maxAlphaCo      0.2;
+
+maxDeltaT       1;
+
+// ************************************************************************* //
+
+// functionObjects
+functions
+{
+    // ***************************************************** //
+    // **** coded functionObject for droplet processing **** //
+    // ***************************************************** //
+    dropletpproc
+    {
+        // Load the library containing the 'coded' functionObject
+        libs ("libutilityFunctionObjects.so");
+        type coded;
+        writeControl  timeStep;
+        writeInterval 1;
+        // Name of on-the-fly generated functionObject
+        name dropletpproc;
+        // List of include search directories
+        codeOptions
+        #{
+            -I$(LIB_SRC)/sampling/lnInclude \
+            -I$(LIB_SRC)/surfMesh/lnInclude 
+        #};
+        // List of libraries to link with
+        codeLibs
+        #{
+            -lsampling \
+            -lsurfMesh 
+        #};
+        // List of include files
+        codeInclude
+        #{
+            #include "sampledIsoSurfaceCell.H"
+        #};
+        // Code
+        codeWrite
+        #{
+            Info << "----------dropletpproc----------" << endl;
+
+            // Lookup velocity field U
+            const volVectorField& U = mesh().lookupObject<volVectorField>("U");
+
+            // Lookup liquid fraction alpha_liquid
+            const volScalarField& alphaLiquid = mesh().lookupObject<volScalarField>("alpha.phase1");
+
+            // Compute isosurface alpha=0.5
+            dictionary isoSurfDict;
+            isoSurfDict.add("type","isoSurfaceCell");
+            isoSurfDict.add("isoField","alpha.phase1");
+            isoSurfDict.add("isoValue",0.5);
+            isoSurfDict.add("regularise","none");
+            sampledIsoSurfaceCell isoInterface("isoInterface", mesh(), isoSurfDict);
+            isoInterface.update();
+
+            // Compute droplet volume
+            dimensionedScalar dropletVolume = fvc::domainIntegrate(alphaLiquid); // This is integral of "alphaLiquid" over the volume
+            Info << "droplet volume     = " << dropletVolume.value() << endl;
+
+            // Compute droplet area
+            dimensionedScalar dropletArea = isoInterface.area();
+            Info << "droplet area       = " << dropletArea.value() << endl;
+
+            // Compute droplet center
+            dimensionedVector Cb = fvc::domainIntegrate(alphaLiquid*mesh().C())/dropletVolume;
+            Info << "droplet centroid   = " << Cb.value() << endl;
+
+            // Compute droplet velocity
+            dimensionedVector Ub = fvc::domainIntegrate(alphaLiquid*U)/dropletVolume;
+            Info << "droplet velocity   = " << Ub.value() << endl;
+
+            // Compute radius of volume equivalent sphere (from droplet volume)
+            dimensionedScalar radiusA = pow(3.0/4.0/constant::mathematical::pi*8.0*dropletVolume, 1.0/3.0); // Bubble volume is multiplied by 8 to account for 360°
+            Info << "droplet diameter A = " << radiusA.value()*2.0 << endl;
+
+            // Compute radius of droplet (from droplet surface)
+            dimensionedScalar radiusB = sqrt(8.0*dropletArea/constant::mathematical::pi/4.0); // Bubble area is multiplied by 8 to account for 360°
+            Info << "droplet diameter B = " << radiusB.value()*2.0 << endl;
+
+            // Compute degree of sphericity
+            if ( radiusB.value() != 0.0 )
+            Info << "droplet sphericity = " << pow(radiusA.value()/radiusB.value(),2) << endl;
+
+            Info << "----------dropletpproc----------\n" << endl;
+
+        #};
+    }
+
+    // ********************************************************** //
+    // **** sample functionObject for extracting isosurfaces **** //
+    // ********************************************************** //
+    isosurfaces
+    {
+        type            surfaces;
+        libs ("libsampling.so");
+        writeControl    writeTime;
+
+        surfaceFormat   vtk;
+        fields          ( p U );
+
+        // interpolationScheme. choice of
+        //      cell          : use cell-centre value only; constant over cells (default)
+        //      cellPoint     : use cell-centre and vertex values
+        //      cellPointFace : use cell-centre, vertex and face values.
+        //      pointMVC      : use point values only (Mean Value Coordinates)
+        //      cellPatchConstrained : like 'cell' but uses cell-centre except on
+        //                             boundary faces where it uses the boundary value.
+        //      cellPointWallModified: like 'cell' but uses cell-centre except on
+        //                             walls faces where it uses the wall value.
+        interpolationScheme cellPointFace;
+
+        // Surface sampling definition
+        //
+        // 1] patches are not triangulated by default
+        // 2] planes are always triangulated
+        // 3] iso-surfaces are always triangulated
+        surfaces
+        (
+          interpolatedIso
+          {
+              // Iso surface for interpolated values only
+              type            isoSurface;      // always triangulated
+              isoField        alpha.phase1;
+              isoValue        0.5;
+              interpolate     true;
+              regularise      false;           // do not simplify
+          }
+          constantIso
+          {
+              // Iso surface for constant values.
+              // Triangles guaranteed not to cross cells.
+              type            isoSurfaceCell;  // always triangulated
+              isoField        alpha.phase1;
+              isoValue        0.5;
+              interpolate     false;
+              regularise      false;           // do not simplify
+          }
+        );
+    }
+
+    // ************************************************ //
+    // **** Pressure profiles along sampling lines **** //
+    // ************************************************ //
+    pressure_profiles
+    {
+        type                sets;
+        libs                ("libsampling.so");
+        writeControl        writeTime;
+        setFormat           raw;
+        interpolationScheme cellPointFace;
+
+        sets
+        (
+            line_x_axis
+            {
+                type       midPointAndFace;
+                axis       distance;
+                start      (0 0 0);
+                end        (1 0 0);
+            }
+            line_xy_45
+            {
+                type       midPointAndFace;
+                axis       distance;
+                start      (0 0 0);
+                end        (1 1 0);
+            }
+            line_y_axis
+            {
+                type       midPointAndFace;
+                axis       distance;
+                start      (0 0 0);
+                end        (0 1 0);
+            }
+            line_z_axis
+            {
+                type       midPointAndFace;
+                axis       distance;
+                start      (0 0 0);
+                end        (0 0 1);
+            }
+            line_xz_45
+            {
+                type       midPointAndFace;
+                axis       distance;
+                start      (0 0 0);
+                end        (1 0 1);
+            }
+            line_yz_45
+            {
+                type       midPointAndFace;
+                axis       distance;
+                start      (0 0 0);
+                end        (0 1 1);
+            }
+            line_xyz_45
+            {
+                type       midPointAndFace;
+                axis       distance;
+                start      (0 0 0);
+                end        (1 1 1);
+            }
+        );
+
+
+        fields
+        (
+            p
+        );
+    }
+
+    // ************************************************ //
+    // **** monitor of min/max values of variables **** //
+    // ************************************************ //
+    minMaxComponents
+    {
+        type            fieldMinMax;
+        libs            ("libfieldFunctionObjects.so");
+
+        writeControl    timeStep;
+        writeInterval   1;
+
+        write           true;
+        log             false;
+        mode            component;
+        fields          ( U );
+    }
+
+    minMaxMagnitude
+    {
+        type            fieldMinMax;
+        libs            ("libfieldFunctionObjects.so");
+
+        writeControl    timeStep;
+        writeInterval   1;
+
+        write           true;
+        log             false;
+        mode            magnitude;
+        fields          ( U );
+    }
+
+    minMaxPressure
+    {
+        type            fieldMinMax;
+        libs            ("libfieldFunctionObjects.so");
+
+        writeControl    timeStep;
+        writeInterval   1;
+
+        write           true;
+        log             false;
+        mode            component;
+        fields          ( p );
+    }
+}
+
+// ************************************************************************* //

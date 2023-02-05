@@ -11,13 +11,51 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "system";
-    object      ijkDict;
+    object      fvSchemes;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
 {
-cellSet domain;
-symXIn true;
-symXOut true;
-symYIn true;
-symYOut true;
+    default         CrankNicolson 0.9;
 }
+
+gradSchemes
+{
+    default         Gauss linear;
+}
+
+divSchemes
+{
+    default             none;
+    div(rhoPhi,U)	Gauss limitedLinearV 1;
+    div(phi,alpha)	Gauss vanLeer;
+    div(phirb,alpha)	Gauss interfaceCompression;
+    div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
+}
+
+laplacianSchemes
+{
+    default	Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default	linear;
+}
+
+snGradSchemes
+{
+    default	corrected;
+}
+
+fluxRequired
+{
+    default         no;
+    p_rgh;
+    pcorr;
+    alpha.phase1;
+}
+
+
+// ************************************************************************* //

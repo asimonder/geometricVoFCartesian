@@ -11,13 +11,35 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "system";
-    object      ijkDict;
+    object      decomposeParDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+numberOfSubdomains 8;
+
+method         simple;
+
+simpleCoeffs
 {
-cellSet domain;
-symXIn true;
-symXOut true;
-symYIn true;
-symYOut true;
+    n               ( 2 2 2 );
+    delta           0.001;
 }
+
+hierarchicalCoeffs
+{
+    n               ( 2 2 2 );
+    delta           0.001;
+    order           xyz;
+}
+
+manualCoeffs
+{
+    dataFile        "";
+}
+
+distributed     no;
+
+roots           ( );
+
+
+// ************************************************************************* //

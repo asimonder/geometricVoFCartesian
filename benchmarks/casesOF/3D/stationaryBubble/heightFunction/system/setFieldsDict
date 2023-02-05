@@ -11,13 +11,28 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "system";
-    object      ijkDict;
+    object      setFieldsDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-{
-cellSet domain;
-symXIn true;
-symXOut true;
-symYIn true;
-symYOut true;
-}
+
+defaultFieldValues
+(
+    volScalarFieldValue alpha.phase1 0
+);
+
+regions
+(
+    // Droplet
+    sphereToCell
+    {
+        centre (0 0 0);
+        radius 0.4;
+        fieldValues
+        (
+            volScalarFieldValue alpha.phase1 1
+        );
+    }
+);
+
+
+// ************************************************************************* //

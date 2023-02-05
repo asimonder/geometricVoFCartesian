@@ -11,13 +11,16 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "system";
-    object      ijkDict;
+    object      curvatureDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+curvatureModel heightFunction; //RDF //divGradAlpha
+
+heightFunctionParams
 {
-cellSet domain;
-cyclicX true;
-cyclicY true;
-cyclicZ true; 
+  //interfaceTol 1e-2;
+  nMax 3;
 }
+
+// ************************************************************************* //
