@@ -1,5 +1,5 @@
 # geometricVoFCartesian
-The *geometricVoFCartesian* is an extension library for simulating two-phase flows in OpenFOAM. It features conventional and machine-learning methods to estimate the normal vector and curvature of the fluid-fluid interfaces in geometric Volume-of-Fluid (VoF) framework. 
+The *geometricVoFCartesian* is an extension library improving two-phase-flow functionalities in OpenFOAM. It features conventional and machine-learning methods to estimate the normal vector and curvature of the fluid-fluid interfaces in geometric Volume-of-Fluid (VoF) framework. 
 
 ## Feature Overview
 Available methods are as follows:
@@ -64,7 +64,7 @@ cyclicX true;
 If the grid is uniform everywhere in the domain, then simply use "```cellSet domain;```".
 
 ### New curvature models
-New curvature-estimation models need to defined in ```system/curvatureDict```, e.g., for the height function method,
+New curvature-estimation models are configured in ```system/curvatureDict```, e.g., for the height function method,
 
 ```
 curvatureModel heightFunction;
@@ -76,7 +76,7 @@ heightFunctionParams
 
 Here, nMax is the number of cells neighbouring the central cell in one direction. For instance, if the height function is obtained from 7 cells along the height, then nMax=3 so that 3+1+3=7. 
 
-MLP model is selected as follows:
+MLP model is configured as follows:
 
 ```
 curvatureModel mlpCurvature;
@@ -98,8 +98,8 @@ mlpParams
 
 ## Examples 
 Several benchmark cases are provided:
-- 2D: stationary bubble, rising bubble, standing capillary wave, parasitic capillary ripples. See Sec. 5 in Ref. [1].
-- 3D: stationary bubble (work in progress)
+- 2D: stationary bubble, rising bubble, standing capillary wave, parasitic capillary ripples. See Sec. 5 in Ref. [1] for results.
+- 3D: stationary bubble, translating bubble
 
 ## Publications 
  [1] Önder, A., & Liu, P. L.-F. (2022). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. arXiv. http://arxiv.org/abs/2206.06041
