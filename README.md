@@ -64,7 +64,7 @@ cyclicX true;
 If the grid is uniform everywhere in the domain, then simply use "```cellSet domain;```".
 
 ### New curvature models
-New curvature-estimation models need to defined in ```system/curvatureDict```, e.g., for the height function method,
+New curvature-estimation models are configured in ```system/curvatureDict```, e.g., for the height function method,
 
 ```
 curvatureModel heightFunction;
