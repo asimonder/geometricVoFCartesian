@@ -76,7 +76,7 @@ heightFunctionParams
 
 Here, nMax is the number of cells neighbouring the central cell in one direction. For instance, if the height function is obtained from 7 cells along the height, then nMax=3 so that 3+1+3=7. 
 
-MLP model is selected as follows:
+MLP model is configured as follows:
 
 ```
 curvatureModel mlpCurvature;
