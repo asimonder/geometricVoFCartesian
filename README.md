@@ -1,5 +1,5 @@
 # geometricVoFCartesian
-The *geometricVoFCartesian* is an extension library for simulating two-phase flows in OpenFOAM. It features conventional and machine-learning methods to estimate the normal vector and curvature of the fluid-fluid interfaces in geometric Volume-of-Fluid (VoF) framework. 
+The *geometricVoFCartesian* is an extension library improving two-phase-flow functionalities in OpenFOAM. It features conventional and machine-learning methods to estimate the normal vector and curvature of the fluid-fluid interfaces in geometric Volume-of-Fluid (VoF) framework. 
 
 ## Feature Overview
 Available methods are as follows:
