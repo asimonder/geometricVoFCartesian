@@ -99,7 +99,8 @@ mlpParams
 ## Examples 
 Several benchmark cases are provided:
 - 2D: stationary bubble, rising bubble, standing capillary wave, parasitic capillary ripples. See Sec. 5 in Ref. [1] for results.
-[Parasitic ripples](./benchmarks/casesOF/2D/parasiticRipples/GCapillaryWave.gif)
+
+![Parasitic ripples](./benchmarks/casesOF/2D/parasiticRipples/GCapillaryWave.gif)
 - 3D: stationary bubble, translating bubble
 
 ## Publications 
