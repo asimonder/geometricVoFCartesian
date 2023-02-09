@@ -42,7 +42,7 @@ The details of MLP models can be found in Ref. [1].
 ## Prerequisites
 OpenFOAM v2006 must be installed:
 
-https://www.openfoam.com/news/main-news/openfoam-v20-06
+https://www.openfoam.com/download/release-history
 ## Installation
 ```
 git clone https://github.com/asimonder/geometricVoFCartesian.git
