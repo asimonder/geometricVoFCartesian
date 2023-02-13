@@ -6,7 +6,7 @@ Available methods are as follows:
 - **Interface normal vector**: Youngs' Method, Central-Columns Differences Method, Mixed Youngs-Central Method
 - **Interface curvature**: Height Function Method, Multilayer-Perceptron (MLP) models (only in 2D currently)
 
-The methods are designed for uniform (isotropic) Cartesian grids. In cases where the interface motion occurs in a smaller subset of the domain, the uniform grid can also be restricted to a smaller zone containing the interface. This is currently achieved using the cellSet functionality. The rest of the domain can use generic unstructured grids. 
+The methods are designed for uniform (isotropic) Cartesian grids. In cases where the interface motion occurs in a smaller subset of the domain, the uniform grid can also be restricted to a smaller zone containing the interface. This is currently achieved using the ```cellSet``` functionality. The rest of the domain can use generic unstructured grids. 
 
 ### Fundamental Classes
 - ```ijkZone```: Creation and manipulation of the regular-grid zone containing the interface motions.
