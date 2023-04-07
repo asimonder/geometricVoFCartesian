@@ -104,7 +104,7 @@ Several benchmark cases are provided:
 - **3D**: stationary bubble, translating bubble
 
 ## Publications 
- [1] Önder, A., & Liu, P. L.-F. (2023). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. Journal of Computational Physics, 112110.
+ [1] Önder, A., & Liu, P. L.-F. (2023). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. *Journal of Computational Physics*, 112110.
 
 ## Author
 Asim Önder (asim.onder@gmail.com)
