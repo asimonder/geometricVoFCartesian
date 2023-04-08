@@ -108,6 +108,7 @@ Several benchmark cases are provided in ```benchmarks/casesOF``` directory:
 - **2D**: stationary bubble, rising bubble, standing capillary wave, parasitic capillary ripples. See Sec. 5 in Önder & Liu (2023) for results.
 
 ![Parasitic ripples](./benchmarks/casesOF/2D/parasiticRipples/GCapillaryWave.gif)
+
 - **3D**: stationary bubble, translating bubble
 
 ## Publications 
