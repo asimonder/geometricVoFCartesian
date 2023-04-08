@@ -3,7 +3,7 @@
 #RMin=2;expR=9;
 #RMin=4;expR=9;
 #RMin=4;expR=8;
-RMin=2;expR=11;
+#RMin=2;expR=11;
 RMin=2;expR=12;
 #RMin=4;expR=12;
 NInt=200
