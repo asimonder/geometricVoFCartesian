@@ -23,7 +23,7 @@ Machine learning models employ deep MLP architectures to estimate the interfacia
 
 ```bash tensorflow/scripts/genCircles.sh```
 
-2. About hundred Models are trained with mini-batch optimization:
+2. Around hundred different models are trained with mini-batch optimization:
 
 ```bash tensorflow/scripts/mlpTrain.sh```
 
