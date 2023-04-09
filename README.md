@@ -23,11 +23,11 @@ Machine learning models employ deep MLP architectures to estimate the interfacia
 - **SymMLP**: the symmetry-preserving MLP model using bias-free neurons
 - **StdMLP**: the standard MLP model
 
-The models are available in ```benchmarks/casesOF/2D/mlpCurvatureModels```.
+The models are available in [benchmarks/casesOF/2D/mlpCurvatureModels](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/casesOF/2D/mlpCurvatureModels).
 
 ### Development 
 
-The code to develop MLP models can be found in ```/tensorflow``` directory. The general procedure can be summarized as follows: 
+The code to develop MLP models can be found in [tensorflow](https://github.com/asimonder/geometricVoFCartesian/tree/main/tensorflow) directory. The general procedure can be summarized as follows: 
 1.  A synthetic dataset composed of circular arcs of varying sizes is generated:
 
 ```bash tensorflow/scripts/genCircles.sh```
@@ -42,9 +42,9 @@ The code to develop MLP models can be found in ```/tensorflow``` directory. The 
 
 The ```multilayerPerceptron``` class in OpenFOAM reads these txt files and constructs the corresponding MLP model.
 
-4. The best performing models are selected after conducting analytical tests in python environment (cf. ```/benchmarks/analyticShapes```), and standard benchmark tests in OpenFOAM (cf. ```benchmarks/casesOF/2D```). 
+4. The best performing models are selected after conducting analytical tests in python environment (cf. [/benchmarks/analyticShapes](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/analyticShapes)), and standard benchmark tests in OpenFOAM (cf. [benchmarks/casesOF/2D](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/analyticShapes)). 
 
-The technical details are elaborated in Önder & Liu (2023). 
+The technical details are elaborated in [Önder & Liu (2023)](https://www.dropbox.com/s/7u9v05ejmipdgfn/Onder_Liu_JCP2023.pdf?dl=0). 
 
 ## Prerequisites
 OpenFOAM v2006 must be installed:
@@ -104,15 +104,15 @@ mlpParams
 ```mlpModel``` specifies the full path to txt files containing weights and biases of the model. ```interfaceTol``` is the volume-fraction threshold for curvature to be non-zero. ```zonalModel``` has to be set ```true``` for symmetry-preserving MLP. If the MLP model uses input-output scaling, then ```useScaling``` is set to ```true```, and ```xoffsetInput```, ```gainInput```, ```yminInput```, ```yminOutput```, ```gainOutput``` and ```xoffsetOutput``` have to be specified.
 
 ## Examples 
-Several benchmark cases are provided in ```benchmarks/casesOF``` directory:
-- **2D**: stationary bubble, rising bubble, standing capillary wave, parasitic capillary ripples. See Sec. 5 in Önder & Liu (2023) for results.
+Several benchmark cases are provided in [benchmarks/casesOF](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/casesOF) directory:
+- **2D**: stationary bubble, rising bubble, standing capillary wave, parasitic capillary ripples. See Sec. 5 in [Önder & Liu (2023)](https://www.dropbox.com/s/7u9v05ejmipdgfn/Onder_Liu_JCP2023.pdf?dl=0) for results.
 
 ![Parasitic ripples](./benchmarks/casesOF/2D/parasiticRipples/GCapillaryWave.gif)
 
 - **3D**: stationary bubble, translating bubble
 
 ## Publications 
- Önder, A., & Liu, P. L.-F. (2023). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. *Journal of Computational Physics*, 112110.
+ Önder, A., & Liu, P. L.-F. (2023). Deep learning of interfacial curvature: a symmetry-preserving approach for the volume of fluid method. *Journal of Computational Physics*, 112110. [(pdf)](https://www.dropbox.com/s/7u9v05ejmipdgfn/Onder_Liu_JCP2023.pdf?dl=0)
 
 ## Author
 Asim Önder (asim.onder@gmail.com)
