@@ -23,7 +23,7 @@ Machine learning models employ deep MLP architectures to estimate the interfacia
 - **SymMLP**: the symmetry-preserving MLP model using bias-free neurons
 - **StdMLP**: the standard MLP model
 
-The models are available in [benchmarks/casesOF/2D/mlpCurvatureModels](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/casesOF/2D/mlpCurvatureModels).
+The models are available in [benchmarks/casesOF/2D/mlpCurvatureModels](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/casesOF/2D/mlpCurvatureModels).  Training datasets can be shared upon request.
 
 ### Development 
 
@@ -31,6 +31,7 @@ The code to develop MLP models can be found in [tensorflow](https://github.com/a
 1.  A synthetic dataset composed of circular arcs of varying sizes is generated:
 
 ```bash tensorflow/scripts/genCircles.sh```
+
 
 2. Around hundred different models are trained with mini-batch optimization:
 
