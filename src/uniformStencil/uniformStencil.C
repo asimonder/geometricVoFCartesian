@@ -255,7 +255,7 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 }
 
 
-Foam::scalar Foam::uniformStencil::estimateSignK()
+/*Foam::scalar Foam::uniformStencil::estimateSignK()
 {
   Foam::vector n=calcYoungNormal();
   return estimateSignK();
@@ -321,7 +321,7 @@ Foam::scalar Foam::uniformStencil::estimateSignK(Foam::vector n)
 
   return std::copysign(1.0,-Hxx); //(posK?1.0:-1.0);
 
-}
+  }*/
 
 
 Foam::vector Foam::uniformStencil::calcYoungNormal()

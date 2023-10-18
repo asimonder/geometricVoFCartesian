@@ -1,1 +1,0 @@
-../DLR_TwoPhaseFlow/curvature/heightFunctionDLR/heightFunctionDLR.C

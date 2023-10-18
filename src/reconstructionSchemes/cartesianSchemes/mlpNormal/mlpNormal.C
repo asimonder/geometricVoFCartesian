@@ -72,7 +72,7 @@ void Foam::reconstruction::mlpNormal::gradSurf(const volScalarField& phi)
 	  if (zonalModel_)
 	    {
 	      vector n = stencil_.calcYoungNormal();
-	      sgnK=stencil_.estimateSignK(n);
+	      sgnK=0; //stencil_.estimateSignK(n);
 	      scalar nN=0;
 	      scalar nT=0;
 	      label tMax=0;

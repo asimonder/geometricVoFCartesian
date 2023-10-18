@@ -7,7 +7,6 @@ multilayerPerceptron/multilayerPerceptron.C
 reconstructionSchemes/cartesianSchemes/youngCartesian/youngCartesian.C
 reconstructionSchemes/cartesianSchemes/ccdCartesian/ccdCartesian.C
 reconstructionSchemes/cartesianSchemes/mycCartesian/mycCartesian.C
-reconstructionSchemes/cartesianSchemes/mlpNormal/mlpNormal.C
 
 interfaceForces/interfaceForces.C
 interfaceForces/curvatureModels/curvatureModel.C
@@ -15,7 +14,5 @@ interfaceForces/curvatureModels/newCurvatureModel.C
 interfaceForces/curvatureModels/heightFunction/heightFunction.C
 interfaceForces/curvatureModels/divGradAlpha/divGradAlpha.C
 interfaceForces/curvatureModels/mlpCurvature/mlpCurvature.C
-
-DLR_TwoPhaseFlow/curvature/RDF/RDF.C
 
 LIB = $(FOAM_USER_LIBBIN)/libgeometricVoFCartesian

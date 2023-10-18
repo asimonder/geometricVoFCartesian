@@ -1,1 +1,0 @@
-../waveFunctions/waveFunction.C

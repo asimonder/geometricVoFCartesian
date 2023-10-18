@@ -1,1 +1,0 @@
-../interfaceForces/curvatureModels/heightFunction/.#heightFunctionCartesian.H

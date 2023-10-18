@@ -103,8 +103,8 @@ namespace Foam
 
     const List<scalar> getStencil(){return A_;};
 
-    scalar estimateSignK();
-    scalar estimateSignK(vector n);
+    //scalar estimateSignK();
+    //scalar estimateSignK(vector n);
     vector calcYoungNormal();
     vector calcCCDNormal();
     //scalar calcCurvature(const Map<scalar>& phiIJK,const Vector<label>& ijk,label normalDir);

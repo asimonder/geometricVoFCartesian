@@ -1,1 +1,0 @@
-../implicitFunctions/ellipsoid/ellipsoidImplicitFunction.C
