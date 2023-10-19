@@ -48,7 +48,7 @@ The ```multilayerPerceptron``` class in OpenFOAM reads these txt files and const
 The technical details are elaborated in [Önder & Liu (2023)](https://www.dropbox.com/s/7u9v05ejmipdgfn/Onder_Liu_JCP2023.pdf?dl=0). 
 
 ## Prerequisites
-OpenFOAM v2006 must be installed:
+OpenFOAM v2006 or above must be installed:
 
 https://www.openfoam.com/download/release-history
 ## Installation
