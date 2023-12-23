@@ -43,7 +43,7 @@ The code to develop MLP models can be found in [tensorflow](https://github.com/a
 
 The ```multilayerPerceptron``` class in OpenFOAM reads these txt files and constructs the corresponding MLP model.
 
-4. The best performing models are selected after conducting analytical tests in python environment (cf. [/benchmarks/analyticShapes](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/analyticShapes)), and standard benchmark tests in OpenFOAM (cf. [benchmarks/casesOF/2D](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/analyticShapes)). 
+4. The best performing models are selected after conducting analytical tests in python environment (cf. Jupyter Notebooks in [/benchmarks/analyticShapes](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/analyticShapes)), and standard benchmark tests in OpenFOAM (cf. [benchmarks/casesOF/2D](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/analyticShapes)). 
 
 The technical details are elaborated in [Önder & Liu (2023)](https://www.dropbox.com/s/7u9v05ejmipdgfn/Onder_Liu_JCP2023.pdf?dl=0). 
 
