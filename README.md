@@ -27,7 +27,7 @@ The models are available in [benchmarks/casesOF/2D/mlpCurvatureModels](https://g
 
 ### Development 
 
-The code to develop MLP models can be found in [tensorflow](https://github.com/asimonder/geometricVoFCartesian/tree/main/tensorflow) directory. The general procedure can be summarized as follows: 
+The code to develop MLP models can be found in [tensorflow](https://github.com/asimonder/geometricVoFCartesian/tree/main/tensorflow) directory. The general procedure is summarized as follows: 
 1.  A synthetic dataset composed of circular arcs of varying sizes is generated:
 
 ```bash tensorflow/scripts/genCircles.sh```
