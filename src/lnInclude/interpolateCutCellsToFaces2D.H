@@ -1,1 +1,0 @@
-../interfaceForces/curvatureModels/interpolateCutCellsToFaces2D.H
