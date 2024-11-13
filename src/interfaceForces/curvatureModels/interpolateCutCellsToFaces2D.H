@@ -1,3 +1,16 @@
+const volVectorField& faceCentre = surf.centre();
+const labelList& globalIds=ijkMesh_.globalIds(); 
+point Pmin=ijkMesh_.Pmin();
+//point Pmax=ijkMesh_.Pmax();
+//const scalar dx=ijkMesh_.dx();
+//const scalar dy=ijkMesh_.dy();
+//const scalar dz=ijkMesh_.dz();
+const label Nx=ijkMesh_.Nx();
+const label Ny=ijkMesh_.Ny();
+const label Nz=ijkMesh_.Nz();
+Map<vector> faceCentreIJK;
+Map<scalar> curvIJK;
+
 K_.correctBoundaryConditions();
 Kf_=fvc::interpolate(K_);
 
@@ -72,7 +85,9 @@ forAll(mesh.boundaryMesh(),iPatch)
 alphaIJK.clear();
 //ijkMesh_.getZoneField(neiInterface,alphaIJK,alpha1_,stencilSize);
 ijkMesh_.getZoneField(neiInterface,curvIJK,K_,stencilSize);
+Info<<"Done: ijkMesh_.getZoneField(neiInterface,curvIJK,K_,stencilSize);"<<endl;
 ijkMesh_.getZoneField(neiInterface,faceCentreIJK,faceCentre,stencilSize);
+Info<<"Done: ijkMesh_.getZoneField(neiInterface,faceCentreIJK,faceCentre,stencilSize);"<<endl;
 const scalar distMax=1.01*sqrt(1.25)*dl_;
 const scalar distInterfaceMax=4.0*dl_; 
 const surfaceVectorField& Cf = mesh.Cf();
@@ -81,7 +96,6 @@ const Foam::labelList& own=alpha1_.mesh().faceOwner();
 forAll(Kf_,iFace)
 {
   label iCellO=own[iFace];
-  label iCellN=nei[iFace];
   scalar K1=K_[own[iFace]];      
   scalar K2=K_[nei[iFace]];
   if (Kf_[iFace]!=0 and K1*K2==0)
@@ -96,7 +110,6 @@ forAll(Kf_,iFace)
       label kP=round((cc.z()-Pmin.z())/dl_);
       
       scalar sumW=0;
-      label count=0;
       for (int i=-iMax;i<iMax+1;i++)
 	{
 	  for (int j=-jMax;j<jMax+1;j++)

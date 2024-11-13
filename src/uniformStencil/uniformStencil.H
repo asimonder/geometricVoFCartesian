@@ -109,7 +109,11 @@ namespace Foam
     vector calcCCDNormal();
     //scalar calcCurvature(const Map<scalar>& phiIJK,const Vector<label>& ijk,label normalDir);
     //scalar calcCurvature(label normalDir);
-    
+
+    void flip(const int axis);
+    void transpose(const bool xaxis,const bool yaxis,const bool zaxis);
+    List<scalar> getSmallStencil(const int iMax,const int jMax,const int kMax,std::string format);
+
     label a2(const label i, const label j)
     {
       //hardcoded to z!
@@ -118,6 +122,7 @@ namespace Foam
   
     label a3(const label i, const label j, const label k)
     {
+      //return (k+nMax_)+NxS_*(j+nMax_)+NxS_*NyS_*(i+nMax_);
       return (i+iMax_)+NxS_*(j+jMax_)+NxS_*NyS_*(k+kMax_);
     }
 

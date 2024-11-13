@@ -97,44 +97,11 @@ Foam::interfaceForces::Kf() const
 Foam::tmp<Foam::surfaceScalarField>
 Foam::interfaceForces::surfaceTensionForce() const
 {
-  //Foam::surfaceScalarField Kf(fvc::interpolate(K()*0.0));
-  /*Foam::surfaceScalarField Kf(fvc::interpolate(K()));
-  const Foam::volScalarField& Kc=K();
-  const Foam::labelList& nei=alpha1_.mesh().faceNeighbour();
-  const Foam::labelList& own=alpha1_.mesh().faceOwner();
-  forAll(Kf,iFace)
-    {
-      scalar K1=Kc[own[iFace]];      
-      scalar K2=0;
-      if (nei[iFace]>-1)
-	{
-	  K2=Kc[nei[iFace]];
-	}
-      else
-	{
-	  K2=-1.;
-	  Info<<"face "<<iFace<<" is on the boundary..."<<endl;
-	}
-      if (K1*K2==0 and Kf[iFace]!=0) 
-	Kf[iFace]*=2;
-    }
-    return fvc::interpolate(sigma())*Kf*fvc::snGrad(alpha1_);*/
   return fvc::interpolate(sigma())*Kf()*fvc::snGrad(alpha1_);
   // return fvc::interpolate(sigma()*K())*fvc::snGrad(alpha1_);
   //return fvc::snGrad(sigma()*K()*alpha1_);
 }
 
-/*Foam::tmp<Foam::volVectorField>
-Foam::interfaceForces::surfaceTensionForce() const
-{
-  //return  sigma()*K()*fvc::reconstruct(fvc::snGrad(alpha1_));
-  volVectorField sigmaForce(K()*sigma()*fvc::reconstruct(fvc::snGrad(alpha1_)));
-  //forAll(sigmaForce,iCell)
-  // {
-  //   sigmaForce[iCell]*=K().values()[iCell];//*sigma();
-  // }
-  return  sigmaForce; //fvc::reconstruct(fvc::snGrad(alpha1_));
-  }*/
 
 Foam::tmp<Foam::volScalarField>
 Foam::interfaceForces::nearInterface() const

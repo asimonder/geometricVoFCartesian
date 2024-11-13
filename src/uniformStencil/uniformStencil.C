@@ -25,7 +25,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "uniformStencil.H"
-
+#include <cassert>
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 /*namespace Foam
@@ -48,8 +48,6 @@ Foam::uniformStencil::uniformStencil(const Foam::fvMesh& mesh,
   jMax_(jMax),
   kMax_(kMax)
 {  
-
-  Info<<"uniformStencil: constructing..."<<endl;
 
   const Vector<bool>& isEmpty=ijkMesh_.isEmpty();
   if (isEmpty.x())
@@ -569,80 +567,92 @@ Foam::vector Foam::uniformStencil::calcCCDNormal()
 }
 
 
-/*Foam::scalar Foam::uniformStencil::calcCurvature(label normalDir)
+void Foam::uniformStencil::flip(const int axis)
 {
-  const Foam::scalar dx=ijkMesh_.dx();
-  scalar kappa=0.0;
-
-  //const List<scalar>& A=A_;
+  List<scalar> A;
+  A.setSize(N_,0.0);  
   
-  if (is2D_)
+  int sgnnx=1;
+  int sgnny=1;
+  int sgnnz=1;
+  if (axis==0)
+    sgnnx=-1;
+  else if(axis==1)
+    sgnny=-1;
+  else if(axis==2)
+    sgnnz=-1;
+  else
+    assert(axis);
+
+  for (int k=-kMax_;k<kMax_+1;k++)
     {
-      double H[3]={0.0,0.0,0.0}; 
-      for (int iN=-nMax_;iN<nMax_+1;iN++)
+      for (int j=-jMax_;j<jMax_+1;j++)
 	{
-	  for (int iT=-1;iT<2;iT++)
+	  for (int i=-iMax_;i<iMax_+1;i++)
 	    {
-	      if(normalDir==0)
-		H[iT+1]+=A_[a2(iN,iT)]*dx;
-	      else if(normalDir==1)
-		{
-		  if (ijkMesh_.isEmpty().x())
-		    H[iT+1]+=A_[a2(iN,iT)]*dx;
-		  else
-		    H[iT+1]+=A_[a2(iT,iN)]*dx;
-		}
-	      else
-		H[iT+1]+=A_[a2(iT,iN)]*dx;
+	      A[a3(i*sgnnx,j*sgnny,k*sgnnz)]=A_[a3(i,j,k)];
 	    }
 	}
-      scalar Ht=(H[2]-H[0])/2.0/dx;
-      scalar Htt=(H[2]-2.0*H[1]+H[0])/dx/dx;
-      kappa=(Htt)/Foam::pow(1.0+Ht*Ht,1.5);
+    }
+  A_=A;
+}
+
+
+void Foam::uniformStencil::transpose(const bool xaxis,const bool yaxis,const bool zaxis)
+{
+  assert(not(xaxis && yaxis && zaxis));
+
+  List<scalar> A;
+  A.setSize(N_,0.0);  
+
+  if (xaxis && yaxis)
+    {
+      for (int k=-kMax_;k<kMax_+1;k++)
+	for (int j=-jMax_;j<jMax_+1;j++)
+	  for (int i=-iMax_;i<iMax_+1;i++)
+	    A[a3(i,j,k)]=A_[a3(j,i,k)];
+    }
+  else if (xaxis && zaxis)
+    {
+      for (int k=-kMax_;k<kMax_+1;k++)
+	for (int j=-jMax_;j<jMax_+1;j++)
+	  for (int i=-iMax_;i<iMax_+1;i++)
+	    A[a3(i,j,k)]=A_[a3(k,j,i)];
+    }
+  else if (yaxis && zaxis)
+    {
+      for (int k=-kMax_;k<kMax_+1;k++)
+	for (int j=-jMax_;j<jMax_+1;j++)
+	  for (int i=-iMax_;i<iMax_+1;i++)
+	    A[a3(i,j,k)]=A_[a3(i,k,j)];
+    }
+
+  A_=A; 
+}
+
+
+Foam::List<Foam::scalar> Foam::uniformStencil::getSmallStencil(const int iMax,const int jMax,const int kMax,std::string format)
+{
+  Foam::List<scalar> A;
+
+  if (format=="F")
+    {
+      for(int k=-kMax;k<kMax+1;k++)
+	for(int j=-jMax;j<jMax+1;j++)
+	  for(int i=-iMax;i<iMax+1;i++)
+	    A.push_back(A_[a3(i,j,k)]);
+    }
+  else if (format=="C")
+    {
+      for(int i=-iMax;i<iMax+1;i++)
+	for(int j=-jMax;j<jMax+1;j++)
+	  for(int k=-kMax;k<kMax+1;k++)
+	    A.push_back(A_[a3(i,j,k)]);
     }
   else
-    {
-      double H[3][3]={{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}}; 
-      for (int iN=-nMax_;iN<nMax_+1;iN++)//normal 
-	{
-	  for (int iT=-1;iT<2;iT++)//tangent
-	    {
-	      for (int iB=-1;iB<2;iB++)//bi-normal
-		{
-		  if (normalDir==0)
-		    {
-		      H[iT+1][iB+1]+=A_[a3(iN,iT,iB)]*dx;
-		    }
-		  else if (normalDir==1)
-		    {
-		      H[iT+1][iB+1]+=A_[a3(iT,iN,iB)]*dx;
-		    }
-		  else
-		    {
-		      H[iT+1][iB+1]+=A_[a3(iT,iB,iN)]*dx;
-		    }			    			   
-		}
-	    }
-	}
-      scalar Ht=(H[2][1]-H[0][1])/2.0/dx;
-      scalar Hb=(H[1][2]-H[1][0])/2.0/dx;
-      scalar Htt=(H[2][1]-2.0*H[1][1]+H[0][1])/dx/dx;
-      scalar Hbb=(H[1][2]-2.0*H[1][1]+H[1][0])/dx/dx;
-      scalar Htb=(H[2][2]-H[2][0]-H[0][2]+H[0][0])/4./dx/dx;
-      kappa=(Htt+Hbb+Htt*Hb*Hb+Hbb*Ht*Ht-2.0*Htb*Ht*Hb)/Foam::pow(1.0+Ht*Ht+Hb*Hb,1.5);      
-    }
-
-  return -kappa;
+    assert("Flattening format unknown.");
+      
+  return A;
 }
-*/
-/*std::vector<double> Foam::uniformStencil::getSmallStencil(int iMax, int jMax, int kMax)
-{
-  std::vector<double> data;
-  for(int i=-iMax;i<iMax+1;i++)
-    for(int j=-jMax;j<jMax+1;j++)
-      for(int k=-kMax;k<kMax+1;k++)
-	data.push_back(A_[a3(i,j,k)]);
-  return data;
-  }*/
 
 // ************************************************************************* //

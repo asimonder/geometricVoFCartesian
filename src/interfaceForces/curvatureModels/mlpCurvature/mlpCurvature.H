@@ -61,44 +61,18 @@ private:
 
   const dimensionedScalar deltaN_;
 
-  multilayerPerceptron mlp_;
+  ijkZone ijkMesh_;
 
-  //reconstructedDistanceFunction RDF_;
-  
-  label nMax_;
+  const globalIndex globalNumbering_;
 
   boolList boundaryCells_;
 
-  ijkZone ijkMesh_;
-
-  uniformStencil stencil_;
-  
-  const globalIndex globalNumbering_;
-
-  bool is2D_;
-
-  scalar dl_;
-
-  int iMax_;int jMax_;int kMax_;
-
-  int NInput_;
-
   bool zonalModel_;
-
-  bool averageZones_;
 
   bool useScaling_;
 
-  label fillNeighbours_;
+  bool averageZones_;
 
-  //bool explicitCurvature_;
-
-  //bool rdfMark_;
-
-  //bool extendInterface_;
-
-  //scalar KRef_;
-  
   fileName mlpModel_;
 
   scalar interfaceTol_;
@@ -115,6 +89,30 @@ private:
   
   scalar gainOutput_; 
 
+  int iMax_;int jMax_;int kMax_;
+
+  label nMax_;
+
+  multilayerPerceptron mlp_;
+
+  uniformStencil stencil_;
+  
+  bool is2D_;
+
+  scalar dl_;
+
+  int NInput_;
+
+  //  label fillNeighbours_;
+
+  //bool explicitCurvature_;
+
+  //bool rdfMark_;
+
+  //bool extendInterface_;
+
+  //scalar KRef_;
+  
   std::vector<std::vector<int>> indices_;
   
   //- Disallow copy construct
@@ -126,7 +124,7 @@ private:
   
 protected:
 
-  scalar estimateSignK(const List<scalar>& A, const vector& n);
+  //scalar estimateSignK(const List<scalar>& A, const vector& n);
     
   //- Re-calculate the interface curvature
   virtual void calculateK();
@@ -137,7 +135,11 @@ protected:
    const surfaceVectorField::Boundary& gradAlphaf
    ) const;
 
+  void calculateCellK2D(const label & celli,const vector& n);
+  void calculateCellK3D(const label & celli,const vector& n);
 
+
+  
 public:
 
     //- Runtime type information

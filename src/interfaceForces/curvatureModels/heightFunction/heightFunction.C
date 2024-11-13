@@ -70,7 +70,6 @@ Foam::heightFunction::heightFunction
 {
   
   ijkMesh_.markBoundaryCells(boundaryCells_,nMax_);
-  Info<<"Done setting up ijkMesh for the height function method..."<<endl;
 
   const scalar dx=ijkMesh_.dx();
   const scalar dy=ijkMesh_.dy();
@@ -103,7 +102,6 @@ Foam::heightFunction::heightFunction
 	dl_=dz;
     }
 
-  Info<<"grid spacing, dl_="<<dl_<<endl;
 }
 
 // * * * * * * * * * * * * * * Public Access Member Functions  * * * * * * * * * * * * * * //
@@ -321,23 +319,10 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 
 void Foam::heightFunction::calculateK()
 {
-  Info<<"Calculating the curvature with the height function method..."<<endl;
   const fvMesh& mesh = alpha1_.mesh();
   const volVectorField& C = mesh.C();
-  //const surfaceVectorField& Sf = mesh.Sf();
-  point Pmin=ijkMesh_.Pmin();
-  point Pmax=ijkMesh_.Pmax();
-  const scalar dx=ijkMesh_.dx();
-  const scalar dy=ijkMesh_.dy();
-  const scalar dz=ijkMesh_.dz();
-  const label Nx=ijkMesh_.Nx();
-  const label Ny=ijkMesh_.Ny();
-  const label Nz=ijkMesh_.Nz();
-  const labelList& globalIds=ijkMesh_.globalIds(); 
   //modify to dynamic version for speed up
   Map<scalar> alphaIJK;
-  Map<vector> faceCentreIJK;
-  Map<scalar> curvIJK;
 
   // no solid boundaries yet
   //const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
@@ -345,20 +330,26 @@ void Foam::heightFunction::calculateK()
   //surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
   // //const volVectorField nHat(gradAlpha/(mag(gradAlpha) + deltaN_));
   //correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
-
   forAll(K_,celli)
     K_[celli]=0;
-
 
   reconstructionSchemes& surf =
     mesh.lookupObjectRef<reconstructionSchemes>("reconstructionScheme");
 
-  surf.reconstruct(false);
+  //surf.reconstruct(false);
   //surf.reconstruct(true);
 
   const boolList& interfaceCells = surf.interfaceCell();
-    
-  const volVectorField& faceCentre = surf.centre();
+  //boolList interfaceCells(surf.interfaceCell().size(),false);
+  //forAll(interfaceCells,iCell)
+  // {
+  //  if (alpha1_[iCell]>interfaceTol_ or alpha1_[iCell]<1-interfaceTol_)
+  //	{
+  //	  interfaceCells[iCell]=true;
+  //	}
+  //}
+  
+  //const volVectorField& faceCentre = surf.centre();
   const volVectorField& faceNormal = surf.normal();
 
   Vector<label> stencilSize(nMax_,nMax_,nMax_);
@@ -368,11 +359,6 @@ void Foam::heightFunction::calculateK()
     {
       vector n = faceNormal[celli];
       if(interfaceCells[celli] && mag(n)>0)
-	//vector n = nHat[celli];
-      //RDF_.correctBoundaryConditions();
-      //RDF_.markCellsNearSurf(interfaceCells,1);
-      //const boolList& nextToInterface =RDF_.nextToInterface(); 
-      //if(interfaceCells[celli] or nextToInterface[celli])
 	{
 	  label dir=-1;
 	  if (mag(n.x())>0.0 and !ijkMesh_.isEmpty().x())
@@ -383,15 +369,14 @@ void Foam::heightFunction::calculateK()
 	    dir=2;
 	  if (dir==-1)
 	    {
-	      Info<<"n="<<n<<endl;
 	      FatalErrorInFunction
 	      << "Normal direction cannot be identified."
-	     << abort(FatalError);
+	      <<" n="<<n
+	      << abort(FatalError);
 	    }
 
 	  if (boundaryCells_[celli])
 	    {
-	      //Info<<"C[celli]="<<C[celli]<<endl;
 	      printf("Cell at the boundary: proc=%d, x=%f, y=%f, z=%f\n",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
 	      /*FatalErrorInFunction
 		<< "Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment."
@@ -399,8 +384,6 @@ void Foam::heightFunction::calculateK()
 	      continue;
 	    }
 
-	  //stencil_.setStencil(alphaIJK,ijkG);
-	  //K_[celli]=stencil_.calcCurvature(dir);
 
 	  Vector<label> ijkG=ijkMesh_.ijk3(celli);
 	  List<scalar> H=calculateHeights(alphaIJK,ijkG,dir); 
@@ -421,17 +404,25 @@ void Foam::heightFunction::calculateK()
 		      H2[i+1][j+1]=H[i+1+3*(j+1)]; 
 		    }
 		}
+	      
 	      scalar Ht=(H2[2][1]-H2[0][1])/2.0/dl_;
 	      scalar Hb=(H2[1][2]-H2[1][0])/2.0/dl_;
 	      scalar Htt=(H2[2][1]-2.0*H2[1][1]+H2[0][1])/dl_/dl_;
 	      scalar Hbb=(H2[1][2]-2.0*H2[1][1]+H2[1][0])/dl_/dl_;
 	      scalar Htb=(H2[2][2]-H2[2][0]-H2[0][2]+H2[0][0])/4./dl_/dl_;
-	      K_[celli]=(Htt+Hbb+Htt*Hb*Hb+Hbb*Ht*Ht-2.0*Htb*Ht*Hb)/Foam::pow(1.0+Ht*Ht+Hb*Hb,1.5);      
+	      K_[celli]=(Htt+Hbb+Htt*Hb*Hb+Hbb*Ht*Ht-2.0*Htb*Ht*Hb)/Foam::pow(1.0+Ht*Ht+Hb*Hb,1.5);
 	    }	  	      
 	}      
     }
 
-#include "../interpolateCutCellsToFaces.H"
+  if (is2D_)	    
+    {
+      #include "../interpolateCutCellsToFaces2D.H"
+    }
+  else
+    {
+      #include "../interpolateCutCellsToFaces3D.H"
+    }
 }
 
 

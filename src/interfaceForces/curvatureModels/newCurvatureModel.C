@@ -28,18 +28,16 @@ Foam::curvatureModel::New
     const volVectorField& U
 )
 {
-    word modelType("divGradAlpha");
+    word modelType("nil");
 
     if (!dict.readIfPresent("curvatureModel", modelType))
     {
-        Warning
+      FatalIOErrorInFunction(dict)
             << "Entry '"
-            << "curvatureModel" << "' not found in dictionary "
-            << dict.name() << nl
-            << "using default" << nl;
+            << "curvatureModel" << "' is not found in "
+            << dict.name()
+	    << exit(FatalIOError);
     }
-
-    Info<< "Selecting curvatureModel: " << modelType << endl;
 
     auto cstrIter = componentsConstructorTablePtr_->cfind(modelType);
 

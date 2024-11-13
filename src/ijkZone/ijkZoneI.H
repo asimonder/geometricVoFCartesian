@@ -86,14 +86,15 @@ void Foam::ijkZone::getZoneField(const Foam::boolList& zone,
 		      
 		      if (globalNumbering_.isLocal(gblIdx))
 			{
-			  //Info<<"local Point: "<<cc<<endl;
+			  //Info<<"local Point: "<<gblIdx<<endl;
+			  //Info<<"phiIJK.size()="<<endl;
 			  if (!phiIJK.found(gblIdx))
 			    phiIJK.insert(gblIdx,
 					  phi[globalNumbering_.toLocal(gblIdx)]);
 			}
 		      else
 			{
-			  //Info<<"non-local Point: "<<cc<<endl;
+			  //Info<<"non-local Point: "<<endl;
 			  const label procID =
 			    globalNumbering_.whichProcID(gblIdx);
 			  if (!commNeeded[procID].found(gblIdx))
@@ -110,7 +111,7 @@ void Foam::ijkZone::getZoneField(const Foam::boolList& zone,
   
   if (Pstream::parRun())
     {
-      // Info<<"getZoneField: starting parallel communication... "<<endl;
+      //Info<<"getZoneField: starting parallel communication... "<<endl;
       PstreamBuffers pBufs(Pstream::commsTypes::nonBlocking);
 
       // Stream data into buffer
@@ -144,7 +145,7 @@ void Foam::ijkZone::getZoneField(const Foam::boolList& zone,
       // Get values from other proc
       List<Map<Type>> sendValues(Pstream::nProcs());
 
-      //Info<<"getZoneField: starting parallel communication: sendValues... "<<endl;
+      // Info<<"getZoneField: starting parallel communication: sendValues... "<<endl;
       forAll(send, domaini)
 	{
 	  for (const label sendIdx : send[domaini])
@@ -188,7 +189,7 @@ void Foam::ijkZone::getZoneField(const Foam::boolList& zone,
   
     }
 
-  Info<<"getZoneField: done... "<<endl;
+  //Info<<"getZoneField: done... "<<endl;
 }
 
 

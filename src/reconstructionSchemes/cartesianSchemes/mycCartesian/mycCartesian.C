@@ -47,12 +47,30 @@ void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
 {
   Map<scalar> phiIJK;
   Vector<label> stencilSize(1,1,1);
+  //printf("Proc=%d ;interfaceCell_.size()=%d\n",Pstream::myProcNo(),interfaceCell_.size());
+  //Info<<"interfaceCell_.size()="<<interfaceCell_.size()<<endl;
+  //Info<<"interfaceCell_: "<<interfaceCell_<<endl;
+  //int nIntCells=0;
+  //forAll(interfaceCell_, i)
+  // {
+  //   if (interfaceCell_[i])
+  //	{
+  //	  Info<<"alpha_["<<i<<"]="<<phi[i]<<endl;
+  //	  nIntCells++;
+  //	}      
+  //}
+  //Info<<"nIntCells="<<nIntCells<<endl;
+  
   ijkMesh_.getZoneField(interfaceCell_,phiIJK,phi,stencilSize);
 
+  //Info<<"Done in gradSurf!"<<endl;
+  
   //printf("Proc=%d: Done getZoneField.\n",Pstream::myProcNo());
   label youngCount=0;
   label CCDCount=0;
   //const scalar eps=10e-14;
+  //  printf("Proc=%d ;interfaceLabels_.size()=%d\n",Pstream::myProcNo(),interfaceLabels_.size());
+  
   forAll(interfaceLabels_, i)
     {      
       int celli=interfaceLabels_[i];
@@ -69,13 +87,15 @@ void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
       stencil_.setStencil(phiIJK,ijkMesh_.ijk3(celli));
       //interfaceNormal_[i] = stencil_.calcCCDNormal();
       
+      //move these calculations from uniformStencil to the respective reconstruction classes.
       vector m1=stencil_.calcYoungNormal();
       vector m2=stencil_.calcCCDNormal();
       vector m2C=m2;
 
       if(Foam::mag(m1)+Foam::mag(m2)==0)
 	{
-	  printf("Proc=%d: Young and CDC normals are zero! Skipping the interface cell=%d!\n",Pstream::myProcNo(),celli);
+	  printf("Proc=%d: Young and CDC normals are zero! Setting the interface in cell %d to zero!\n",Pstream::myProcNo(),celli);
+	  interfaceNormal_[i] =vector::zero;
 	  //Info<< "Young and CDC normals are zero! Skipping the interface cell...";
 	  continue;
 	}
@@ -91,57 +111,77 @@ void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
 
       //printf("Proc=%d: done scaling normals.\n",Pstream::myProcNo());
 
-      if (fabs(m2C.y())==1.0)
-	{
-	  if (fabs(m1.y())<fabs(m2.y()))
-	    {
-	      interfaceNormal_[i] = m1;
-	      youngCount+=1;
-	    }
-	  else
-	    {
-	      interfaceNormal_[i] = m2;
-	      CCDCount+=1;
-	    }
+      //Info<<"m1="<<m1<<endl;
+      // Info<<"m2="<<m2<<endl;
+      //Info<<"m2C="<<m2C<<endl;
+      if (Foam::mag(m2C)==0)
+        {
+	  interfaceNormal_[i] = m1;
+	  youngCount+=1;
 	}
-      else if (fabs(m2C.z())==1.0)
-	{
-	  if (fabs(m1.z())<fabs(m2.z()))
-	    {
-	      interfaceNormal_[i] = m1;
-	      youngCount+=1;
-	    }
-	  else
-	    {
-	      interfaceNormal_[i] = m2;
-	      CCDCount+=1;
-	    }
-	}	  
-      else if (fabs(m2C.x())==1.0)
-	{
-	  if (fabs(m1.x())<fabs(m2.x()))
-	    {
-	      interfaceNormal_[i] = m1;
-	      youngCount+=1;
-	    }
-	  else
-	    {
-	      interfaceNormal_[i] = m2;
-	      CCDCount+=1;
-	    }
+      else{	
+	if (fabs(m2C.y())==1.0)
+	  {
+	    if (fabs(m1.y())<fabs(m2.y()))
+	      {
+		interfaceNormal_[i] = m1;
+		youngCount+=1;
+	      }
+	    else
+	      {
+		interfaceNormal_[i] = m2;
+		CCDCount+=1;
+	      }
 	}
-      else
-	FatalErrorInFunction
-	  << "Unity direction cannot be found in CCD scheme!"
-	  << abort(FatalError);
+	else if (fabs(m2C.z())==1.0)
+	  {
+	    if (fabs(m1.z())<fabs(m2.z()))
+	    {
+	      interfaceNormal_[i] = m1;
+	      youngCount+=1;
+	    }
+	    else
+	    {
+	      interfaceNormal_[i] = m2;
+	      CCDCount+=1;
+	    }
+	  }	  
+	else if (fabs(m2C.x())==1.0)
+	  {
+	    if (fabs(m1.x())<fabs(m2.x()))
+	      {
+		interfaceNormal_[i] = m1;
+		youngCount+=1;
+	    }
+	    else
+	      {
+	      interfaceNormal_[i] = m2;
+	      CCDCount+=1;
+	      }
+	  }
+	//modification to escape the fatal error 2024/11/1
+	else
+	  {
+	    //printf("Proc=%d: Unity direction cannot be found in CCD scheme! Using the Youngs algorithm in cell %d!\n",Pstream::myProcNo(),celli);
+	    //interfaceNormal_[i] = m1;
+	    //youngCount+=1;
+	    //}
 
+	    //printf("Proc=%d: Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment. Setting the normal of the interfacial the segment in cell %d to zero!\n",Pstream::myProcNo(),celli);
+	    //interfaceNormal_[i] =vector::zero;
 
-
+	    FatalErrorInFunction
+	    << "Unity direction cannot be found in CCD scheme! m2C="<<m2C
+	    <<"; m1="<<m1<<"; m2="<<m2
+	    <<"; A= "<<stencil_.getStencil()
+	    << abort(FatalError);
+	  }
+      }
+      
     }
-
+  
   //printf("Proc=%d: Done gradSurf.\n",Pstream::myProcNo());
 
-  
   if (Pstream::parRun())
       {
 	Foam::reduce(youngCount, sumOp<label>());
@@ -198,13 +238,9 @@ void Foam::reconstruction::mycCartesian::reconstruct(bool forceUpdate)
 
     if (mesh_.topoChanging())
     {
-        // Introduced resizing to cope with changing meshes
-        //if(interfaceCell_.size() != mesh_.nCells())
-        //{
-        //    interfaceCell_.resize(mesh_.nCells());
-        //}
-      Info<<"Dynamic mesh is not supported!"<<endl;
-      Foam::FatalError();
+      FatalErrorInFunction
+	<<"Dynamic mesh is not supported!"
+	<<abort(FatalError);
     }
     
     interfaceCell_ = false;

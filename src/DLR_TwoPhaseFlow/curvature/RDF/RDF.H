@@ -38,6 +38,7 @@ SourceFiles
 
 #include "curvatureModel.H"
 #include "reconstructedDistanceFunction.H"
+#include "syncTools.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
