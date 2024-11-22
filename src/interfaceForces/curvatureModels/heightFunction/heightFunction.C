@@ -324,12 +324,16 @@ void Foam::heightFunction::calculateK()
   //modify to dynamic version for speed up
   Map<scalar> alphaIJK;
 
-  // no solid boundaries yet
-  //const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
-  //surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
-  //surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
-  // //const volVectorField nHat(gradAlpha/(mag(gradAlpha) + deltaN_));
-  //correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
+  /////////// to apply divGradAlpha on solid boundaries ////////////////
+  const surfaceVectorField& Sf = mesh.Sf();
+  const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
+  surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
+  surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
+  const volVectorField nHat(gradAlpha/(mag(gradAlpha) + deltaN_));
+  correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
+  ///////////////////////////////////////////////////////////////////////
+
+  
   forAll(K_,celli)
     K_[celli]=0;
 
@@ -377,7 +381,8 @@ void Foam::heightFunction::calculateK()
 
 	  if (boundaryCells_[celli])
 	    {
-	      printf("Cell at the boundary: proc=%d, x=%f, y=%f, z=%f\n",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
+	      //printf("Cell at the boundary: proc=%d, x=%f, y=%f, z=%f\n",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
+	      K_ = -fvc::div(nHatfv & Sf);
 	      /*FatalErrorInFunction
 		<< "Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment."
 		<< abort(FatalError);*/
