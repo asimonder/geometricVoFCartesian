@@ -454,11 +454,15 @@ void Foam::mlpCurvature::calculateK()
   //Map<vector> faceCentreIJK;
   //  Map<scalar> curvIJK;
 
-  // where to put this one?
+
+  /////////// apply divGradAlpha on solid boundaries ////////////////
+  const surfaceVectorField& Sf = mesh.Sf();
   const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
   surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
   surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
+  const volVectorField nHat(gradAlpha/(mag(gradAlpha) + deltaN_));
   correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
+  ///////////////////////////////////////////////////////////////////////
 
   forAll(K_,celli)
     K_[celli]=0;
@@ -488,9 +492,10 @@ void Foam::mlpCurvature::calculateK()
 	  nInterfaceCells+=1;
 	  if (boundaryCells_[celli])
 	  {
-	    printf("Cell at the boundary: proc=%d, x=%f, y=%f, z=%f\n",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
-	    nBoundaryCells+=1;
-	      continue;
+	    //printf("Cell at the boundary: proc=%d, x=%f, y=%f, z=%f\n",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
+	    //nBoundaryCells+=1;
+	    K_ = -fvc::div(nHatfv & Sf);
+	    continue;
 	  }
 	  stencil_.setStencil(alphaIJK,ijkMesh_.ijk3(celli));
 

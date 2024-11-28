@@ -324,7 +324,7 @@ void Foam::heightFunction::calculateK()
   //modify to dynamic version for speed up
   Map<scalar> alphaIJK;
 
-  /////////// to apply divGradAlpha on solid boundaries ////////////////
+  /////////// apply divGradAlpha on solid boundaries ////////////////
   const surfaceVectorField& Sf = mesh.Sf();
   const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
   surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));

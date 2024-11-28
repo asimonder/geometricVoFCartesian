@@ -16,8 +16,5 @@ interfaceForces/curvatureModels/divGradAlpha/divGradAlpha.C
 interfaceForces/curvatureModels/mlpCurvature/mlpCurvature.C
 
 DLR_TwoPhaseFlow/curvature/RDF/RDF.C
-DLR_TwoPhaseFlow/curvature/heightFunctionDLR/heightFunctionDLR.C
-DLR_TwoPhaseFlow/curvature/heightFunctionDLR/heightFuncStencil/HFStencil.C
-DLR_TwoPhaseFlow/curvature/heightFunctionDLR/twoDimFDStencil/twoDimFDStencil.C
 
 LIB = $(FOAM_USER_LIBBIN)/libgeometricVoFCartesian
