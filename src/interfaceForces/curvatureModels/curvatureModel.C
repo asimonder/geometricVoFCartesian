@@ -46,8 +46,9 @@ Foam::curvatureModel::curvatureModel
             "K_",
             alpha1_.time().timeName(),
             alpha1_.mesh(),
-	    IOobject::NO_READ,
+	    //IOobject::NO_READ,
 	    //IOobject::MUST_READ,
+	    IOobject::READ_IF_PRESENT,
             IOobject::AUTO_WRITE
         ),
         alpha1_.mesh(),
