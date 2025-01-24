@@ -27,8 +27,6 @@
                  - fvc::snGrad(p_rgh)
                 ) * mesh.magSf()
             )
-	    //-interfaceForce.sigma()*alpha1*fvc::grad(interfaceForce.K())
-	    //+interfaceForce.sigma()*interfaceForce.K()*fvc::grad(alpha1)
         );
 
         fvOptions.correct(U);

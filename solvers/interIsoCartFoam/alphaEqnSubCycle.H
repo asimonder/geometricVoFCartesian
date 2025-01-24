@@ -32,12 +32,7 @@ if (nAlphaSubCycles > 1)
     dimensionedScalar totalDeltaT = runTime.deltaT();
     surfaceScalarField rhoPhiSum
     (
-        IOobject
-        (
-            "rhoPhiSum",
-            runTime.timeName(),
-            mesh
-        ),
+        mesh.newIOobject("rhoPhiSum"),
         mesh,
         dimensionedScalar(rhoPhi.dimensions(), Zero)
     );

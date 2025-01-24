@@ -56,8 +56,8 @@ IOdictionary curvatureDict
 
 
 Info<< "Reading transportProperties\n" << endl;
-//immiscibleIncompressibleTwoPhaseMixture mixture(U, phi);
-incompressibleTwoPhaseMixture mixture(U, phi);
+immiscibleIncompressibleTwoPhaseMixture mixture(U, phi);
+//incompressibleTwoPhaseMixture mixture(U, phi);
 
 volScalarField& alpha1(mixture.alpha1());
 volScalarField& alpha2(mixture.alpha2());
@@ -97,11 +97,23 @@ surfaceScalarField rhoPhi
     fvc::interpolate(rho)*phi
 );
 
+typedef incompressibleInterPhaseTransportModel
+    <
+        immiscibleIncompressibleTwoPhaseMixture
+    > transportModelType;
+
 
 // Construct incompressible turbulence model
-autoPtr<incompressible::turbulenceModel> turbulence
+//autoPtr<incompressible::turbulenceModel> turbulence
+//(
+//   incompressible::turbulenceModel::New(U, phi, mixture)
+//);
+autoPtr<transportModelType> turbulence
 (
-    incompressible::turbulenceModel::New(U, phi, mixture)
+    new transportModelType
+    (
+        rho, U, phi, rhoPhi, mixture
+    )
 );
 
 

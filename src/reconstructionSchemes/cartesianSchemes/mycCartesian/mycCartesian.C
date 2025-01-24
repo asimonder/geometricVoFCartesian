@@ -48,6 +48,7 @@ void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
   Map<scalar> phiIJK;
   Vector<label> stencilSize(1,1,1);
   //printf("Proc=%d ;interfaceCell_.size()=%d\n",Pstream::myProcNo(),interfaceCell_.size());
+  //  printf("Proc=%d ;interfaceLabels_.size()=%d\n",Pstream::myProcNo(),interfaceLabels_.size());
   //Info<<"interfaceCell_.size()="<<interfaceCell_.size()<<endl;
   //Info<<"interfaceCell_: "<<interfaceCell_<<endl;
   //int nIntCells=0;
@@ -60,7 +61,8 @@ void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
   //	}      
   //}
   //Info<<"nIntCells="<<nIntCells<<endl;
-  
+
+  //Info<<"Getting zone field..."<<endl;
   ijkMesh_.getZoneField(interfaceCell_,phiIJK,phi,stencilSize);
 
   //Info<<"Done in gradSurf!"<<endl;
@@ -77,7 +79,14 @@ void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
       
       if (boundaryCells_[celli])
 	{
-	  printf("Proc=%d: Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment. Setting the normal of the interfacial the segment in cell %d to zero!\n",Pstream::myProcNo(),celli);
+	  // printf("Proc=%d: Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment. Setting the normal of the interfacial the segment in cell %d to zero!\n",Pstream::myProcNo(),celli);
+	  scalar alphaNew=0.0;
+	  if (alpha1_[celli]<0.5)
+	    alphaNew=0.0;
+	  else
+	    alphaNew=1.0;
+	  printf("\n Proc=%d; Cell at [%f,%f,%f] with alpha=%f is at a non-cyclic cellSet or domain boundary. Setting alpha to %f\n",Pstream::myProcNo(),mesh_.C()[celli].x(),mesh_.C()[celli].y(),mesh_.C()[celli].z(),alpha1_[celli],alphaNew);
+	  alpha1_[celli]=alphaNew;
 	  //FatalErrorInFunction
 	  //  << "Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment."
 	  //<< abort(FatalError);
@@ -94,7 +103,14 @@ void Foam::reconstruction::mycCartesian::gradSurf(const volScalarField& phi)
 
       if(Foam::mag(m1)+Foam::mag(m2)==0)
 	{
-	  printf("Proc=%d: Young and CDC normals are zero! Setting the interface in cell %d to zero!\n",Pstream::myProcNo(),celli);
+	  //	  printf("Proc=%d: Young and CDC normals are zero! Setting the interface normal in cell %d to zero!\n",Pstream::myProcNo(),celli);
+	  scalar alphaNew=0.0;
+	  if (alpha1_[celli]<0.5)
+	    alphaNew=0.0;
+	  else
+	    alphaNew=1.0;
+	  printf("\n Proc=%d; Young and CDC normals are zero at cell at [%f,%f,%f] with alpha=%f is at a non-cyclic cellSet or domain boundary. Setting alpha to %f\n",Pstream::myProcNo(),mesh_.C()[celli].x(),mesh_.C()[celli].y(),mesh_.C()[celli].z(),alpha1_[celli],alphaNew);
+	  alpha1_[celli]=alphaNew;
 	  interfaceNormal_[i] =vector::zero;
 	  //Info<< "Young and CDC normals are zero! Skipping the interface cell...";
 	  continue;
@@ -249,10 +265,31 @@ void Foam::reconstruction::mycCartesian::reconstruct(bool forceUpdate)
 
     forAll(alpha1_,celli)
     {
-        if(sIterPLIC_.isASurfaceCell(alpha1_[celli]))
-        {
-            interfaceCell_[celli] = true; // is set to false earlier
-            interfaceLabels_.append(celli);
+      //        if(sIterPLIC_.isASurfaceCell(alpha1_[celli]))
+	 if(surfCellTol_<alpha1_[celli] and alpha1_[celli]<1-surfCellTol_)
+	   {
+	     const point& Xmin=ijkMesh_.Pmin();
+	     const point& Xmax=ijkMesh_.Pmax(); 
+	     if (mesh_.C()[celli].x()<Xmin.x() or
+		 mesh_.C()[celli].y()<Xmin.y() or
+		 mesh_.C()[celli].z()<Xmin.z() or
+		 mesh_.C()[celli].x()>Xmax.x() or
+		 mesh_.C()[celli].y()>Xmax.y() or
+		 mesh_.C()[celli].z()>Xmax.z())
+	       {
+		 scalar alphaNew=0.0;
+		 if (alpha1_[celli]<0.5)
+		   alphaNew=0.0;
+		 else
+		   alphaNew=1.0;
+		 printf("\n Proc=%d; Cell at [%f,%f,%f] with alpha=%f is outside ijkZone! Setting alpha to %f\n",Pstream::myProcNo(),mesh_.C()[celli].x(),mesh_.C()[celli].y(),mesh_.C()[celli].z(),alpha1_[celli],alphaNew);
+		 alpha1_[celli]=alphaNew;
+	       }
+	     else
+	       {	   
+		 interfaceCell_[celli] = true; // is set to false earlier
+		 interfaceLabels_.append(celli);
+	       }
         }
     }
     interfaceNormal_.setSize(interfaceLabels_.size());

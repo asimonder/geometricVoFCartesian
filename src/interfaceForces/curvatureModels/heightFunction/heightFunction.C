@@ -68,7 +68,9 @@ Foam::heightFunction::heightFunction
     //extendInterface_(false),
     boundaryCells_(mesh_.nCells(),false)
 {
-  
+
+  Info<<"Curvature model: heightFunction."<<endl;
+	      
   ijkMesh_.markBoundaryCells(boundaryCells_,nMax_);
 
   const scalar dx=ijkMesh_.dx();

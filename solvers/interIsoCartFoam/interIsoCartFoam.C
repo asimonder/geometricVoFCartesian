@@ -48,7 +48,7 @@ Description
 
     isoAdvector code supplied by Johan Roenby, STROMNING (2018)
 
-    Adapted by A. Onder to include new surface tension models.
+    Adapted by A. Onder to include new surface tension model (2021-2024)
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
@@ -59,7 +59,8 @@ Description
 #include "CrankNicolsonDdtScheme.H"
 #include "subCycle.H"
 #include "immiscibleIncompressibleTwoPhaseMixture.H"
-#include "turbulentTransportModel.H"
+#include "incompressibleInterPhaseTransportModel.H"
+//#include "turbulentTransportModel.H"
 #include "pimpleControl.H"
 #include "fvOptions.H"
 #include "CorrectPhi.H"
@@ -75,8 +76,8 @@ int main(int argc, char *argv[])
     (
         "Solver for two incompressible, isothermal immiscible fluids"
         " using isoAdvector phase-fraction based interface capturing.\n"
-        //"With optional mesh motion and mesh topology changes including"
-        //" adaptive re-meshing.\n"
+        "With optional mesh motion and mesh topology changes including"
+        " adaptive re-meshing.\n"
         "The solver is derived from interFoam"
     );
 
@@ -92,7 +93,7 @@ int main(int argc, char *argv[])
     #include "initCorrectPhi.H"
     #include "createUfIfPresent.H"
 
-    turbulence->validate();
+    //turbulence->validate();
 
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
@@ -126,42 +127,39 @@ int main(int argc, char *argv[])
                 if (mesh.changing())
                 {
 		  gh = (g & mesh.C()) - ghRef;
-                    ghf = (g & mesh.Cf()) - ghRef;
+		  ghf = (g & mesh.Cf()) - ghRef;
 
-                    if (isA<dynamicRefineFvMesh>(mesh))
+		  if (isA<dynamicRefineFvMesh>(mesh))
                     {
-                        advector.surf().mapAlphaField();
-                        alpha2 = 1.0 - alpha1;
-                        alpha2.correctBoundaryConditions();
-                        rho == alpha1*rho1 + alpha2*rho2;
-                        rho.correctBoundaryConditions();
-                        rho.oldTime() = rho;
-                        alpha2.oldTime() = alpha2;
+		      advector.surf().mapAlphaField();
+		      alpha2 = 1.0 - alpha1;
+		      alpha2.correctBoundaryConditions();
+		      rho == alpha1*rho1 + alpha2*rho2;
+		      rho.correctBoundaryConditions();
+		      rho.oldTime() = rho;
+		      alpha2.oldTime() = alpha2;
                     }
 
-                    MRF.update();
-
-                    if (correctPhi)
+		  MRF.update();
+		  
+		  if (correctPhi)
                     {
                         // Calculate absolute flux
                         // from the mapped surface velocity
-                        phi = mesh.Sf() & Uf();
+		      phi = mesh.Sf() & Uf();
 
-                        #include "correctPhi.H"
+                      #include "correctPhi.H"
 
                         // Make the flux relative to the mesh motion
-                        fvc::makeRelative(phi, U);
+		      fvc::makeRelative(phi, U);
 
-                        mixture.correct();
+		      mixture.correct();
                     }
 
                     if (checkMeshCourantNo)
                     {
                         #include "meshCourantNo.H"
-			}
-		    /*FatalErrorInFunction
-		    << "Dynamic mesh is not supported at the moment."
-		    << abort(FatalError);*/
+		    }
 
                 }
             }
@@ -172,7 +170,7 @@ int main(int argc, char *argv[])
             mixture.correct();
 
 	    interfaceForce.correct();
-	    
+
             if (pimple.frozenFlow())
             {
                 continue;
@@ -191,8 +189,6 @@ int main(int argc, char *argv[])
                 turbulence->correct();
             }
         }
-
-	//#include "calculateCurvatureError.H"
 
 	runTime.write();
 
