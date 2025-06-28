@@ -10,7 +10,7 @@
     Copyright (C) 2017 OpenCFD Ltd.
     Copyright (C) 2018 Johan Roenby
     Copyright (C) 2019-2020 DLR
-    Copyright (C) 2021-2025 Asim Onder
+    Copyright (C) 2021-2025 Asim Önder
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -48,7 +48,7 @@ Description
 
     isoAdvector code supplied by Johan Roenby, STROMNING (2018)
 
-    Adapted by A. Onder to include new surface tension models (2021-2025)
+    Adapted by A. Önder to include the new surface tension models (2021-2025)
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
