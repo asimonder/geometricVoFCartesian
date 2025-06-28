@@ -29,7 +29,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    interIsoFoamCart
+    interIsoCartFoam
 
 
 Description
