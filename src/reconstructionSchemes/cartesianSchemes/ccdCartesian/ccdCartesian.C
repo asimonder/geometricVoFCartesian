@@ -91,7 +91,7 @@ Foam::reconstruction::ccdCartesian::ccdCartesian
     surfCellTol_(modelDict().lookupOrDefault<scalar>("surfCellTol", 1e-8)),
     sIterPLIC_(mesh_,surfCellTol_),
     //globalNumbering_(mesh_.nCells()+mesh_.nBoundaryFaces()),
-    ijkMesh_(mesh_),
+    ijkMesh_(ijkZone::New(alpha1.mesh())),
     stencil_(mesh_,ijkMesh_,1),
     boundaryCells_(mesh_.nCells(),false)
 {

@@ -206,7 +206,7 @@ Foam::reconstruction::mlpNormal::mlpNormal
     isoFaceTol_(modelDict().lookupOrDefault<scalar>("isoFaceTol", 1e-8)),
     surfCellTol_(modelDict().lookupOrDefault<scalar>("surfCellTol", 1e-8)),
     sIterPLIC_(mesh_,surfCellTol_),
-    ijkMesh_(mesh_),
+    ijkMesh_(ijkZone::New(alpha1.mesh())),
     boundaryCells_(mesh_.nCells(),false),
     //bias_(modelDict().lookupOrDefault<bool>("use_bias",false)),
     zonalModel_(dict.lookupOrDefault<bool>("zonalModel",true)),

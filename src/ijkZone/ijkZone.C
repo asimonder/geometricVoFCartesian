@@ -5,9 +5,8 @@
     \\  /    A nd           | Copyright (C) 2021 OpenCFD Ltd.
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-                            | Copyright (C) 2021 Asim Onder
+                            | Copyright (C) 2021-2025 Asim Onder
 -------------------------------------------------------------------------------
-
 License
     This file is part of OpenFOAM.
 
@@ -28,6 +27,9 @@ License
 
 #include "ijkZone.H"
 #include "exprOps.H"
+#include "processorPolyPatch.H"
+#include "processorCyclicPolyPatch.H"
+#include "PstreamReduceOps.H"
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
@@ -37,10 +39,36 @@ namespace Foam
 }
 
 
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+// This is the implementation of your new static function.
+Foam::ijkZone& Foam::ijkZone::New(const fvMesh& mesh)
+{
+    // Check the mesh's object registry to see if an ijkZone already exists.
+    if (!mesh.thisDb().foundObject<ijkZone>(ijkZone::typeName))
+    {
+        // If not, create one...
+        Info<< "Creating new ijkZone object and adding to registry." << endl;
+        ijkZone* ijkZonePtr = new ijkZone(mesh);
+        // ...and store it in the registry.
+        ijkZonePtr->store();
+    }
+
+    // Return a reference to the object now guaranteed to be in the registry.
+    return const_cast<ijkZone&>(mesh.lookupObject<ijkZone>(ijkZone::typeName));
+}
+
 
 Foam::ijkZone::ijkZone(const fvMesh& mesh):
-  //MeshObject<fvMesh, Foam::TopologicalMeshObject, ijkZone>(mesh),
+  regIOobject(IOobject
+	      (
+	       typeName,
+	       mesh.time().system(), 
+	       mesh,
+	       IOobject::NO_READ,
+	       IOobject::NO_WRITE,
+	       false
+	       )),
   mesh_(mesh),
   globalNumbering_(mesh_.nCells()+mesh_.nBoundaryFaces()),
   C_(mesh.C()),
@@ -81,7 +109,6 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
   const  surfaceVectorField&  Cf = mesh_.Cf();
 
   const cellList& cells=mesh_.cells();
-  const faceList& faces=mesh_.faces();
   labelList cellIndices;
   if (!isDomain)
     {
@@ -97,30 +124,31 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
 	cellIndices[celli]=celli;
     }
 
-  Info<<"Size of the interface domain="<<cellIndices.size()<<endl;
-  dx_=0.0;dy_=0.0;dz_=0.0;
+  Info<<"Size of the interface domain of the master proc="<<cellIndices.size()<<endl;
   Pmin_=point::uniform(VGREAT);
   Pmax_=point::uniform(-VGREAT);
+  dx_=0.0;dy_=0.0;dz_=0.0;
+
   if (cellIndices.size()>0)
     {
+      const faceList& faces=mesh_.faces();
       const label iCell=cellIndices[0];
       for (int iF=0;iF<6;iF++)
-	{	    
-	  label f1=cells[iCell][iF];
-	  label f2=cells[iCell].opposingFaceLabel(f1,faces);
-	  scalar dx=Cf[f1].x()-Cf[f2].x();
-	  scalar dy=Cf[f1].y()-Cf[f2].y();
-	  scalar dz=Cf[f1].z()-Cf[f2].z();
-	  if (dx>dx_)
-	    dx_=dx;
-	  if (dy>dy_)
-	    dy_=dy;
-	  if (dz>dz_)
-	    dz_=dz;		    
+       {	    
+         label f1=cells[iCell][iF];
+         label f2=cells[iCell].opposingFaceLabel(f1,faces);
+         scalar dx=Cf[f1].x()-Cf[f2].x();
+	 scalar dy=Cf[f1].y()-Cf[f2].y();
+         scalar dz=Cf[f1].z()-Cf[f2].z();
+         if (dx>dx_)
+	   dx_=dx;
+	 if (dy>dy_)
+	   dy_=dy;
+	 if (dz>dz_)
+	   dz_=dz;		    
 	}
 
       forAll(cellIndices,celli)
-      //for(int celli=0;celli<100<celli++)
 	{
 	  const label iCell=cellIndices[celli];
 	  const point cc = C_[iCell];
@@ -128,123 +156,44 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
 	  Pmax_=Foam::max(Pmax_, cc);
 	}
     }
-
-  if (Pstream::parRun())
-      {
-	Foam::reduce(Pmin_, minOp<point>());
-	Foam::reduce(Pmax_, maxOp<point>());
-	Foam::reduce(dx_, maxOp<scalar>());
-	Foam::reduce(dy_, maxOp<scalar>());
-	Foam::reduce(dz_, maxOp<scalar>());    
-      }
-
-    Info<< "dx= "<<dx_<< ",  dy= "<<dy_<< ",   dz= "<<dz_<<endl;
-
-    Lx_=Pmax_.x()-Pmin_.x();
-    Ly_=Pmax_.y()-Pmin_.y();
-    Lz_=Pmax_.z()-Pmin_.z();
-    Nx_=round(Lx_/dx_+1.0);
-    Ny_=round(Ly_/dy_+1.0);
-    Nz_=round(Lz_/dz_+1.0);
-
-    Info<<"Pmin="<<Pmin_<<", Pmax="<<Pmax_<<endl;	   
-    Info<<"Nx= "<<Nx_<<", Ny= "<<Ny_<<", Nz= "<<Nz_<<endl;
-
-    if (Nx_==1)
-      isEmpty_.x()=true;
-    if (Ny_==1)
-      isEmpty_.y()=true;
-    if (Nz_==1)
-      isEmpty_.z()=true;
-    
-    labelList globalIds(Nx_*Ny_*Nz_,-10);
   
-    forAll(cellIndices,celli)
-      {
-	const label iCell=cellIndices[celli];
-	//Vector<label> ijk3=ijk3(iCell);
-	label ijk=ijk1(ijk3(iCell));
-	if (Pstream::parRun())
-	  globalIds[ijk]=globalNumbering_.toGlobal(iCell);
-	else
-	  globalIds[ijk]=iCell;
-      }
-    
-    if (Pstream::parRun())
-      {
-	Foam::reduce(globalIds, maxOp<labelList>());
-      }
+  if (Pstream::parRun())
+    {
+      Foam::reduce(Pmin_, minOp<point>());
+      Foam::reduce(Pmax_, maxOp<point>());
+      Foam::reduce(dx_, maxOp<scalar>());
+      Foam::reduce(dy_, maxOp<scalar>());
+      Foam::reduce(dz_, maxOp<scalar>());    
+    }
 
-    globalIds_=globalIds;
-    
-    //isCyclic?
-    if (false)
-      {
-    forAll(faces,facei)
-      {
-	if (!mesh_.isInternalFace(facei))
-	  {
-	    if ((C_[mesh_.faceOwner()[facei]]<Pmin_ && C_[mesh_.faceNeighbour()[facei]]<Pmin_) ||
-		(C_[mesh_.faceOwner()[facei]]>Pmax_ && C_[mesh_.faceNeighbour()[facei]]>Pmax_))
-	      {
-		continue;
-	      }
-	    const polyBoundaryMesh& pbm = mesh_.boundaryMesh();
-	    	    
-	    // Boundary face. Find out which face of which patch
-	    const label patchi = pbm.patchID()[facei - mesh_.nInternalFaces()];
-    
-	    // Handle empty patches
-	    const polyPatch& pp = pbm[patchi];
-	    //printf("Proc=%d, patch type=%s \n",Pstream::myProcNo(),mesh_.boundary()[patchi].type());
-	    if (isA<cyclicPolyPatch>(pp) || mesh_.boundary()[patchi].type()=="processorCyclic")
-	      {
-		//printf("Proc=%d, cyclic patch found...\n",Pstream::myProcNo());
-		vector transDir=mesh_.faceAreas()[facei];
-		/*if (transDir.x()!=0 and transDir.y()==0 and transDir.z()==0)
-		  isCyclic_.x()=true;
-		else if (transDir.y()!=0 and transDir.x()==0 and transDir.z()==0)
-		  isCyclic_.y()=true;
-		else if (transDir.z()!=0 and transDir.x()==0 and transDir.y()==0)
-		  isCyclic_.z()=true;
-		else
-		  FatalErrorInFunction
-		    << "Cyclic BC found but not aligned with one of the Cartesian coordinates"
-		    << abort(FatalError);*/
+  Info<< "dx= "<<dx_<< ",  dy= "<<dy_<< ",   dz= "<<dz_<<endl;
 
-		isCyclic_.x()=true;
-		isCyclic_.y()=true;
-		isCyclic_.z()=false;
-		
-		/*if (transDir.x()>transDir.y() and transDir.x()>transDir.z())
-		  isCyclic_.x()=true;
-		else if (transDir.y()>transDir.x() and transDir.y()>transDir.z()) //(transDir.y()!=0 and transDir.x()==0 and transDir.z()==0)
-		  isCyclic_.y()=true;
-		else if (transDir.z()>transDir.x() and transDir.z()>transDir.y()) //(transDir.z()!=0 and transDir.x()==0 and transDir.y()==0)
-		  isCyclic_.z()=true;
-		else
-		  FatalErrorInFunction
-		    << "Cyclic BC found but not aligned with one of the Cartesian coordinates"
-		    << abort(FatalError);*/
-	      }
-	  }
-      }
-      }
-    
-    //printf("Proc=%d, isCyclic.x()=%d, isCyclic.y()=%d, isCyclic.z()=%d\n",Pstream::myProcNo(),isCyclic_.x(),isCyclic_.y(),isCyclic_.z());
-    //Info<<"Cyclic BCs are hardcoded in ijkZone.C!"<<endl;    
-    if (Pstream::parRun())
-      {
-	Foam::reduce(isCyclic_.x(),orOp<bool>());
-	Foam::reduce(isCyclic_.y(),orOp<bool>());
-	Foam::reduce(isCyclic_.z(),orOp<bool>());
-      }
+  Lx_=Pmax_.x()-Pmin_.x();
+  Ly_=Pmax_.y()-Pmin_.y();
+  Lz_=Pmax_.z()-Pmin_.z();
+  Nx_=round(Lx_/dx_+1.0);
+  Ny_=round(Ly_/dy_+1.0);
+  Nz_=round(Lz_/dz_+1.0);
+  
 
-    Info<<"is x periodic: " <<isCyclic_.x()<<endl;
-    Info<<"is y periodic: " <<isCyclic_.y()<<endl;
-    Info<<"is z periodic: " <<isCyclic_.z()<<endl;
+  Info<<"Pmin="<<Pmin_<<", Pmax="<<Pmax_<<endl;	   
+  Info<<"Nx= "<<Nx_<<", Ny= "<<Ny_<<", Nz= "<<Nz_<<endl;
 
-    //mark boundary cells
+  if (Nx_==1)
+    isEmpty_.x()=true;
+  if (Ny_==1)
+    isEmpty_.y()=true;
+  if (Nz_==1)
+    isEmpty_.z()=true;
+
+  Info<<"is x periodic: " <<isCyclic_.x()<<endl;
+  Info<<"is y periodic: " <<isCyclic_.y()<<endl;
+  Info<<"is z periodic: " <<isCyclic_.z()<<endl;
+
+  
+ ///////////////////// REFACTORING THE PARALLEL COMMUNICATION ///////////////////////
+#include "parallelCommunication.H"
+
 }
 
 //Foam::List<bool> Foam::ijkZone::markBoundaryCells(label nOffsetCells)
@@ -309,6 +258,11 @@ Foam::Vector<Foam::label> Foam::ijkZone::ijk3(label celli)
     return *objectPtr;
     }*/
  
-
+bool Foam::ijkZone::writeData(Ostream& os) const
+{
+    // This object has no data to write, but the function must exist.
+    // We could write the globalIds_ map here if we wanted to, but it's not necessary.
+    return os.good();
+}
 
 // ************************************************************************* //

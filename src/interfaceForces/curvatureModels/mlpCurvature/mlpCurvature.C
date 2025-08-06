@@ -60,7 +60,7 @@ Foam::mlpCurvature::mlpCurvature
         "deltaN",
         1e-8/pow(average(alpha1.mesh().V()), 1.0/3.0)
      ),
-    ijkMesh_(mesh_),
+    ijkMesh_(ijkZone::New(alpha1.mesh())),
     globalNumbering_(ijkMesh_.globalNumbering()),
     boundaryCells_(mesh_.nCells(),false),
     zonalModel_(dict.subDict("mlpParams").lookupOrDefault<bool>("zonalModel",false)),

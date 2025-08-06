@@ -59,7 +59,7 @@ private:
 
   const dimensionedScalar deltaN_;
 
-  ijkZone ijkMesh_;
+  ijkZone& ijkMesh_;
 
   const globalIndex globalNumbering_;
 

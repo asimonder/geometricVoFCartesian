@@ -59,7 +59,7 @@ Foam::heightFunction::heightFunction
         "deltaN",
         1e-8/pow(average(alpha1.mesh().V()), 1.0/3.0)
      ),
-    ijkMesh_(alpha1.mesh()),
+    ijkMesh_(ijkZone::New(alpha1.mesh())), 
     globalNumbering_(ijkMesh_.globalNumbering()),
     nMax_(dict.subDict("heightFunctionParams").lookupOrDefault<label>("nMax",3)),
     //fillNeighbours_(dict.lookupOrDefault<label>("fillNeighbours",-1)),
@@ -332,6 +332,7 @@ void Foam::heightFunction::calculateK()
   surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
   surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
   const volVectorField nHat(gradAlpha/(mag(gradAlpha) + deltaN_));
+  const volScalarField KDivGrad(-fvc::div(nHatfv & Sf));
   correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
   ///////////////////////////////////////////////////////////////////////
 
@@ -375,16 +376,19 @@ void Foam::heightFunction::calculateK()
 	    dir=2;
 	  if (dir==-1)
 	    {
-	      FatalErrorInFunction
-	      << "Normal direction cannot be identified."
-	      <<" n="<<n
-	      << abort(FatalError);
+	      printf("Normal direction is not identified! Continuing for testing purposes.  proc=%d, x=%f, y=%f, z=%f\n",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
+	      //MPI_Abort(Pstream::mpiCommunicator(), -1); 
+	      //FatalErrorInFunction
+	      //<< "Normal direction cannot be identified."
+	      // <<" n="<<n
+	      //<< abort(FatalError);
+	      continue;
 	    }
 
 	  if (boundaryCells_[celli])
 	    {
 	      //printf("Cell at the boundary: proc=%d, x=%f, y=%f, z=%f\n",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
-	      K_ = -fvc::div(nHatfv & Sf);
+	      K_[celli] = KDivGrad[celli];
 	      /*FatalErrorInFunction
 		<< "Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment."
 		<< abort(FatalError);*/

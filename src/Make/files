@@ -17,4 +17,9 @@ interfaceForces/curvatureModels/mlpCurvature/mlpCurvature.C
 
 DLR_TwoPhaseFlow/curvature/RDF/RDF.C
 
+implicitFunctions/solitaryWaveLaitone/solitaryWaveLaitoneImplicitFunction.C
+implicitFunctions/solitaryWaveClamondFructus/solitaryWaveClamondFructusImplicitFunction.C
+implicitFunctions/interpolatedWave/interpolatedWaveImplicitFunction.C
+
+
 LIB = $(FOAM_USER_LIBBIN)/libgeometricVoFCartesian

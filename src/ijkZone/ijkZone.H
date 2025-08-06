@@ -49,6 +49,8 @@ SourceFiles
 #include "MeshObject.H"
 #include "IFstream.H"
 #include "cellSet.H"
+#include "regIOobject.H" 
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -59,14 +61,12 @@ namespace Foam
                         Class ijkZone Declaration
 \*---------------------------------------------------------------------------*/
 
-  //class ijkZone //:  //public MeshObject
-    //<
-    //fvMesh,
-    //TopologicalMeshObject,
-    //ijkZone
-    //>
-  class ijkZone
-  {
+
+class ijkZone
+:
+    public regIOobject 
+{
+
   private:
 
     // Private data
@@ -79,7 +79,7 @@ namespace Foam
     label Nx_;label Ny_;label Nz_;
     scalar Lx_;scalar Ly_;scalar Lz_;
     labelList globalIds_;
-    //bool is2D_;
+    labelList neighbourProcs_;
     const globalIndex globalNumbering_;
     const volVectorField& C_;
     Vector<bool> isEmpty_;
@@ -93,7 +93,10 @@ namespace Foam
 
   //template<class Type>
   //void collectDataFromOtherProcs(const List<labelHashSet>& commNeeded, Map<Type>& fieldData);
-      
+
+  //- Construct from fvMesh
+    explicit ijkZone(const fvMesh&);
+  
   //- No copy construct
     ijkZone(const ijkZone&) = delete;
   
@@ -104,16 +107,18 @@ namespace Foam
   // Constructors
   // Declare name of the class and its debug switch
     TypeName("ijkZone");
-
-  //- Construct from fvMesh
-    explicit ijkZone(const fvMesh&);
-
+  
   // Selectors
-  //static ijkZone& New(const fvMesh&);
-
+  static ijkZone& New(const fvMesh&);
+  
   //- Destructor
     virtual ~ijkZone() = default;      
 
+
+  // Inherited functions
+   bool writeData(Ostream&) const override;
+
+  
     // Member functions
   
     void markBoundaryCells(boolList& atBoundary,label nOffsetCells);

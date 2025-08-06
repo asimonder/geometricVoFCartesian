@@ -68,7 +68,7 @@ class youngCartesian
   //- Interpolation object from cell centres to points
   DynamicField<vector> interfaceNormal_;
   
-  ijkZone ijkMesh_;
+  ijkZone& ijkMesh_;
 
   uniformStencil stencil_;
 
