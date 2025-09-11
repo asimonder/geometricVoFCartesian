@@ -433,6 +433,7 @@ void Foam::heightFunction::calculateK()
   else
     {
       #include "../interpolateCutCellsToFaces3D.H"
+      //      #include "../interpolateCutCellsToFaces3D_dbg.H"
     }
 }
 
