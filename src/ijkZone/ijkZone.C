@@ -198,8 +198,7 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
   Info<<"is y periodic: " <<isCyclic_.y()<<endl;
   Info<<"is z periodic: " <<isCyclic_.z()<<endl;
 
- ///////////////////// REFACTORING THE PARALLEL COMMUNICATION ///////////////////////
-#include "parallelCommunicationDbg2.H"
+#include "parallelCommunication.H"
 
 }
 
