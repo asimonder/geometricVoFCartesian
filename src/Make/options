@@ -6,6 +6,9 @@ EXE_INC = \
 -I$(LIB_SRC)/transportModels/geometricVoF/lnInclude \
 -I$(LIB_SRC)/transportModels/twoPhaseProperties/lnInclude \
 -I$(LIB_SRC)/transportModels/twoPhaseProperties/alphaContactAngle/alphaContactAngle \
+-I$(LIB_SRC)/functionObjects/field/lnInclude \
+-I$(LIB_SRC)/sampling/lnInclude \
+-I$(LIB_SRC)/dynamicMesh/lnInclude \
 -I$(WM_PROJECT_DIR)/applications/utilities/preProcessing/setAlphaField/alphaFieldFunctions/lnInclude 
 
 
@@ -15,4 +18,7 @@ LIB_LIBS = \
     -lmeshTools \
     -ltwoPhaseMixture \
     -lalphaFieldFunctions \
+    -lfieldFunctionObjects \
+    -lsampling \
+    -ldynamicMesh \
     -ltwoPhaseProperties 

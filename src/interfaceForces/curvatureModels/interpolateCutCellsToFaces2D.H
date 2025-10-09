@@ -1,5 +1,4 @@
 const volVectorField& faceCentre = surf.centre();
-const labelList& globalIds=ijkMesh_.globalIds(); 
 point Pmin=ijkMesh_.Pmin();
 //point Pmax=ijkMesh_.Pmax();
 //const scalar dx=ijkMesh_.dx();
@@ -139,8 +138,8 @@ forAll(Kf_,iFace)
 		    kl=kP-1-k;
 		  else
 		    kl=(kP+k+Nz)%Nz;
-		  label ijk=il+Nx*jl+Nx*Ny*kl;
-		  label gblId=globalIds[ijk];
+		  label gblId=ijkMesh_.lookupGlobalId(il,jl,kl);
+		  
 		  if (curvIJK[gblId]!=0)
 		    {
 		      vector fC=faceCentreIJK[gblId];
@@ -232,8 +231,7 @@ forAll(mesh.boundaryMesh(),iPatch)
 			    kl=kP-1-k;
 			  else
 			    kl=(kP+k+Nz)%Nz;
-			  label ijk=il+Nx*jl+Nx*Ny*kl;
-			  label gblId=globalIds[ijk];
+			  label gblId=ijkMesh_.lookupGlobalId(il,jl,kl);
 			  //if (alphaIJK[gblId]>interfaceTol_ && alphaIJK[gblId]<1-interfaceTol_ && curvIJK[gblId]!=0)
 			  if (curvIJK[gblId]!=0)
 			    {

@@ -124,7 +124,6 @@ Foam::uniformStencil::uniformStencil(const Foam::fvMesh& mesh,
 
 void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<label>& ijk)
 {
-  const labelList& globalIds=ijkMesh_.globalIds();
   const Vector<bool>& isEmpty=ijkMesh_.isEmpty();
   const label Nx=ijkMesh_.Nx();
   const label Ny=ijkMesh_.Ny();
@@ -157,8 +156,7 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 		kl=kP-1-k;
 	      else
 		kl=(kP+k+Nz)%Nz;
-	      label ijkG=ijkMesh_.ijk1(il,jl,kl); 
-	      label gblIdx=globalIds[ijkG];
+	      label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
 	      A_[a2(j,k)]=phiIJK[gblIdx];	
 	    }
 	}
@@ -182,8 +180,7 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 		kl=kP-1-k;
 	      else
 		kl=(kP+k+Nz)%Nz;
-	      label ijkG=ijkMesh_.ijk1(il,jl,kl); 
-	      label gblIdx=globalIds[ijkG];
+	      label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
 	      A_[a2(i,k)]=phiIJK[gblIdx];
 	    }
 	}
@@ -207,8 +204,7 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 		jl=jP-1-j;
 	      else
 		jl=(jP+j+Ny)%Ny;
-	      label ijkG=ijkMesh_.ijk1(il,jl,kl); 
-	      label gblIdx=globalIds[ijkG];
+	      label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
 	      A_[a2(i,j)]=phiIJK[gblIdx];	
 	    }
 	}
@@ -242,8 +238,7 @@ void Foam::uniformStencil::setStencil(const Map<scalar>& phiIJK, const Vector<la
 		  //label il=(iP+i+Nx)%Nx;
 		  //label jl=(jP+j+Ny)%Ny;
 		  //label kl=(kP+k+Nz)%Nz;
-		  label ijkG=ijkMesh_.ijk1(il,jl,kl); 
-		  label gblIdx=globalIds[ijkG];
+		  label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
 		  //label ijkL=(i+nMax_)+NS_*(j+nMax_)+NS_*NS_*(k+nMax_);
 		  A_[a3(i,j,k)]=phiIJK[gblIdx];	
 		}

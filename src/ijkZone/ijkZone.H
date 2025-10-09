@@ -28,7 +28,7 @@ Class
 
 Description
 
-    Developed by Asim Onder (2021)
+    Developed by Asim Onder (2021-2025)
 
 SourceFiles
     ijkZone.C
@@ -48,6 +48,7 @@ SourceFiles
 #include "IOdictionary.H"
 #include "MeshObject.H"
 #include "IFstream.H"
+#include "OFstream.H"
 #include "cellSet.H"
 #include "regIOobject.H" 
 
@@ -60,7 +61,6 @@ namespace Foam
 /*---------------------------------------------------------------------------*\
                         Class ijkZone Declaration
 \*---------------------------------------------------------------------------*/
-
 
 class ijkZone
 :
@@ -75,8 +75,14 @@ class ijkZone
     const fvMesh& mesh_;
     point Pmin_;
     point Pmax_;
-    scalar dx_;scalar dy_;scalar dz_;
+    point PminL_;
+    point PmaxL_;
+  // Local window integer offsets
+    label minIL_, minJL_, minKL_;
+  label maxIL_, maxJL_, maxKL_;
+  scalar dx_;scalar dy_;scalar dz_;
     label Nx_;label Ny_;label Nz_;
+    label NxL_;label NyL_;label NzL_;
     scalar Lx_;scalar Ly_;scalar Lz_;
     labelList globalIds_;
     labelList neighbourProcs_;
@@ -175,9 +181,17 @@ class ijkZone
     //convert i,j,k addressing to 1D 
     label ijk1(Vector<label> ijk3) const {return ijk3.x()+Nx_*ijk3.y()+Nx_*Ny_*ijk3.z();}
     label ijk1(label i, label j, label k) const {return i+Nx_*j+Nx_*Ny_*k;}
+    label ijk1L(label i, label j, label k) const {return i+NxL_*j+NxL_*NyL_*k;}
+
+    Vector<label> ijk3(const label celli) const;
+    Vector<label> ijk1To3(label ijk) const; // const {return i+Nx_*j+Nx_*Ny_*k;}
     
-    Vector<label> ijk3(const label celli);
-    
+  //    label ijkGlobalToLocal(const label celli);
+    label ijkGlobalToLocal(const label ijk) const;
+    label ijkGlobalToLocal(const label i, const label j, const label k) const;
+
+    label lookupGlobalId(label i, label j, label k) const;
+  
   };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -170,7 +170,6 @@ void Foam::heightFunction::correctContactAngle
 
 Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar>& phiIJK,const Vector<label>& ijk,label dir)
 {
-  const labelList& globalIds=ijkMesh_.globalIds();
   const Vector<bool>& isEmpty=ijkMesh_.isEmpty();
   const label Nx=ijkMesh_.Nx();
   const label Ny=ijkMesh_.Ny();
@@ -209,8 +208,7 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 		   kl=kP-1-k;
 		 else
 		   kl=(kP+k+Nz)%Nz;
-		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
-		 label gblIdx=globalIds[ijkG];
+		 label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
 		 if (dir==1)
 		   H[k+1]+=phiIJK[gblIdx];
 		 else
@@ -237,8 +235,7 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 		   kl=kP-1-k;
 		 else
 		   kl=(kP+k+Nz)%Nz;
-		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
-		 label gblIdx=globalIds[ijkG];
+		 label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
 		 if (dir==0)
 		   H[k+1]+=phiIJK[gblIdx];
 		 else
@@ -265,8 +262,7 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 		   jl=jP-1-j;
 		 else
 		   jl=(jP+j+Ny)%Ny;
-		 label ijkG=ijkMesh_.ijk1(il,jl,kl); 
-		 label gblIdx=globalIds[ijkG];
+		 label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
 		 if (dir==0)
 		   H[j+1]+=phiIJK[gblIdx];
 		 else
@@ -302,8 +298,7 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 		    kl=kP-1-k;
 		  else
 		    kl=(kP+k+Nz)%Nz;
-		  label ijkG=ijkMesh_.ijk1(il,jl,kl); 
-		  label gblIdx=globalIds[ijkG];
+		  label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
 		  if (dir==0)
 		    H[j+1+3*(k+1)]+=phiIJK[gblIdx];
 		  else if (dir==1)

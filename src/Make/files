@@ -19,5 +19,6 @@ DLR_TwoPhaseFlow/curvature/RDF/RDF.C
 
 implicitFunctions/interpolatedWave/interpolatedWaveImplicitFunction.C
 
+functionObjects/RDF/RDF.C
 
 LIB = $(FOAM_USER_LIBBIN)/libgeometricVoFCartesian

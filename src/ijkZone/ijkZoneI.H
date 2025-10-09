@@ -51,8 +51,10 @@ void Foam::ijkZone::getZoneField(const Foam::boolList& zone,
     jMax=0;
   if (isEmpty_.z())
     kMax=0;
+
+
   
-#include "ijkZone/zoneTransfers.H"
+ #include "ijkZone/zoneTransfers.H"
   
 }
 

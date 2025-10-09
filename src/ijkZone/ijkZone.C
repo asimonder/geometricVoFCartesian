@@ -1,4 +1,4 @@
-/*---------------------------------------------------------------------------*\
+/*---------------------------------------------------------------------------* \
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
@@ -166,6 +166,11 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
       Foam::reduce(dz_, maxOp<scalar>());    
     }
 
+  PmaxL_=Pmax_;
+  PminL_=Pmin_;
+
+  
+  // Global bounding box
   Info<< "dx= "<<dx_<< ",  dy= "<<dy_<< ",   dz= "<<dz_<<endl;
 
   Lx_=Pmax_.x()-Pmin_.x();
@@ -174,6 +179,9 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
   Nx_=round(Lx_/dx_+1.0);
   Ny_=round(Ly_/dy_+1.0);
   Nz_=round(Lz_/dz_+1.0);
+  NxL_=Nx_;
+  NyL_=Ny_;
+  NzL_=Nz_;
   
 
   Info<<"Pmin="<<Pmin_<<", Pmax="<<Pmax_<<endl;	   
@@ -190,9 +198,8 @@ Foam::ijkZone::ijkZone(const fvMesh& mesh):
   Info<<"is y periodic: " <<isCyclic_.y()<<endl;
   Info<<"is z periodic: " <<isCyclic_.z()<<endl;
 
-  
  ///////////////////// REFACTORING THE PARALLEL COMMUNICATION ///////////////////////
-#include "parallelCommunication.H"
+#include "parallelCommunicationDbg2.H"
 
 }
 
@@ -214,7 +221,7 @@ void Foam::ijkZone::markBoundaryCells(boolList& atBoundary,label nOffsetCells)
 }
 
 
-Foam::Vector<Foam::label> Foam::ijkZone::ijk3(label celli)
+Foam::Vector<Foam::label> Foam::ijkZone::ijk3(label celli) const
 {  
   label i=round((C_[celli].x()-Pmin_.x())/dx_);
   label j=round((C_[celli].y()-Pmin_.y())/dy_);
@@ -230,33 +237,69 @@ Foam::Vector<Foam::label> Foam::ijkZone::ijk3(label celli)
   return Vector<label>(i,j,k);
 }
 
-
-
-// * * * * * * * * * * * * * * * * Selectors  * * * * * * * * * * * * * * //
-/*Foam::ijkZone& Foam::ijkZone::New(const fvMesh& mesh)
+Foam::Vector<Foam::label> Foam::ijkZone::ijk1To3(label ijk) const
 {
-    bool found = mesh.thisDb().foundObject<ijkZone>
-    (
-        ijkZone::typeName
-    ); 
-    ijkZone* ptr = nullptr;
+    label k = ijk / (Nx_*Ny_);
+    label rem = ijk % (Nx_*Ny_);
+    label j = rem / Nx_;
+    label i = rem % Nx_;
 
-    if(found)
+    return Vector<label>(i,j,k);
+}
+
+
+Foam::label Foam::ijkZone::ijkGlobalToLocal(label ijk) const
+{
+    Vector<label> ijkG3 = ijk1To3(ijk);
+
+    label i = ijkG3.x() - minIL_;
+    label j = ijkG3.y() - minJL_;
+    label k = ijkG3.z() - minKL_;
+
+    if (isEmpty_.x())
+      i=0;
+    else if (isEmpty_.y())
+      j=0;
+    else if (isEmpty_.z())
+      k=0;
+    
+    return ijk1L(i, j, k);
+}
+
+
+
+Foam::label Foam::ijkZone::ijkGlobalToLocal(label iG,label jG,label kG) const
+{
+  label i = iG - minIL_;
+  label j = jG - minJL_;
+  label k = kG - minKL_;
+
+  if (isEmpty_.x())
+    i=0;
+  else if (isEmpty_.y())
+    j=0;
+  else if (isEmpty_.z())
+    k=0;
+
+  return ijk1L(i,j,k);;
+}
+
+Foam::label Foam::ijkZone::lookupGlobalId(label i, label j, label k) const
+{
+    const label globalKey = ijk1(i,j,k);              // global flatten
+    const label localKey  = ijkGlobalToLocal(globalKey);
+
+    if (localKey < 0 || localKey >= globalIds_.size())
     {
-        ptr = mesh.thisDb().getObjectPtr<ijkZone>
-        (
-            ijkZone::typeName
-        );
-
-        return *ptr;
+        FatalErrorInFunction
+            << "Out of range lookup: globalKey=" << globalKey
+            << " localKey=" << localKey
+            << " size=" << globalIds_.size()
+            << exit(FatalError);
     }
-
-    ijkZone* objectPtr = new ijkZone(mesh);
-
-    regIOobject::store(static_cast<ijkZone*>(objectPtr));
-
-    return *objectPtr;
-    }*/
+    
+    return globalIds_[localKey];
+}
  
 bool Foam::ijkZone::writeData(Ostream& os) const
 {
