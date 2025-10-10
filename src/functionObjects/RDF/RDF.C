@@ -32,7 +32,8 @@ bool Foam::functionObjects::RDF::calc()
         return false;
 	}*/
 
-  // const volScalarField& alpha = obr().lookupObject<volScalarField>(alphaName_);
+  //const volScalarField& alpha = obr().lookupObject<volScalarField>(alphaName_);
+  
 
     reconstructionSchemes& recon =
       obr().lookupObjectRef<reconstructionSchemes>("reconstructionScheme");
