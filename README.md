@@ -23,7 +23,7 @@ Machine learning models employ deep MLP architectures to estimate the interfacia
 - **SymMLP**: the symmetry-preserving MLP model using bias-free neurons
 - **StdMLP**: the standard MLP model
 
-The models are available in [benchmarks/casesOF/2D/mlpCurvatureModels](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/casesOF/2D/mlpCurvatureModels).  Training datasets can be shared upon request.
+The models are available in [benchmarks/OpenFOAM/2D/mlpCurvatureModels](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/OpenFOAM/2D/mlpCurvatureModels).  Training datasets can be shared upon request.
 
 ### Development 
 
@@ -43,7 +43,7 @@ The code to develop MLP models can be found in [tensorflow](https://github.com/a
 
 The ```multilayerPerceptron``` class in OpenFOAM reads these txt files and constructs the corresponding MLP model.
 
-4. The best performing models are selected after conducting analytical tests in python environment (cf. Jupyter Notebooks in [/benchmarks/analyticShapes](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/analyticShapes)), and standard benchmark tests in OpenFOAM (cf. [benchmarks/casesOF/2D](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/analyticShapes)). 
+4. The best performing models are selected after conducting analytical tests in python environment (cf. Jupyter Notebooks in [/benchmarks/Python](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/Python)), and standard benchmark tests in OpenFOAM (cf. [benchmarks/OpenFOAM/2D](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/OpenFOAM/2D)). 
 
 The technical details are elaborated in [Önder & Liu (2023)](https://www.dropbox.com/s/7u9v05ejmipdgfn/Onder_Liu_JCP2023.pdf?dl=0). 
 
@@ -105,7 +105,7 @@ mlpParams
 ```mlpModel``` specifies the full path to txt files containing weights and biases of the model. ```interfaceTol``` is the volume-fraction threshold for curvature to be non-zero. ```zonalModel``` has to be set ```true``` for symmetry-preserving MLP. If the MLP model uses input-output scaling, then ```useScaling``` is set to ```true```, and ```xoffsetInput```, ```gainInput```, ```yminInput```, ```yminOutput```, ```gainOutput``` and ```xoffsetOutput``` have to be specified.
 
 ## Examples 
-Several benchmark cases are provided in [benchmarks/casesOF](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/casesOF) directory:
+Several benchmark cases are provided in [benchmarks/casesOF](https://github.com/asimonder/geometricVoFCartesian/tree/main/benchmarks/OpenFOAM) directory:
 - **2D**: stationary bubble, rising bubble, standing capillary wave, parasitic capillary ripples. See Sec. 5 in [Önder & Liu (2023)](https://www.dropbox.com/s/7u9v05ejmipdgfn/Onder_Liu_JCP2023.pdf?dl=0) for results.
 
 ![Parasitic ripples](./benchmarks/casesOF/2D/parasiticRipples/GCapillaryWave.gif)
