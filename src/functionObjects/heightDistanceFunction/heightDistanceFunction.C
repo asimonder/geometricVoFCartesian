@@ -124,7 +124,7 @@ bool Foam::functionObjects::heightDistanceFunction::write()
         {
             for (label i = 0; i < Nx_; i++)
             {
-                os << i*dx_+dx/2. << " " << j*dy_+dy_/2. << " " << eta_[ij(i,j)] << nl;
+                os << i*dx_+dx_/2. << " " << j*dy_+dy_/2. << " " << eta_[ij(i,j)] << nl;
             }
         }
     }
