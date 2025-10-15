@@ -74,10 +74,11 @@ bool Foam::functionObjects::heightDistanceFunction::calc()
                 IOobject::NO_WRITE
             ),
             mesh_,
-            dimensionedScalar("zero", dimLength, 0.0)
+            dimensionedScalar("init", dimLength, 0.0)
         )
     );
 
+    
     volScalarField& phi = tPhi.ref();
 
     forAll(phi, celli)
@@ -90,7 +91,18 @@ bool Foam::functionObjects::heightDistanceFunction::calc()
         phi[celli] = mesh_.C()[celli].z()-(eta[ij(i,j)]+zMin_);
     }
 
-    phi.correctBoundaryConditions();
+    //    phi.correctBoundaryConditions();
+
+    forAll(mesh_.boundary(), patchI)
+      {
+	const vectorField& cf = mesh_.boundary()[patchI].Cf();
+	scalarField& bf = phi.boundaryFieldRef()[patchI];
+	
+	forAll(cf, f)
+	  {
+	    bf[f] = cf[f].z();   // set to the face-centre elevation
+	  }
+      }    
     
     // store and return true on success
     return store(resultName_, tPhi);
@@ -124,7 +136,7 @@ bool Foam::functionObjects::heightDistanceFunction::write()
         {
             for (label i = 0; i < Nx_; i++)
             {
-                os << i*dx_+dx/2. << " " << j*dy_+dy_/2. << " " << eta_[ij(i,j)] << nl;
+                os << i*dx_+dx_/2. << " " << j*dy_+dy_/2. << " " << eta_[ij(i,j)] << nl;
             }
         }
     }
