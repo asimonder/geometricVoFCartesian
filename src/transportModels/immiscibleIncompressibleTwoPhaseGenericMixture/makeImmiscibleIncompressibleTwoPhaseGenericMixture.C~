@@ -1,0 +1,5 @@
+#include "immiscibleIncompressibleTwoPhaseGenericMixture.H"
+#include "incompressibleInterPhaseTransportModel.H"
+#include "makeIncompressibleInterPhaseTransportModel.H"
+
+makeIncompressibleInterPhaseTransportModel(immiscibleIncompressibleTwoPhaseGenericMixture);

@@ -58,7 +58,7 @@ Description
 #include "localEulerDdtScheme.H"
 #include "CrankNicolsonDdtScheme.H"
 #include "subCycle.H"
-#include "immiscibleIncompressibleTwoPhaseMixture.H"
+#include "immiscibleIncompressibleTwoPhaseGenericMixture.H"
 #include "incompressibleInterPhaseTransportModel.H"
 //#include "turbulentTransportModel.H"
 #include "pimpleControl.H"
