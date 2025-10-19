@@ -117,7 +117,18 @@ Foam::incompressibleTwoPhaseGenericMixture::incompressibleTwoPhaseGenericMixture
     )
 {
   phaseInterpolation_ = this->lookupOrDefault<word>("phaseInterpolation", "linear");
+  if (phaseInterpolation_ != "linear" && phaseInterpolation_ != "harmonic")
+    {
+      FatalIOErrorInFunction(*this)
+        << "Unknown phaseInterpolation type: " << phaseInterpolation_ << nl
+        << "Valid options are:" << nl
+        << "    linear"  << nl
+        << "    harmonic" << nl
+        << exit(FatalIOError);
+    }
+  
   calcNu();
+  
 }
 
 
