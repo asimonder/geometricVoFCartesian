@@ -1,3 +1,0 @@
-interIsoDyCartFoam.C
-
-EXE = $(FOAM_APPBIN)/interIsoDyCartFoam
