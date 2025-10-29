@@ -14,8 +14,8 @@ int main(int argc, char *argv[])
     (
         IOobject
         (
-            "cleanCarrierPhasesDict",
-            runTime.constant(),
+	    "cleanCarrierPhasesDict",
+	    runTime.globalPath()/"system",
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
@@ -44,21 +44,38 @@ int main(int argc, char *argv[])
     );
 
     const scalarField& zc = mesh.C().component(vector::Z);
+    const pointField& cc = mesh.C();
+
+    label iC = 0;
 
     forAll(alpha, i)
-    {
-        const scalar z = zc[i];
-        if (z < zMinAlpha)
-        {
-            alpha[i] = 1.0;
-        }
-        else if (z > zMaxAlpha)
-        {
-            alpha[i] = 0.0;
-        }
-        // leave cells between zMinAlpha and zMaxAlpha unchanged
-    }
-
+      {
+	const scalar z = zc[i];
+	const scalar oldVal = alpha[i];
+	
+	if (z < zMinAlpha && oldVal != 1.0)
+	  {
+	    alpha[i] = 1.0;
+	    iC++;
+	    Pout << "Cell " << i << " at " << cc[i]
+		 << ": alpha changed from " << oldVal << " to 1.0 (z = " << z << ")" << nl;
+	  }
+	else if (z > zMaxAlpha && oldVal != 0.0)
+	  {
+	    alpha[i] = 0.0;
+	    iC++;
+	    Pout << "Cell " << i << " at " << cc[i]
+		 << ": alpha changed from " << oldVal << " to 0.0 (z = " << z << ")" << nl;
+	  }
+      }
+    
+    reduce(iC, sumOp<label>());
+    
+    if (Pstream::master())
+      {
+	Info<< "Total number of cells modified: " << iC << nl;
+      }
+    
     alpha.correctBoundaryConditions();
     alpha.write();
 
