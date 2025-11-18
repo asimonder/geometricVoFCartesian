@@ -933,10 +933,10 @@ $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/CrankNicolsonDdtScheme.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/CrankNicolsonDdtScheme.C \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/subCycle.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/subCycleTime.H \
-$(WM_PROJECT_DIR)/src/transportModels/immiscibleIncompressibleTwoPhaseMixture/lnInclude/immiscibleIncompressibleTwoPhaseMixture.H \
-$(WM_PROJECT_DIR)/src/transportModels/incompressible/lnInclude/incompressibleTwoPhaseMixture.H \
-$(WM_PROJECT_DIR)/src/transportModels/incompressible/transportModel/transportModel.H \
-$(WM_PROJECT_DIR)/src/transportModels/incompressible/viscosityModels/viscosityModel/viscosityModel.H \
+../../../src/lnInclude/immiscibleIncompressibleTwoPhaseGenericMixture.H \
+../../../src/lnInclude/incompressibleTwoPhaseGenericMixture.H \
+$(WM_PROJECT_DIR)/src/transportModels/incompressible/lnInclude/transportModel.H \
+$(WM_PROJECT_DIR)/src/transportModels/incompressible/lnInclude/viscosityModel.H \
 $(WM_PROJECT_DIR)/src/transportModels/twoPhaseMixture/lnInclude/twoPhaseMixture.H \
 $(WM_PROJECT_DIR)/src/transportModels/interfaceProperties/lnInclude/interfaceProperties.H \
 $(WM_PROJECT_DIR)/src/transportModels/interfaceProperties/lnInclude/surfaceTensionModel.H \
@@ -960,6 +960,7 @@ $(WM_PROJECT_DIR)/src/TurbulenceModels/turbulenceModels/lnInclude/RASModel.C \
 $(WM_PROJECT_DIR)/src/TurbulenceModels/turbulenceModels/lnInclude/LESModel.H \
 $(WM_PROJECT_DIR)/src/TurbulenceModels/turbulenceModels/lnInclude/LESdelta.H \
 $(WM_PROJECT_DIR)/src/TurbulenceModels/turbulenceModels/lnInclude/LESModel.C \
+$(WM_PROJECT_DIR)/src/transportModels/incompressible/transportModel/transportModel.H \
 $(WM_PROJECT_DIR)/src/TurbulenceModels/incompressible/lnInclude/turbulentTransportModel.C \
 $(WM_PROJECT_DIR)/src/phaseSystemModels/twoPhaseInter/VoFphaseIncompressibleTurbulenceModels/lnInclude/VoFphaseTurbulentTransportModel.H \
 $(WM_PROJECT_DIR)/src/TurbulenceModels/phaseIncompressible/lnInclude/PhaseIncompressibleTurbulenceModel.H \
@@ -989,8 +990,8 @@ $(WM_PROJECT_DIR)/src/dynamicMesh/lnInclude/hexRef8.H \
 $(WM_PROJECT_DIR)/src/dynamicMesh/lnInclude/removeFaces.H \
 $(WM_PROJECT_DIR)/src/dynamicMesh/lnInclude/refinementHistory.H \
 $(WM_PROJECT_DIR)/src/dynamicFvMesh/lnInclude/dynamicRefineFvMeshTemplates.C \
-../../src/lnInclude/interfaceForces.H \
-../../src/lnInclude/curvatureModel.H \
+../../../src/lnInclude/interfaceForces.H \
+../../../src/lnInclude/curvatureModel.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/postProcess.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/addRegionOption.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/addFunctionObjectOptions.H \

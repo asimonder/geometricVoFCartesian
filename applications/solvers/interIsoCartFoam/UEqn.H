@@ -3,7 +3,7 @@
     fvVectorMatrix UEqn
     (
         fvm::ddt(rho, U) + fvm::div(rhoPhi, U)
-      + MRF.DDt(rho, U)
+        + MRF.DDt(rho, U)
 	//+ turbulence->divDevRhoReff(rho, U)
 	- fvm::laplacian(mixture.muf(), U)
      ==
