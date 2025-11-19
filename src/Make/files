@@ -26,6 +26,5 @@ transportModels/immiscibleIncompressibleTwoPhaseGenericMixture/immiscibleIncompr
 transportModels/immiscibleIncompressibleTwoPhaseGenericMixture/makeImmiscibleIncompressibleTwoPhaseGenericMixture.C
 
 finiteVolume/divSchemes/momentumConsistentLinear/momentumConsistentLinear.C
-finiteVolume/ddtSchemes/momentumConsistentCrankNicolson/momentumConsistentCrankNicolsonSchemes.C
 
 LIB = $(FOAM_USER_LIBBIN)/libgeometricVoFCartesian

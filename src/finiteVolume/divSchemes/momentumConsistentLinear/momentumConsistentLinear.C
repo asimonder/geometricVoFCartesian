@@ -25,9 +25,13 @@ License
 
 \*---------------------------------------------------------------------------*/
 
+
 #include "momentumConsistentLinear.H"
 #include "fvMesh.H"
 #include "fvcSnGrad.H"
+// for parallel reduction
+#include "Pstream.H"
+#include "ops.H" 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -39,7 +43,7 @@ Foam::momentumConsistentLinear<Type>::weights
 ) const
 {
     const fvMesh& mesh = this->mesh();
-    
+
     tmp<surfaceScalarField> tWeights
     (
         new surfaceScalarField
@@ -57,47 +61,61 @@ Foam::momentumConsistentLinear<Type>::weights
             dimless
         )
     );
-    
+
     surfaceScalarField& weights = tWeights.ref();
-    
-    // Compute snGrad(alpha) at faces
-    //const surfaceScalarField snGradAlpha = fvc::snGrad(alpha_);
+
     tmp<surfaceScalarField> tsnGradAlpha = fvc::snGrad(alpha_);
     const surfaceScalarField& snGradAlpha = tsnGradAlpha();
-    
+
     const surfaceScalarField& faceFlux = this->faceFlux_;
     const surfaceScalarField& meshWeights = mesh.weights();
     
-    // Interior faces
+    // Get face areas for accurate statistics
+    const surfaceScalarField& magSf = mesh.magSf();
+
+    // Statistics counters
+    scalar linearArea = 0.0;
+    scalar totalArea = 0.0;
+
+    // Internal faces
     forAll(weights, facei)
     {
+        scalar faceArea = magSf[facei];
+        totalArea += faceArea;
+
         if (mag(snGradAlpha[facei]) > interfaceThreshold_)
         {
-            // Interface: use upwind (0 or 1 based on flux)
+            // Interface: use upwind
             weights[facei] = (faceFlux[facei] > 0) ? 1.0 : 0.0;
         }
         else
         {
-            // Bulk: use linear (central differencing)
+            // Bulk: use linear
             weights[facei] = meshWeights[facei];
+            linearArea += faceArea; // Count this area as Linear/Bulk
         }
     }
-    
+
     // Boundary faces
     surfaceScalarField::Boundary& bWeights = weights.boundaryFieldRef();
     const surfaceScalarField::Boundary& bSnGradAlpha = snGradAlpha.boundaryField();
     const surfaceScalarField::Boundary& bFaceFlux = faceFlux.boundaryField();
     const surfaceScalarField::Boundary& bMeshWeights = meshWeights.boundaryField();
-    
+    const surfaceScalarField::Boundary& bMagSf = magSf.boundaryField();
+
     forAll(bWeights, patchi)
     {
         scalarField& pWeights = bWeights[patchi];
         const scalarField& pSnGradAlpha = bSnGradAlpha[patchi];
         const scalarField& pFaceFlux = bFaceFlux[patchi];
         const scalarField& pMeshWeights = bMeshWeights[patchi];
-        
+        const scalarField& pMagSf = bMagSf[patchi];
+
         forAll(pWeights, facei)
         {
+            scalar faceArea = pMagSf[facei];
+            totalArea += faceArea;
+
             if (mag(pSnGradAlpha[facei]) > interfaceThreshold_)
             {
                 pWeights[facei] = (pFaceFlux[facei] > 0) ? 1.0 : 0.0;
@@ -105,10 +123,30 @@ Foam::momentumConsistentLinear<Type>::weights
             else
             {
                 pWeights[facei] = pMeshWeights[facei];
+                linearArea += faceArea; // Count as Linear
             }
         }
     }
-    
+
+    // Parallel Reduction
+    // This ensures the stats are summed across all processors
+    reduce(linearArea, sumOp<scalar>());
+    reduce(totalArea, sumOp<scalar>());
+
+    // Print Statistics (Only on Master to avoid log spam)
+    if (Pstream::master())
+    {
+        scalar bulkFraction = 0.0;
+        if (totalArea > VSMALL)
+        {
+            bulkFraction = linearArea / totalArea;
+        }
+        
+        // Print the fraction of the Face Area that is using Linear interpolation
+        Info<< "MomentumLinear: Bulk (Linear) Face Area Fraction = " 
+            << bulkFraction * 100.0 << " %" << endl;
+    }
+
     return tWeights;
 }
 
@@ -117,4 +155,11 @@ namespace Foam
     makeSurfaceInterpolationScheme(momentumConsistentLinear)
 }
 
-// ************************************************************************* //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+
+
+
+
+
+
