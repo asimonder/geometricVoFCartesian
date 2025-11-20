@@ -114,13 +114,18 @@ int main(int argc, char *argv[])
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
+	const dimensionedScalar& dt0 = runTime.deltaT0();
+	
+	tmp<volVectorField> tDeltaRhoU = rho.oldTime() * U.oldTime() - rho.oldTime().oldTime() * U.oldTime().oldTime();
+	const volVectorField& deltaRhoU = tDeltaRhoU(); 
+
+	volVectorField ddt0_old_stored("ddt0_old_stored", ddt0);
+
+	
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
         {
 	  
-	  tmp<surfaceScalarField> tmufOld = mixture.muf();
-	  const surfaceScalarField& mufOld = tmufOld();
-
             if (pimple.firstIter() || moveMeshOuterCorrectors)
             {
                 if (isA<dynamicRefineFvMesh>(mesh))

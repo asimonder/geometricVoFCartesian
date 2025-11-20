@@ -170,3 +170,17 @@ mesh.setFluxRequired(alpha1.name());
 
 isoAdvection advector(alpha1, phi, U);
 
+Info<< "Creating ddt0 field for recursive CN calculation\n" << endl;
+volVectorField ddt0
+(
+    IOobject
+    (
+        "ddt0",
+        runTime.timeName(),
+        mesh,
+        IOobject::MUST_READ_IF_MODIFIED, // Crucial: Loads old value on restart
+        IOobject::AUTO_WRITE             // Saves value for restarts
+    ),
+    mesh,
+    dimensionedVector(dimDensity * dimVelocity / dimTime, Zero)
+);

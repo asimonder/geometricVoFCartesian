@@ -15,23 +15,27 @@ forAll(intCoeff, cellI)
     }
 }
 
-//surfScalarField impCoeffs = fvc::interpolate(1.0 - (1.0 - beta)*intCoeff);
-//surfScalarField expCoeffs = fvc::interpolate(1.0 - (1.0 - beta)*intCoeff);
-tmp<surfaceScalarField> timpCoeffs = fvc::interpolate(1.0 - (1.0 - beta)*intCoeff);
-const surfaceScalarField& impCoeffs = timpCoeffs();
-tmp<surfaceScalarField> texpCoeffs = fvc::interpolate((1.0 - beta)*intCoeff);
-const surfaceScalarField& expCoeffs = texpCoeffs();
+tmp<volScalarField> tOffCenterCoeff = beta * intCoeff;
+const volScalarField& offCenterCoeff = tOffCenterCoeff();
 
+if (runTime.timeIndex() > runTime.startTimeIndex() + 1)
+  {
+    ddt0 = ((1.0 + offCenterCoeff) / dt0) * deltaRhoU - (offCenterCoeff * ddt0_old_stored);
+  }
+ else
+   {
+     ddt0 = deltaRhoU / dt0;
+   }
 
 fvVectorMatrix UEqn
 (
-    fvm::ddt(rho, U) + MRF.DDt(rho, U)
-      +  fvm::div(impCoeffs*rhoPhi, U)
-      - fvm::laplacian(impCoeffs*mixture.muf(), U)
-  ==
+    (1.0 + offCenterCoeff) * fvm::ddt(rho, U)
+  + MRF.DDt(rho, U)
+  + fvm::div(rhoPhi, U)
+  - fvm::laplacian(mixture.muf(), U)
+ ==
     fvOptions(rho, U)
-    - fvc::div(expCoeffs*rhoPhi.oldTime(), U.oldTime())
-    + fvc::laplacian(expCoeffs*mufOld, U.oldTime())
+  + offCenterCoeff * ddt0
 );
 
 
