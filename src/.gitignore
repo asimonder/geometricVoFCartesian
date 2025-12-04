@@ -2,3 +2,22 @@
 \#*\#
 .\#*
 [#]*[#]
+# OpenFOAM Build artifacts
+Make/linux*/
+**/Make/linux*/
+*.o
+*.dep
+*.so
+*.a
+lnInclude/
+**/lnInclude/
+
+# Backup and temp files
+*~
+#*#
+.#*
+*.swp
+
+# Logs
+log
+

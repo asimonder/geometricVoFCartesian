@@ -7,22 +7,6 @@
 -------------------------------------------------------------------------------
     Copyright (C) 2025 Asim Onder
 -------------------------------------------------------------------------------
-License
-    This file is part of OpenFOAM.
-
-    OpenFOAM is free software: you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
-    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-    for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
-
 Class
     Foam::fv::momentumConsistentCrankNicolson
 
@@ -47,6 +31,7 @@ Description
 #define momentumConsistentCrankNicolson_H
 
 #include "ddtScheme.H"
+#include "volFields.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -115,9 +100,12 @@ class momentumConsistentCrankNicolson
         scalar interfaceThreshold_;
         
         //- Spatially varying offset coefficient field
-        mutable scalarField ocCoeff_;
+        //  Must be volScalarField to handle parallel/cyclic BCs correctly
+        volScalarField ocCoeff_;
 
-
+        mutable volScalarField rDtCoefField_;
+        mutable volScalarField rDtCoef0Field_;
+  
     // Private Member Functions
 
         //- No copy construct
@@ -127,7 +115,7 @@ class momentumConsistentCrankNicolson
         void operator=(const momentumConsistentCrankNicolson&) = delete;
         
         //- Update spatially varying coefficient
-        void updateOcCoeff() const;
+        void updateOcCoeff();
         
         //- Get or create ddt0 field
         template<class GeoField>
@@ -151,11 +139,11 @@ class momentumConsistentCrankNicolson
 
         //- Return reciprocal time coefficient
         template<class GeoField>
-        tmp<scalarField> rDtCoef_(const DDt0Field<GeoField>&) const;
+        tmp<volScalarField> rDtCoef_(const DDt0Field<GeoField>&) const;
 
         //- Return reciprocal old time coefficient
         template<class GeoField>
-        tmp<scalarField> rDtCoef0_(const DDt0Field<GeoField>&) const;
+        tmp<volScalarField> rDtCoef0_(const DDt0Field<GeoField>&) const;
 
         //- Return ddt0 multiplied by off-centering coefficient
         template<class GeoField>
@@ -269,7 +257,36 @@ public:
         );
 };
 
+template<>
+tmp<surfaceScalarField> momentumConsistentCrankNicolson<scalar>::fvcDdtUfCorr
+(
+    const GeometricField<scalar, fvPatchField, volMesh>& U,
+    const GeometricField<scalar, fvsPatchField, surfaceMesh>& Uf
+);
 
+template<>
+tmp<surfaceScalarField> momentumConsistentCrankNicolson<scalar>::fvcDdtPhiCorr
+(
+    const volScalarField& U,
+    const surfaceScalarField& phi
+);
+
+template<>
+tmp<surfaceScalarField> momentumConsistentCrankNicolson<scalar>::fvcDdtUfCorr
+(
+    const volScalarField& rho,
+    const volScalarField& U,
+    const surfaceScalarField& Uf
+);
+
+template<>
+tmp<surfaceScalarField> momentumConsistentCrankNicolson<scalar>::fvcDdtPhiCorr
+(
+    const volScalarField& rho,
+    const volScalarField& U,
+    const surfaceScalarField& phi
+);
+  
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 } // End namespace fv
@@ -288,4 +305,4 @@ public:
 
 #endif
 
-// ************************************************************************* //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
