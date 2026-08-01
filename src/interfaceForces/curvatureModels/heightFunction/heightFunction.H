@@ -34,7 +34,8 @@ SourceFiles
 #include "autoPtr.H"
 #include "curvatureModel.H"
 #include "globalIndex.H"
-//#include "reconstructedDistanceFunction.H"
+#include "zoneDistribute.H"
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -73,6 +74,7 @@ private:
 
   boolList boundaryCells_;
 
+  //mutable autoPtr<reconstructedDistanceFunction> rdfPtr_;
   
   //- Disallow copy construct
   heightFunction(const heightFunction&);
@@ -81,6 +83,8 @@ private:
   void operator=(const heightFunction&);
 
   List<scalar> calculateHeights(const Map<scalar>& phiIJK,const Vector<label>& ijk,label dir);
+
+  
   
 protected:
 

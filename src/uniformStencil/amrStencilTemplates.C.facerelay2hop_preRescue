@@ -1,0 +1,601 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2026 Asim Onder
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+License
+    This file is part of OpenFOAM.
+
+    OpenFOAM is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+
+\*---------------------------------------------------------------------------*/
+
+#include <queue>
+#include <cmath>
+
+// * * * * * * * * * * * * Private helper * * * * * * * * * * * * * * * * * //
+
+static bool bboxOverlaps
+(
+    const Foam::point& eMin,
+    const Foam::point& eMax,
+    const Foam::point& dMin,
+    const Foam::point& dMax,
+    const Foam::Vector<bool>& isCyclic,
+    const Foam::vector& L
+)
+{
+    for (Foam::direction d = 0; d < 3; d++)
+    {
+        bool dimOK = false;
+        if (eMin[d] <= dMax[d] && eMax[d] >= dMin[d])
+            dimOK = true;
+
+        if (!dimOK && isCyclic[d] && L[d] > Foam::SMALL)
+        {
+            if ((eMin[d]+L[d]) <= dMax[d] && (eMax[d]+L[d]) >= dMin[d])
+                dimOK = true;
+            if ((eMin[d]-L[d]) <= dMax[d] && (eMax[d]-L[d]) >= dMin[d])
+                dimOK = true;
+        }
+        if (!dimOK) return false;
+    }
+    return true;
+}
+
+
+static bool cellInsideBBox
+(
+    const Foam::point& cc,
+    const Foam::point& bMin,
+    const Foam::point& bMax,
+    const Foam::Vector<bool>& isCyclic,
+    const Foam::vector& L
+)
+{
+    for (Foam::direction d = 0; d < 3; d++)
+    {
+        bool dimIn = false;
+        if (cc[d] >= bMin[d] && cc[d] <= bMax[d])
+            dimIn = true;
+
+        if (!dimIn && isCyclic[d] && L[d] > Foam::SMALL)
+        {
+            if ((cc[d]+L[d]) >= bMin[d] && (cc[d]+L[d]) <= bMax[d])
+                dimIn = true;
+            if ((cc[d]-L[d]) >= bMin[d] && (cc[d]-L[d]) <= bMax[d])
+                dimIn = true;
+        }
+        if (!dimIn) return false;
+    }
+    return true;
+}
+
+
+// Spatial hash key from position and bin size
+static Foam::Vector<Foam::label> spatialKey
+(
+    const Foam::point& p,
+    Foam::scalar invBin
+)
+{
+    return Foam::Vector<Foam::label>
+    (
+        Foam::label(std::floor(p.x() * invBin)),
+        Foam::label(std::floor(p.y() * invBin)),
+        Foam::label(std::floor(p.z() * invBin))
+    );
+}
+
+// Pack labelVector into single label for use as hash key
+static Foam::label packKey(const Foam::Vector<Foam::label>& k)
+{
+    // Use large prime multipliers to reduce collisions
+    return k.x() + 99991 * k.y() + 999979 * k.z();
+}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+template<typename Type>
+void Foam::amrStencil::getZoneField
+(
+    const boolList& zone,
+    Map<Type>& phiMap,
+    const GeometricField<Type, fvPatchField, volMesh>& phi
+)
+{
+    updateIfNeeded();
+
+    if (!procMapsBuilt_)
+    {
+        buildProcMaps();
+    }
+
+    const label nLayers = max(max(iMax_, jMax_), kMax_);
+
+    Map<DynamicList<label>> spatialHash;
+    labelList  remoteGIds;
+    pointField remoteCCs;
+    Map<Type>  gIdToValue;
+    scalar binSize = 0;
+    scalar invBin = 0;
+
+    if (Pstream::parRun())
+    {
+        scalar tA0 = mesh_.time().elapsedCpuTime();
+
+        // --- Build potentialSenders: zone expanded by expandLayers ---
+        bitSet isSender(mesh_.nCells(), false);
+        forAll(zone, ci)
+        {
+            if (zone[ci]) isSender.set(ci);
+        }
+
+        const labelUList& own = mesh_.faceOwner();
+        const labelUList& nei = mesh_.faceNeighbour();
+        const label nInternal = mesh_.nInternalFaces();
+        const label expandLayers =
+            label(1.5 * max(max(iMax_, jMax_), kMax_)) + 2;
+
+        for (label layer = 0; layer < expandLayers; layer++)
+        {
+            bitSet toAdd(mesh_.nCells(), false);
+            for (label fi = 0; fi < nInternal; fi++)
+            {
+                const label o = own[fi];
+                const label n = nei[fi];
+                if (isSender.test(o) && !isSender.test(n))
+                    toAdd.set(n);
+                else if (isSender.test(n) && !isSender.test(o))
+                    toAdd.set(o);
+            }
+            forAll(toAdd, ci)
+            {
+                if (toAdd.test(ci)) isSender.set(ci);
+            }
+        }
+
+        labelList potentialSenders = isSender.toc();
+
+        // --- Exchange partners: face-adjacent procs with sender cells ---
+        HashSet<label> exchangeSet;
+        HashSet<label> allNbrProcs;
+        {
+            const polyBoundaryMesh& patches = mesh_.boundaryMesh();
+            forAll(patches, patchi)
+            {
+                const polyPatch& pp = patches[patchi];
+                if (!isA<processorPolyPatch>(pp)) continue;
+
+                const processorPolyPatch& procPatch =
+                    refCast<const processorPolyPatch>(pp);
+                const label nbrProc = procPatch.neighbProcNo();
+
+                allNbrProcs.insert(nbrProc);
+
+                if (exchangeSet.found(nbrProc)) continue;
+
+                const labelUList& faceCells = pp.faceCells();
+                forAll(faceCells, fi)
+                {
+                    if (isSender.test(faceCells[fi]))
+                    {
+                        exchangeSet.insert(nbrProc);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Symmetric closure
+        {
+            PstreamBuffers pBufsSym(Pstream::commsTypes::nonBlocking);
+
+            for (const label p : allNbrProcs)
+            {
+                UOPstream toNbr(p, pBufsSym);
+                toNbr << exchangeSet.found(p);
+            }
+
+            pBufsSym.finishedSends();
+
+            for (const label p : allNbrProcs)
+            {
+                bool nbrWantsMe;
+                UIPstream fromNbr(p, pBufsSym);
+                fromNbr >> nbrWantsMe;
+                if (nbrWantsMe) exchangeSet.insert(p);
+            }
+        }
+
+        exchangeProcs_ = exchangeSet.toc();
+        Foam::sort(exchangeProcs_);
+
+        // --- Estimate cell spacing ---
+        scalar dl = 0;
+        forAll(zone, ci)
+        {
+            if (zone[ci])
+            {
+                const scalar V = mesh_.V()[ci];
+                dl = (isEmpty_.x() || isEmpty_.y() || isEmpty_.z())
+                    ? Foam::sqrt(V / max(dx_, max(dy_, dz_)))
+                    : Foam::cbrt(V);
+                break;
+            }
+        }
+        reduce(dl, maxOp<scalar>());
+
+        const scalar reach = 1.5 * nLayers * dl;
+
+        scalar tA1 = mesh_.time().elapsedCpuTime();
+        scalar dtA = tA1 - tA0;
+        reduce(dtA, maxOp<scalar>());
+
+        // --- Data exchange: round 1 (direct) + round 2 (relay) ---
+        scalar tB0 = mesh_.time().elapsedCpuTime();
+
+        DynamicList<label> allGIds;
+        DynamicList<point> allCCs;
+
+        labelList round1G;
+        pointField round1C;
+        List<Type> round1V;
+        labelList round1Src;
+
+        // Round 1: send local potentialSenders
+        {
+            PstreamBuffers pBufs(Pstream::commsTypes::nonBlocking);
+            const pointField& cc = mesh_.C();
+
+            forAll(exchangeProcs_, ni)
+            {
+                const label p = exchangeProcs_[ni];
+
+                DynamicList<label> sendG;
+                DynamicList<point> sendC;
+                DynamicList<Type>  sendV;
+
+                forAll(potentialSenders, si)
+                {
+                    const label ci = potentialSenders[si];
+                    sendG.append(globalNumbering_.toGlobal(ci));
+                    sendC.append(cc[ci]);
+                    sendV.append(phi[ci]);
+                }
+
+                UOPstream toNbr(p, pBufs);
+                toNbr << labelList(sendG)
+                      << pointField(sendC)
+                      << List<Type>(sendV);
+            }
+
+            pBufs.finishedSends();
+
+            DynamicList<label> recvGAll;
+            DynamicList<point> recvCAll;
+            DynamicList<Type>  recvVAll;
+            DynamicList<label> recvSrcAll;
+
+            forAll(exchangeProcs_, ni)
+            {
+                labelList recvG;
+                pointField recvC;
+                List<Type> recvV;
+
+                UIPstream fromNbr(exchangeProcs_[ni], pBufs);
+                fromNbr >> recvG >> recvC >> recvV;
+
+                forAll(recvG, ci)
+                {
+                    const label gId = recvG[ci];
+                    if (!phiMap.found(gId))
+                    {
+                        phiMap.insert(gId, recvV[ci]);
+                    }
+                    if (!gIdToValue.found(gId))
+                    {
+                        gIdToValue.insert(gId, recvV[ci]);
+                        allGIds.append(gId);
+                        allCCs.append(recvC[ci]);
+                        recvGAll.append(gId);
+                        recvCAll.append(recvC[ci]);
+                        recvVAll.append(recvV[ci]);
+                        recvSrcAll.append(exchangeProcs_[ni]);
+                    }
+                }
+            }
+
+            round1G = recvGAll;
+            round1C = recvCAll;
+            round1V = recvVAll;
+            round1Src = recvSrcAll;
+        }
+
+        // Round 2: relay round-1 received data for corner coverage
+        {
+            PstreamBuffers pBufs2(Pstream::commsTypes::nonBlocking);
+
+            forAll(exchangeProcs_, ni)
+            {
+                const label p = exchangeProcs_[ni];
+
+                DynamicList<label> sendG;
+                DynamicList<point> sendC;
+                DynamicList<Type>  sendV;
+
+                forAll(round1G, ri)
+                {
+                    if (round1Src[ri] != p)
+                    {
+                        sendG.append(round1G[ri]);
+                        sendC.append(round1C[ri]);
+                        sendV.append(round1V[ri]);
+                    }
+                }
+
+                UOPstream toNbr(p, pBufs2);
+                toNbr << labelList(sendG)
+                      << pointField(sendC)
+                      << List<Type>(sendV);
+            }
+
+            pBufs2.finishedSends();
+
+            forAll(exchangeProcs_, ni)
+            {
+                labelList recvG;
+                pointField recvC;
+                List<Type> recvV;
+
+                UIPstream fromNbr(exchangeProcs_[ni], pBufs2);
+                fromNbr >> recvG >> recvC >> recvV;
+
+                forAll(recvG, ci)
+                {
+                    const label gId = recvG[ci];
+                    if (!phiMap.found(gId))
+                    {
+                        phiMap.insert(gId, recvV[ci]);
+                    }
+                    if (!gIdToValue.found(gId))
+                    {
+                        gIdToValue.insert(gId, recvV[ci]);
+                        allGIds.append(gId);
+                        allCCs.append(recvC[ci]);
+                    }
+                }
+            }
+        }
+
+        remoteGIds = allGIds;
+        remoteCCs = allCCs;
+
+        scalar tB1 = mesh_.time().elapsedCpuTime();
+        scalar dtB = tB1 - tB0;
+        label nExch = exchangeProcs_.size();
+        label nSenders = potentialSenders.size();
+        label nRemote = remoteCCs.size();
+        reduce(dtB, maxOp<scalar>());
+        reduce(nExch, maxOp<label>());
+        reduce(nSenders, maxOp<label>());
+        reduce(nRemote, maxOp<label>());
+
+        // --- Build spatial hash ---
+        scalar tC0 = mesh_.time().elapsedCpuTime();
+
+        if (remoteCCs.size() > 0 && dl > SMALL)
+        {
+            binSize = dl;
+            invBin = 1.0 / binSize;
+
+            forAll(remoteCCs, ri)
+            {
+                const label key = packKey(spatialKey(remoteCCs[ri], invBin));
+                if (!spatialHash.found(key))
+                {
+                    spatialHash.insert(key, DynamicList<label>());
+                }
+                spatialHash[key].append(ri);
+            }
+        }
+
+        scalar tC1 = mesh_.time().elapsedCpuTime();
+        scalar dtC = tC1 - tC0;
+        reduce(dtC, maxOp<scalar>());
+
+        Info << "amrStencil: A(senders+partners)=" << dtA
+             << "s B(exchange)=" << dtB
+             << "s C(spatHash)=" << dtC
+             << "s | nExch=" << nExch
+             << " nSenders=" << nSenders
+             << " nRemote=" << nRemote << endl;
+    }
+
+    // ---------------------------------------------------------------
+    // Topology + local collect + spatial-hash fill
+    // ---------------------------------------------------------------
+    scalar tD0 = mesh_.time().elapsedCpuTime();
+
+    List<labelHashSet> commDummy(Pstream::nProcs());
+
+    forAll(zone, celli)
+    {
+        if (!zone[celli]) continue;
+
+        if (!stencilTopology_.found(celli))
+        {
+            stencilTopology_.insert
+            (
+                celli,
+                buildStencilTopology(celli, commDummy)
+            );
+        }
+
+        const labelList& topo = stencilTopology_[celli];
+
+        forAll(topo, idx)
+        {
+            const label gId = topo[idx];
+            if (gId >= 0 && globalNumbering_.isLocal(gId)
+                && !phiMap.found(gId))
+            {
+                phiMap.insert(gId, phi[globalNumbering_.toLocal(gId)]);
+            }
+        }
+
+        if (!Pstream::parRun() || spatialHash.empty()) continue;
+
+        bool hasRemoteNeeds = false;
+        forAll(topo, idx)
+        {
+            const label gId = topo[idx];
+            if (gId < 0)
+            {
+                hasRemoteNeeds = true;
+                break;
+            }
+            if (!globalNumbering_.isLocal(gId) && !phiMap.found(gId))
+            {
+                hasRemoteNeeds = true;
+                break;
+            }
+        }
+        if (!hasRemoteNeeds) continue;
+
+        const point seedCC = mesh_.C()[celli];
+        const scalar V = mesh_.V()[celli];
+        scalar localDx, localDy, localDz;
+
+        if (isEmpty_.x() && !isEmpty_.y() && !isEmpty_.z())
+        {
+            scalar dl = Foam::sqrt(V / dx_);
+            localDx = dx_; localDy = dl; localDz = dl;
+        }
+        else if (!isEmpty_.x() && isEmpty_.y() && !isEmpty_.z())
+        {
+            scalar dl = Foam::sqrt(V / dy_);
+            localDx = dl; localDy = dy_; localDz = dl;
+        }
+        else if (!isEmpty_.x() && !isEmpty_.y() && isEmpty_.z())
+        {
+            scalar dl = Foam::sqrt(V / dz_);
+            localDx = dl; localDy = dl; localDz = dz_;
+        }
+        else
+        {
+            scalar dl = Foam::cbrt(V);
+            localDx = dl; localDy = dl; localDz = dl;
+        }
+
+        const scalar tol = 1.5 * min(min(localDx, localDy), localDz);
+        const scalar tolSq = tol * tol;
+
+        for (label i = -iMax_; i <= iMax_; i++)
+        for (label j = -jMax_; j <= jMax_; j++)
+        for (label k = -kMax_; k <= kMax_; k++)
+        {
+            const label flatIdx = a3(i, j, k);
+            const label gId = topo[flatIdx];
+
+            bool needFill = (gId < 0);
+            if (!needFill && !globalNumbering_.isLocal(gId)
+                && !phiMap.found(gId))
+            {
+                needFill = true;
+            }
+            if (!needFill) continue;
+
+            point expectedCC = seedCC;
+            if (!isEmpty_.x()) expectedCC.x() += i * localDx;
+            if (!isEmpty_.y()) expectedCC.y() += j * localDy;
+            if (!isEmpty_.z()) expectedCC.z() += k * localDz;
+
+            const point& bMin = domainMin_;
+            if (isCyclic_.x() && Lx_ > SMALL)
+            {
+                if (expectedCC.x() < bMin.x())
+                    expectedCC.x() += Lx_;
+                else if (expectedCC.x() > bMin.x() + Lx_)
+                    expectedCC.x() -= Lx_;
+            }
+            if (isCyclic_.y() && Ly_ > SMALL)
+            {
+                if (expectedCC.y() < bMin.y())
+                    expectedCC.y() += Ly_;
+                else if (expectedCC.y() > bMin.y() + Ly_)
+                    expectedCC.y() -= Ly_;
+            }
+            if (isCyclic_.z() && Lz_ > SMALL)
+            {
+                if (expectedCC.z() < bMin.z())
+                    expectedCC.z() += Lz_;
+                else if (expectedCC.z() > bMin.z() + Lz_)
+                    expectedCC.z() -= Lz_;
+            }
+
+            const Vector<label> ck = spatialKey(expectedCC, invBin);
+            scalar bestDistSq = GREAT;
+            label bestIdx = -1;
+
+            for (label di = -1; di <= 1; di++)
+            for (label dj = -1; dj <= 1; dj++)
+            for (label dk = -1; dk <= 1; dk++)
+            {
+                const label key = packKey
+                (
+                    Vector<label>(ck.x()+di, ck.y()+dj, ck.z()+dk)
+                );
+
+                const auto iter = spatialHash.cfind(key);
+                if (!iter.good()) continue;
+
+                const DynamicList<label>& bucket = iter.val();
+                forAll(bucket, bi)
+                {
+                    const label ri = bucket[bi];
+                    const scalar dSq =
+                        Foam::magSqr(remoteCCs[ri] - expectedCC);
+                    if (dSq < bestDistSq)
+                    {
+                        bestDistSq = dSq;
+                        bestIdx = ri;
+                    }
+                }
+            }
+
+            if (bestIdx >= 0 && bestDistSq < tolSq)
+            {
+                const label foundGId = remoteGIds[bestIdx];
+                if (!phiMap.found(foundGId)
+                    && gIdToValue.found(foundGId))
+                {
+                    phiMap.insert(foundGId, gIdToValue[foundGId]);
+                }
+                stencilTopology_[celli][flatIdx] = foundGId;
+            }
+        }
+    }
+
+    scalar tD1 = mesh_.time().elapsedCpuTime();
+    scalar dtD = tD1 - tD0;
+    reduce(dtD, maxOp<scalar>());
+
+    Info << "amrStencil: D(topo+fill)=" << dtD << "s" << endl;
+}
+
+
+// ************************************************************************* //

@@ -21,13 +21,6 @@ const volScalarField& offCenterCoeff = tOffCenterCoeff();
 if (runTime.timeIndex() > runTime.startTimeIndex() + 1)
   {
     ddt0 = ((1.0 + offCenterCoeff) / dt0) * deltaRhoU - (offCenterCoeff * ddt0_old_stored);
-
-    //ddt0 = rDtCoef0_(ddt0)*
-    //  (
-    //  rho.oldTime()*vf.oldTime()
-    //  - rho.oldTime().oldTime()*vf.oldTime().oldTime()
-    //  ) - offCentre_(ddt0());
-    
   }
  else
    {
@@ -37,7 +30,7 @@ if (runTime.timeIndex() > runTime.startTimeIndex() + 1)
 fvVectorMatrix UEqn
 (
     (1.0 + offCenterCoeff) * fvm::ddt(rho, U)
-  + (1.0 + offCenterCoeff) * MRF.DDt(rho, U)
+  + MRF.DDt(rho, U)
   + fvm::div(rhoPhi, U)
   - fvm::laplacian(mixture.muf(), U)
  ==

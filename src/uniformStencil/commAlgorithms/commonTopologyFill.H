@@ -1,0 +1,160 @@
+// commonTopologyFill.H
+// Builds direct position-to-alpha hash for O(1) stencil lookups.
+// No BFS. No per-cell topology. One Map<scalar> read per position.
+//
+// Consumes from comm phase: remoteCCs, remoteGIds, gIdToValue,
+//   binSize, invBin, phiMap
+// Stores in amrStencil: alphaHash_, alphaHashInvBin_
+
+{
+    scalar tD0 = enableTimeLogs ? mesh_.time().elapsedCpuTime() : 0;
+
+    // Compute dl from first zone cell if not set by comm
+    // Always compute binSize from finest zone cell (overrides comm phase value)
+    //
+    // 2D fix: cbrt(V) is the in-plane spacing only for a true 3D cube. On a
+    // 2D slice the empty-direction thickness inflates cbrt(V) (e.g. 0.25 mm
+    // cells in a 0.22 m thick slice give cbrt(V)=2.4 mm), so the bins swallow
+    // many cells and the hash returns wrong values. For 2D use the in-plane
+    // spacing sqrt(V/emptyThickness), matching the HF loop's dl. The 3D path
+    // (no empty direction) is unchanged: it still uses cbrt(V) exactly.
+    {
+        const bool twoD = isEmpty_.x() || isEmpty_.y() || isEmpty_.z();
+        scalar emptyThk = 0;
+        if (twoD)
+        {
+            boundBox ebb = mesh_.bounds();
+            reduce(ebb.min(), minOp<point>());
+            reduce(ebb.max(), maxOp<point>());
+            if (isEmpty_.x())      emptyThk = ebb.max().x() - ebb.min().x();
+            else if (isEmpty_.y()) emptyThk = ebb.max().y() - ebb.min().y();
+            else                   emptyThk = ebb.max().z() - ebb.min().z();
+        }
+
+        scalar dl0 = GREAT;
+        forAll(zone, ci)
+        {
+            if (zone[ci])
+            {
+                const scalar cs = twoD
+                    ? Foam::sqrt(mesh_.V()[ci] / emptyThk)
+                    : Foam::cbrt(mesh_.V()[ci]);
+                dl0 = min(dl0, cs);
+            }
+        }
+        reduce(dl0, minOp<scalar>());
+        binSize = dl0;
+        invBin = 1.0 / binSize;
+    }
+
+    alphaHashInvBin_ = invBin;
+    alphaHash_.clear();
+
+    // Compute grid dimensions for structured key
+    // domainMin_ updated here to guarantee consistency with Nx, Ny
+    {
+        boundBox gbb = mesh_.bounds();
+        reduce(gbb.min(), minOp<point>());
+        reduce(gbb.max(), maxOp<point>());
+        domainMin_ = gbb.min();
+        hashNx_ = label(std::ceil(
+            (gbb.max().x() - gbb.min().x()) * invBin)) + 2;
+        hashNy_ = label(std::ceil(
+            (gbb.max().y() - gbb.min().y()) * invBin)) + 2;
+    }
+
+    // --- Insert local fine cells: zone + nMax expansion ---
+    {
+        const labelUList& own = mesh_.faceOwner();
+        const labelUList& nei = mesh_.faceNeighbour();
+        const label nIntFaces = mesh_.nInternalFaces();
+        // nMax in sweep + 1 cross + 1 cross = nMax+2 face-hops worst case
+        const label nExp = max(max(iMax_, jMax_), kMax_) + 2;
+        const pointField& localCC = mesh_.C();
+
+        bitSet inBand(mesh_.nCells(), false);
+        forAll(zone, ci)
+        {
+            if (zone[ci]) inBand.set(ci);
+        }
+
+        for (label layer = 0; layer < nExp; layer++)
+        {
+            bitSet toAdd(mesh_.nCells(), false);
+            for (label fi = 0; fi < nIntFaces; fi++)
+            {
+                const label o = own[fi];
+                const label n = nei[fi];
+                if (inBand.test(o) && !inBand.test(n))
+                    toAdd.set(n);
+                else if (inBand.test(n) && !inBand.test(o))
+                    toAdd.set(o);
+            }
+            forAll(toAdd, ci)
+            {
+                if (toAdd.test(ci)) inBand.set(ci);
+            }
+        }
+
+        // Only insert cells at finest refinement level
+        scalar fineV = GREAT;
+        forAll(inBand, ci)
+        {
+            if (inBand.test(ci))
+                fineV = min(fineV, mesh_.V()[ci]);
+        }
+        reduce(fineV, minOp<scalar>());
+        const scalar volTol = 1.5 * fineV;
+
+        forAll(inBand, ci)
+        {
+            if (inBand.test(ci) && mesh_.V()[ci] < volTol)
+            {
+                const label key = posKey(localCC[ci]);
+                alphaHash_.insert(key, phi[ci]);
+            }
+        }
+    }
+
+    // --- Insert remote cells from comm phase ---
+    // Note: remote cells are not volume-filtered. Remote coarse cells
+    // could silently provide wrong alpha near refinement boundaries
+    // at processor boundaries. Fix: include volume in comm exchange.
+    forAll(remoteCCs, ri)
+    {
+        const label gId = remoteGIds[ri];
+        if (gIdToValue.found(gId))
+        {
+            const label key = posKey(remoteCCs[ri]);
+            if (!alphaHash_.found(key))
+            {
+                alphaHash_.insert(key, gIdToValue[gId]);
+            }
+        }
+    }
+
+    // --- Populate phiMap for backward compatibility ---
+    forAll(zone, ci)
+    {
+        if (zone[ci])
+        {
+            const label gId = globalNumbering_.toGlobal(ci);
+            if (!phiMap.found(gId))
+            {
+                phiMap.insert(gId, phi[ci]);
+            }
+        }
+    }
+
+    scalar tD1 = enableTimeLogs ? mesh_.time().elapsedCpuTime() : 0;
+    scalar dtD = tD1 - tD0;
+    if (enableTimeLogs)
+    {
+        reduce(dtD, maxOp<scalar>());
+        label nHash = alphaHash_.size();
+        reduce(nHash, maxOp<label>());
+        Info<< "amrStencil: D(hash+fill)=" << dtD
+            << "s | nHash=" << nHash
+            << " Nx=" << hashNx_ << " Ny=" << hashNy_ << endl;
+    }
+}

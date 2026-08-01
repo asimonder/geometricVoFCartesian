@@ -8,20 +8,47 @@ forAll(zone,celli)
         const label j = ijkG.y();
         const label k = ijkG.z();
 
+        bool skipCell = false;
+
         for (int ii = -iMax; ii <= iMax; ++ii)
         {
             for (int kk = -kMax; kk <= kMax; ++kk)
             {
                 for (int jj = -jMax; jj <= jMax; ++jj)
                 {
-                    label il = (i + ii + Nx_) % Nx_;
-                    label jl = (j + jj + Ny_) % Ny_;
-                    label kl = (k + kk + Nz_) % Nz_;
+                    label iRaw = i + ii;
+                    label jRaw = j + jj;
+                    label kRaw = k + kk;
+
+                    if (!isCyclic_.x() && !isEmpty_.x()
+                        && !symXIn_ && iRaw < 0)
+                        continue;
+                    if (!isCyclic_.x() && !isEmpty_.x()
+                        && !symXOut_ && iRaw >= Nx_)
+                        continue;
+                    if (!isCyclic_.y() && !isEmpty_.y()
+                        && !symYIn_ && jRaw < 0)
+                        continue;
+                    if (!isCyclic_.y() && !isEmpty_.y()
+                        && !symYOut_ && jRaw >= Ny_)
+                        continue;
+                    if (!isCyclic_.z() && !isEmpty_.z()
+                        && !symZIn_ && kRaw < 0)
+                        continue;
+                    if (!isCyclic_.z() && !isEmpty_.z()
+                        && !symZOut_ && kRaw >= Nz_)
+                        continue;
+
+                    label il = (iRaw + Nx_) % Nx_;
+                    label jl = (jRaw + Ny_) % Ny_;
+                    label kl = (kRaw + Nz_) % Nz_;
 
                     label ijk = ijkGlobalToLocal(il, jl, kl);
 
-                    label gblIdx = globalIds_[ijk];
+                    if (ijk < 0 || ijk >= globalIds_.size())
+                        continue;
 
+                    label gblIdx = globalIds_[ijk];
 
                     if (globalNumbering_.isLocal(gblIdx))
                     {
@@ -46,7 +73,6 @@ forAll(zone,celli)
         }
     }
 }
-
 
 
   if (Pstream::parRun())

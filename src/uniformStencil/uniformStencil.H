@@ -5,7 +5,7 @@
     \\  /    A nd           | Copyright (C) 2021 OpenCFD Ltd.
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-                            | Copyright (C) 2021 Asim Onder
+                            | Copyright (C) 2021-2025 Asim Onder
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -27,7 +27,14 @@ Class
     Foam::uniformStencil
 
 Description
-    Developed by Asim Onder (2021)
+    Structured stencil on uniform Cartesian grids. Stores a flat array A_
+    indexed by (i,j,k) offsets relative to a seed cell, with methods for
+    interface normal estimation, flipping, and transposing.
+
+    Subclassed by amrStencil for AMR grids where cells are discovered
+    by topological traversal instead of global IJK indexing.
+
+    Developed by Asim Onder (2021-2025)
 
 SourceFiles
     uniformStencil.C
@@ -39,7 +46,6 @@ SourceFiles
 
 #include "fvMesh.H"
 #include "ijkZone.H"
-//#include "globalIndex.H"
 #include "volFields.H"
 #include "surfaceMesh.H"
 #include "volMesh.H"
@@ -48,7 +54,6 @@ SourceFiles
 #include "MeshObject.H"
 #include "IFstream.H"
 #include "cellSet.H"
-//#include "DynamicList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -63,26 +68,59 @@ namespace Foam
   {
   private:
 
-    // Private data
-  //- Reference to mesh
-  
+    //- Reference to mesh
     const fvMesh& mesh_;
-    const ijkZone& ijkMesh_;
+
+    //- Pointer to ijkZone (owned by registry, not by us).
+    //  nullptr when constructed via SubclassTag (amrStencil).
+    //  Used only by setStencil(phiIJK, ijk).
+    const ijkZone* ijkMeshPtr_;
+
+
+  protected:
+
+    // Protected data -- accessible by amrStencil
+
+    //- Total stencil size
     int N_;
+
+    //- 2D flag
     bool is2D_;
+
+    //- Flat stencil array
     List<scalar> A_;
+
+    //- Stencil half-widths
     int iMax_;
     int jMax_;
     int kMax_;
+
+    //- Stencil dimensions
     int NxS_;
     int NyS_;
     int NzS_;
 
-  //- No copy construct
-    //uniformStencil(const uniformStencil&) = delete;
-  
-    //- No copy assignment
-    //void operator=(const uniformStencil&) = delete;
+    //- Empty direction flags
+    Vector<bool> isEmpty_;
+
+    //- Grid spacing (used by normal calculations)
+    scalar dx_;
+
+    //- Protected tag constructor for subclasses that don't use ijkZone.
+    //  Initializes stencil storage and dimensions only; sets ijkMeshPtr_
+    //  to nullptr.
+    struct SubclassTag {};
+    uniformStencil
+    (
+        SubclassTag,
+        const fvMesh& mesh,
+        int iMax,
+        int jMax,
+        int kMax,
+        const Vector<bool>& isEmpty,
+        scalar dx
+    );
+
 
   public:
   // Constructors
@@ -97,7 +135,7 @@ namespace Foam
   //static uniformStencil& New(const fvMesh&);
 
   //- Destructor
-    // virtual ~uniformStencil() = default;      
+    virtual ~uniformStencil() = default;      
 
     void setStencil(const Map<scalar>& phiIJK,const Vector<label>& ijk);
 

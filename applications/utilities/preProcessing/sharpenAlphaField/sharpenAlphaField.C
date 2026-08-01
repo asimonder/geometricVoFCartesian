@@ -43,19 +43,32 @@ int main(int argc, char *argv[])
         mesh
     );
 
+    label nSetZero = 0;
+    label nSetOne  = 0;
+
     forAll(alpha, i)
     {
       if (alpha[i]<minAlpha)
-	alpha[i]=0.0;
+	{ alpha[i]=0.0; ++nSetZero; }
       else if (alpha[i]>maxAlpha)
-	alpha[i]=1.0;
+	{ alpha[i]=1.0; ++nSetOne; }
     }
 
-    alpha.correctBoundaryConditions();
+    label nCellsTotal = alpha.size();
+    reduce(nSetZero,    sumOp<label>());
+    reduce(nSetOne,     sumOp<label>());
+    reduce(nCellsTotal, sumOp<label>());
+
+    //alpha.correctBoundaryConditions();
     alpha.write();
 
     Info<< "Finished sharpening alpha field " << fieldName << nl
-        << "Cells below alphaMinThreshold set to 0.0, above alphaMaxThreshold set to 1.0." << endl;
+        << "Cells set to 0.0 (alpha < " << minAlpha << ") : " << nSetZero << nl
+        << "Cells set to 1.0 (alpha > " << maxAlpha << ") : " << nSetOne << nl
+        << "Cells modified                          : " << nSetZero + nSetOne << nl
+        << "Cells total                             : " << nCellsTotal << nl
+        << "Fraction modified                       : "
+        << scalar(nSetZero + nSetOne)/max(nCellsTotal, label(1)) << endl;
 
     return 0;
 }

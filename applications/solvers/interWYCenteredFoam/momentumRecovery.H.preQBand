@@ -1,0 +1,66 @@
+/*---------------------------------------------------------------------------*\
+    Part of interWYCenteredFoam (see the main file for the full
+    description and license). Extracted for the conventional
+    fragmented solver layout.
+\*---------------------------------------------------------------------------*/
+
+        if (!zonal)
+        {
+            U.primitiveFieldRef() =
+                (q1.primitiveField() + q2.primitiveField())
+               /rho.primitiveField();
+        }
+        else
+        {
+            // outside-zone momentum: standard conservative convection
+            // with the same prognostic flux, stitched to the zone
+            // momentum fluxes at shared faces
+            surfaceVectorField momFlux(splitPtr->qPhi());
+            const surfaceVectorField fluxOut
+            (
+                fvc::flux(phi, rho*U, "div(phi,rhoU)")
+            );
+            forAll(zoneFace, facei)
+            {
+                if (!zoneFace[facei])
+                {
+                    momFlux[facei] = fluxOut[facei];
+                }
+            }
+            forAll(mesh.boundary(), patchi)
+            {
+                const labelUList& fc = mesh.boundary()[patchi].faceCells();
+                vectorField& pM = momFlux.boundaryFieldRef()[patchi];
+                const vectorField& pF =
+                    fluxOut.boundaryField()[patchi];
+                forAll(fc, fi)
+                {
+                    if (!splitPtr->inZone()[fc[fi]])
+                    {
+                        pM[fi] = pF[fi];
+                    }
+                }
+            }
+            const volVectorField divM(fvc::div(momFlux));
+
+            const boolList& zc = splitPtr->inZone();
+            vectorField& Uf = U.primitiveFieldRef();
+            const vectorField& q1f = q1.primitiveField();
+            const vectorField& q2f = q2.primitiveField();
+            const scalarField& rhof = rho.primitiveField();
+            forAll(Uf, celli)
+            {
+                if (zc[celli])
+                {
+                    Uf[celli] =
+                        (q1f[celli] + q2f[celli])/rhof[celli];
+                }
+                else
+                {
+                    Uf[celli] -=
+                        dtDim.value()*divM[celli]/rhof[celli];
+                }
+            }
+        }
+        U.correctBoundaryConditions();
+

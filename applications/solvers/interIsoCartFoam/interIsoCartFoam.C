@@ -67,6 +67,8 @@ Description
 #include "fvcSmooth.H"
 #include "dynamicRefineFvMesh.H"
 #include "interfaceForces.H"
+#include "dynamicMultiDimRefineFvMesh.H"
+#include "dynamicMultiDimRefineBalancedFvMesh.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -115,12 +117,12 @@ int main(int argc, char *argv[])
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
         {
-            if (pimple.firstIter() || moveMeshOuterCorrectors)
+	  if (pimple.firstIter() || moveMeshOuterCorrectors)
             {
-                if (isA<dynamicRefineFvMesh>(mesh))
-                {
-                    advector.surf().reconstruct();
-                }
+	      if (isA<dynamicRefineFvMesh>(mesh) || isA<dynamicMultiDimRefineFvMesh>(mesh) || isA<dynamicMultiDimRefineBalancedFvMesh>(mesh))
+		{
+		  advector.surf().reconstruct();
+		}
 
                 mesh.update();
 
@@ -129,7 +131,8 @@ int main(int argc, char *argv[])
 		  gh = (g & mesh.C()) - ghRef;
 		  ghf = (g & mesh.Cf()) - ghRef;
 
-		  if (isA<dynamicRefineFvMesh>(mesh))
+		  //  if (isA<dynamicRefineFvMesh>(mesh))
+		  if (isA<dynamicRefineFvMesh>(mesh) || isA<dynamicMultiDimRefineFvMesh>(mesh) || isA<dynamicMultiDimRefineBalancedFvMesh>(mesh))
                     {
 		      advector.surf().mapAlphaField();
 		      alpha2 = 1.0 - alpha1;
@@ -162,7 +165,7 @@ int main(int argc, char *argv[])
 		    }
 
                 }
-            }
+	}
 
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"

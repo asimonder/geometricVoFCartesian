@@ -57,15 +57,15 @@ int main(int argc, char *argv[])
 	  {
 	    alpha[i] = 1.0;
 	    iC++;
-	    Pout << "Cell " << i << " at " << cc[i]
-		 << ": alpha changed from " << oldVal << " to 1.0 (z = " << z << ")" << nl;
+	    //Pout << "Cell " << i << " at " << cc[i]
+	    //		 << ": alpha changed from " << oldVal << " to 1.0 (z = " << z << ")" << nl;
 	  }
 	else if (z > zMaxAlpha && oldVal != 0.0)
 	  {
 	    alpha[i] = 0.0;
 	    iC++;
-	    Pout << "Cell " << i << " at " << cc[i]
-		 << ": alpha changed from " << oldVal << " to 0.0 (z = " << z << ")" << nl;
+	    //Pout << "Cell " << i << " at " << cc[i]
+	    //	 << ": alpha changed from " << oldVal << " to 0.0 (z = " << z << ")" << nl;
 	  }
       }
     

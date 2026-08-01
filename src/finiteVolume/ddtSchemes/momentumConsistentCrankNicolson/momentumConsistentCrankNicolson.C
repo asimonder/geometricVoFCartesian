@@ -10,10 +10,10 @@
 \*---------------------------------------------------------------------------*/
 
 #include "momentumConsistentCrankNicolson.H"
+#include "interfaceBand.H"
 #include "surfaceInterpolate.H"
 #include "fvcDiv.H"
 #include "fvMatrices.H"
-#include "fvcGrad.H"
 #include "fvMesh.H"
 
 namespace Foam
@@ -246,28 +246,36 @@ momentumConsistentCrankNicolson<Type>::momentumConsistentCrankNicolson
 )
 :
   ddtScheme<Type>(mesh,is),
-  alpha_(mesh.lookupObject<volScalarField>("alpha.water")),
   bulkCnCoeff_(readScalar(is)),
-  interfaceThreshold_(readScalar(is)),
   ocCoeff_
     (
-        IOobject("ocCoeff", mesh.time().timeName(), mesh, IOobject::NO_READ, IOobject::NO_WRITE),
+        IOobject("ocCoeff", mesh.time().timeName(), mesh, IOobject::NO_READ, IOobject::NO_WRITE, IOobject::NO_REGISTER),
         mesh,
         dimensionedScalar(dimless, bulkCnCoeff_)
     ),
   rDtCoefField_
     (
-        IOobject("rDtCoef", mesh.time().timeName(), mesh, IOobject::NO_READ, IOobject::NO_WRITE),
+        IOobject("rDtCoef", mesh.time().timeName(), mesh, IOobject::NO_READ, IOobject::NO_WRITE, IOobject::NO_REGISTER),
         mesh,
         dimensionedScalar(dimless/dimTime, 0.0)
     ),
   rDtCoef0Field_
     (
-        IOobject("rDtCoef0", mesh.time().timeName(), mesh, IOobject::NO_READ, IOobject::NO_WRITE),
+        IOobject("rDtCoef0", mesh.time().timeName(), mesh, IOobject::NO_READ, IOobject::NO_WRITE, IOobject::NO_REGISTER),
         mesh,
         dimensionedScalar(dimless/dimTime, 0.0)
     )
 {
+    // Swallow the legacy interfaceThreshold argument if present
+    if (!is.eof())
+    {
+        token t(is);
+        if (t.good() && !t.isNumber())
+        {
+            is.putBack(t);
+        }
+    }
+
     if (mesh.moving())
     {
         NotImplemented;
@@ -278,20 +286,15 @@ momentumConsistentCrankNicolson<Type>::momentumConsistentCrankNicolson
 template<class Type>
 void momentumConsistentCrankNicolson<Type>::updateOcCoeff()
 {
-    const volVectorField& gradAlpha = fvc::grad(alpha_);
-    
+    // Shared interface band: Euler region == upwind region by construction.
+    // band = 1 gives Euler, band = 0 gives full CN, ramp values blend.
+    const volScalarField& band = interfaceBand::New(this->mesh()).band();
+
     forAll(ocCoeff_, cellI)
     {
-        if (mag(gradAlpha[cellI]) > interfaceThreshold_)
-        {
-            ocCoeff_[cellI] = 0.0; // Euler
-        }
-        else
-        {
-            ocCoeff_[cellI] = bulkCnCoeff_; // CN
-        }
+        ocCoeff_[cellI] = (1.0 - band[cellI])*bulkCnCoeff_;
     }
- 
+
     ocCoeff_.correctBoundaryConditions();
     
     // --- DIAGNOSTIC START ---
@@ -370,6 +373,8 @@ momentumConsistentCrankNicolson<Type>::fvmDdt
     const GeometricField<Type, fvPatchField, volMesh>& vf
 )
 {
+    updateOcCoeff();
+
     DDt0Field<GeometricField<Type, fvPatchField, volMesh>>& ddt0 =
         ddt0_<GeometricField<Type, fvPatchField, volMesh>>
         (
@@ -444,7 +449,16 @@ template<class Type> tmp<GeometricField<Type, fvPatchField, volMesh>> momentumCo
 template<class Type> tmp<fvMatrix<Type>> momentumConsistentCrankNicolson<Type>::fvmDdt(const GeometricField<Type, fvPatchField, volMesh>& vf) { NotImplemented; return nullptr; }
 template<class Type> tmp<fvMatrix<Type>> momentumConsistentCrankNicolson<Type>::fvmDdt(const dimensionedScalar& rho, const GeometricField<Type, fvPatchField, volMesh>& vf) { NotImplemented; return nullptr; }
 template<class Type> tmp<fvMatrix<Type>> momentumConsistentCrankNicolson<Type>::fvmDdt(const volScalarField& alpha, const volScalarField& rho, const GeometricField<Type, fvPatchField, volMesh>& vf) { NotImplemented; return nullptr; }
-template<class Type> tmp<typename momentumConsistentCrankNicolson<Type>::fluxFieldType> momentumConsistentCrankNicolson<Type>::fvcDdtUfCorr(const GeometricField<Type, fvPatchField, volMesh>& U, const GeometricField<Type, fvsPatchField, surfaceMesh>& Uf) { NotImplemented; return fluxFieldType::null(); }
+template<class Type>
+tmp<typename momentumConsistentCrankNicolson<Type>::fluxFieldType>
+momentumConsistentCrankNicolson<Type>::fvcDdtUfCorr
+(
+    const GeometricField<Type, fvPatchField, volMesh>& U,
+    const GeometricField<Type, fvsPatchField, surfaceMesh>& Uf
+)
+{
+    #include "cnUf.H"
+}
 template<class Type> tmp<typename momentumConsistentCrankNicolson<Type>::fluxFieldType> momentumConsistentCrankNicolson<Type>::fvcDdtUfCorr(const volScalarField& rho, const GeometricField<Type, fvPatchField, volMesh>& U, const GeometricField<Type, fvsPatchField, surfaceMesh>& Uf) { NotImplemented; return fluxFieldType::null(); }
 template<class Type> tmp<typename momentumConsistentCrankNicolson<Type>::fluxFieldType> momentumConsistentCrankNicolson<Type>::fvcDdtPhiCorr(const volScalarField& rho, const GeometricField<Type, fvPatchField, volMesh>& U, const fluxFieldType& phi) { NotImplemented; return fluxFieldType::null(); }
 template<class Type> tmp<surfaceScalarField> momentumConsistentCrankNicolson<Type>::meshPhi(const GeometricField<Type, fvPatchField, volMesh>& vf) { NotImplemented; return nullptr; }

@@ -1,0 +1,71 @@
+// Flux correction after a topology change, replacing the library
+// CorrectPhi call. The library function executes
+// pcorrEqn.setReference(0, 0) unconditionally, which pins the LOCAL
+// cell 0 of every rank (fvMatrix::setReference guards only on
+// needReference and celli >= 0). Each pinned cell then retains a
+// divergence diag(c0)*pcorr(c0) that the solver residual cannot see;
+// compatibility forces only the SUM over the pinned cells to vanish.
+// The Weymouth-Yue compression identity converts the retained
+// divergence into volume-fraction creation in interface cells.
+// Here the projection uses the solver's single global reference cell
+// (pRefCell is valid on exactly one rank, from setRefCell), for which
+// the compatible singular system retains exactly zero divergence.
+{
+    correctUphiBCs(U, phi);
+
+    wordList pcorrTypes
+    (
+        p_rgh.boundaryField().size(),
+        fvPatchFieldBase::zeroGradientType()
+    );
+
+    forAll(p_rgh.boundaryField(), patchi)
+    {
+        if (p_rgh.boundaryField()[patchi].fixesValue())
+        {
+            pcorrTypes[patchi] = fixedValueFvPatchScalarField::typeName;
+        }
+    }
+
+    volScalarField pcorr
+    (
+        IOobject
+        (
+            "pcorr",
+            runTime.timeName(),
+            mesh
+        ),
+        mesh,
+        dimensionedScalar(p_rgh.dimensions(), Zero),
+        pcorrTypes
+    );
+
+    const surfaceScalarField rhofCorr(1.0/fvc::interpolate(1.0/rho));
+    const surfaceScalarField rAUfCorr("rAUf", dtDim/rhofCorr);
+
+    if (pcorr.needReference())
+    {
+        fvc::makeRelative(phi, U);
+        adjustPhi(phi, U, pcorr);
+        fvc::makeAbsolute(phi, U);
+    }
+
+    mesh.setFluxRequired(pcorr.name());
+
+    while (pimple.correctNonOrthogonal())
+    {
+        fvScalarMatrix pcorrEqn
+        (
+            fvm::laplacian(rAUfCorr, pcorr) == fvc::div(phi)
+        );
+
+        pcorrEqn.setReference(pRefCell, 0);
+
+        pcorrEqn.solve(pcorr.select(pimple.finalNonOrthogonalIter()));
+
+        if (pimple.finalNonOrthogonalIter())
+        {
+            phi -= pcorrEqn.flux();
+        }
+    }
+}

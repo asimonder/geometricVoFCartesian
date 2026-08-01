@@ -1,0 +1,82 @@
+// Flux restoration after a topology change, replacing the library
+// CorrectPhi call. Two defects of the library route, both measured on
+// the N0032 AMR reproducer:
+//
+//  1. CorrectPhi executes pcorrEqn.setReference(0, 0) unconditionally,
+//     pinning the LOCAL cell 0 of every rank; each pinned cell retains
+//     a divergence diag*pcorr that the solver residual cannot see
+//     (zero-sum across ranks, nonzero per cell). Cure: the solver's
+//     single global reference cell.
+//
+//  2. The engine's recreated fluxes after unrefinement can carry a
+//     nonzero GLOBAL divergence integral (inconsistent coupled-seam
+//     recreation). No projection can remove a global imbalance; with a
+//     single reference it parks at the reference cell and converts
+//     one-for-one into volume fraction whenever that cell happens to
+//     be interface-adjacent. Cure: rebuild the face flux from the
+//     boundary-synced velocity; coupled-patch interpolation gives
+//     antisymmetric seam fluxes, so the global integral vanishes by
+//     construction and the projection below removes the divergence
+//     completely.
+{
+    correctUphiBCs(U, phi);
+
+    U.correctBoundaryConditions();
+    phi = fvc::interpolate(U) & mesh.Sf();
+
+    wordList pcorrTypes
+    (
+        p_rgh.boundaryField().size(),
+        fvPatchFieldBase::zeroGradientType()
+    );
+
+    forAll(p_rgh.boundaryField(), patchi)
+    {
+        if (p_rgh.boundaryField()[patchi].fixesValue())
+        {
+            pcorrTypes[patchi] = fixedValueFvPatchScalarField::typeName;
+        }
+    }
+
+    volScalarField pcorr
+    (
+        IOobject
+        (
+            "pcorr",
+            runTime.timeName(),
+            mesh
+        ),
+        mesh,
+        dimensionedScalar(p_rgh.dimensions(), Zero),
+        pcorrTypes
+    );
+
+    const surfaceScalarField rhofCorr(1.0/fvc::interpolate(1.0/rho));
+    const surfaceScalarField rAUfCorr("rAUf", dtDim/rhofCorr);
+
+    if (pcorr.needReference())
+    {
+        fvc::makeRelative(phi, U);
+        adjustPhi(phi, U, pcorr);
+        fvc::makeAbsolute(phi, U);
+    }
+
+    mesh.setFluxRequired(pcorr.name());
+
+    while (pimple.correctNonOrthogonal())
+    {
+        fvScalarMatrix pcorrEqn
+        (
+            fvm::laplacian(rAUfCorr, pcorr) == fvc::div(phi)
+        );
+
+        pcorrEqn.setReference(pRefCell, 0);
+
+        pcorrEqn.solve(pcorr.select(pimple.finalNonOrthogonalIter()));
+
+        if (pimple.finalNonOrthogonalIter())
+        {
+            phi -= pcorrEqn.flux();
+        }
+    }
+}

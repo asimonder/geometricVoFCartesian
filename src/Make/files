@@ -1,12 +1,14 @@
 ijkZone/ijkZone.C
 
 uniformStencil/uniformStencil.C
+uniformStencil/amrStencil.C
 
 multilayerPerceptron/multilayerPerceptron.C
 
 reconstructionSchemes/cartesianSchemes/youngCartesian/youngCartesian.C
 reconstructionSchemes/cartesianSchemes/ccdCartesian/ccdCartesian.C
 reconstructionSchemes/cartesianSchemes/mycCartesian/mycCartesian.C
+reconstructionSchemes/cartesianSchemes/mycCartesianAMR/mycCartesianAMR.C
 
 interfaceForces/interfaceForces.C
 interfaceForces/curvatureModels/curvatureModel.C
@@ -14,19 +16,35 @@ interfaceForces/curvatureModels/newCurvatureModel.C
 interfaceForces/curvatureModels/heightFunction/heightFunction.C
 interfaceForces/curvatureModels/divGradAlpha/divGradAlpha.C
 interfaceForces/curvatureModels/mlpCurvature/mlpCurvature.C
+interfaceForces/curvatureModels/rdfCurvature/rdfCurvature.C
+
+interfaceForces/curvatureModels/heightFunction/heightFunctionAMR.C
 
 DLR_TwoPhaseFlow/curvature/RDF/RDF.C
 
 implicitFunctions/interpolatedWave/interpolatedWaveImplicitFunction.C
+implicitFunctions/jonswap/jonswapImplicitFunction.C
+implicitFunctions/lambDroplet/lambDropletImplicitFunction.C
 
 functionObjects/heightDistanceFunction/heightDistanceFunction.C
+functionObjects/surfaceElevation/surfaceElevation.C
+functionObjects/zetaSampler/zetaSampler.C
 
 transportModels/incompressibleTwoPhaseGenericMixture/incompressibleTwoPhaseGenericMixture.C
 transportModels/immiscibleIncompressibleTwoPhaseGenericMixture/immiscibleIncompressibleTwoPhaseGenericMixture.C
 transportModels/immiscibleIncompressibleTwoPhaseGenericMixture/makeImmiscibleIncompressibleTwoPhaseGenericMixture.C
 
+finiteVolume/interfaceBand/interfaceBand.C
 finiteVolume/divSchemes/momentumConsistentLinear/momentumConsistentLinear.C
+finiteVolume/divSchemes/momentumConsistentFavreMinmod/momentumConsistentFavreMinmod.C
+finiteVolume/divSchemes/momentumConsistentKuhn/momentumConsistentKuhn.C
+finiteVolume/divSchemes/midpointGauss/midpointGaussConvectionSchemes.C
 finiteVolume/ddtSchemes/momentumConsistentCrankNicolson/momentumConsistentCrankNicolsonSchemes.C
-finiteVolume/ddtSchemes/CrankNicolsonTestDdtScheme/CrankNicolsonTestDdtSchemes.C
+
+
+splitAdvection/geometricAdvector.C
+splitAdvection/isoAdvector.C
+splitAdvection/splitAdvector.C
+limitedSplitAdvection/limitedSplitAdvector.C
 
 LIB = $(FOAM_USER_LIBBIN)/libgeometricVoFCartesian

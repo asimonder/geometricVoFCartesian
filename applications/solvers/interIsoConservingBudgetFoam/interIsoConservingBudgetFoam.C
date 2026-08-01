@@ -1,0 +1,286 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | www.openfoam.com
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+    Copyright (C) 2011-2017 OpenFOAM Foundation
+    Copyright (C) 2016 DHI
+    Copyright (C) 2017 OpenCFD Ltd.
+    Copyright (C) 2018 Johan Roenby
+    Copyright (C) 2019-2020 DLR
+    Copyright (C) 2021 Asim Onder
+-------------------------------------------------------------------------------
+License
+    This file is part of OpenFOAM.
+
+    OpenFOAM is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+
+Application
+    interIsoConservingBudgetFoam
+
+
+Description
+    Instrumented copy of interIsoConserving2Foam (identical numerics, see
+    that solver's header for the MCVOF description). Adds a per-timestep
+    discrete kinetic-energy budget via mcvofEnergyBudget.H: the change of
+    total and water-weighted KE is attributed separately to the alpha/rho
+    bookkeeping update, the explicit MCVOF momentum advection, the
+    implicit viscous/Sp predictor, and each pressure corrector; the
+    closing residual plus physical dissipation, gravity and pressure
+    power integrals are written to energyBudget.dat, one ASCII row per
+    step. Activated by the PIMPLE switch mcvofEnergyBudget (default
+    false; the hooks are no-ops when false).
+
+    All numerics are byte-identical to interIsoConserving2Foam; the only
+    additions are the budget hooks marked with "// BUDGET" below.
+
+    Mass-momentum consistent variant (MCVOF), second-order advection
+    pass. As interIsoConservingFoam (Zhang, Popinet, Ling 2020, IJMF
+    130:103362, Eqs. 12-19) plus, each switchable in the PIMPLE dict:
+      mcvofExtrapolatePhi (default true): alpha AND momentum advected
+        with the AB2 half-step flux 1.5*phi^n - 0.5*phi^{n-1}
+        (flux placement per Zhang Sec. 2.2.3; AB2 extrapolation
+        replaces their MAC predictor - a documented deviation);
+      mcvofTracing (default true): donor values traced back by
+        0.5*dt*U_donor (BCG-lite: Taylor term only, no pressure or
+        viscous source terms of full BCG - a documented deviation);
+      mcvofLimiterTheta (default 1.5): generalized minmod sharpness,
+        1 = classic minmod, 2 = MC-limiter end.
+    Viscous terms remain implicit Euler and pressure remains at n+1
+    (the flat Basilisk reference also runs implicit viscosity).
+    v2: static mesh; nOuterCorrectors 1; nAlphaSubCycles 1.
+
+    Solver derived from interFoam for two incompressible, isothermal immiscible
+    fluids using the isoAdvector phase-fraction based interface capturing
+    approach, with optional mesh motion and mesh topology changes including
+    adaptive re-meshing.
+
+    Reference:
+    \verbatim
+        Roenby, J., Bredmose, H. and Jasak, H. (2016).
+        A computational method for sharp interface advection
+        Royal Society Open Science, 3
+        doi 10.1098/rsos.160405
+    \endverbatim
+
+    isoAdvector code supplied by Johan Roenby, STROMNING (2018)
+
+    Adapted by A. Onder to include new surface tension model (2021-2024)
+\*---------------------------------------------------------------------------*/
+
+#include "fvCFD.H"
+#include "dynamicFvMesh.H"
+#include "isoAdvection.H"
+#include "EulerDdtScheme.H"
+#include "localEulerDdtScheme.H"
+#include "CrankNicolsonDdtScheme.H"
+#include "subCycle.H"
+#include "immiscibleIncompressibleTwoPhaseGenericMixture.H"
+#include "incompressibleInterPhaseTransportModel.H"
+//#include "turbulentTransportModel.H"
+#include "pimpleControl.H"
+#include "fvOptions.H"
+#include "CorrectPhi.H"
+#include "fvcSmooth.H"
+#include "dynamicRefineFvMesh.H"
+#include "interfaceForces.H"
+#include "mcvofSlopes.H"
+#include "mcvofEnergyBudget.H"   // BUDGET
+#include "dynamicMultiDimRefineFvMesh.H"
+#include "dynamicMultiDimRefineBalancedFvMesh.H"
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+int main(int argc, char *argv[])
+{
+    argList::addNote
+    (
+        "Solver for two incompressible, isothermal immiscible fluids"
+        " using isoAdvector phase-fraction based interface capturing.\n"
+        "With optional mesh motion and mesh topology changes including"
+        " adaptive re-meshing.\n"
+        "The solver is derived from interFoam.\n"
+        "Budget-instrumented copy of interIsoConserving2Foam"
+    );
+
+    #include "postProcess.H"
+
+    #include "addCheckCaseOptions.H"
+    #include "setRootCaseLists.H"
+    #include "createTime.H"
+    #include "createDynamicFvMesh.H"
+    #include "initContinuityErrs.H"
+    #include "createDyMControls.H"
+    #include "createFields.H"
+    #include "initCorrectPhi.H"
+    #include "createUfIfPresent.H"
+
+    if (pimple.nCorrPIMPLE() > 1)
+    {
+        FatalErrorInFunction
+            << "interIsoConserving2Foam v1 supports nOuterCorrectors 1 only"
+            << exit(FatalError);
+    }
+
+    // BUDGET: per-stage discrete kinetic-energy budget (PIMPLE switch
+    // mcvofEnergyBudget, default false; echoes its config at startup)
+    mcvofEnergyBudget energyBudget
+    (
+        pimple, mesh, runTime, U, rho, alpha1, p_rgh, rho1, g, mixture
+    );
+
+    //turbulence->validate();
+
+    #include "CourantNo.H"
+    #include "setInitialDeltaT.H"
+
+    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+    Info<< "\nStarting time loop\n" << endl;
+
+    while (runTime.run())
+    {
+        #include "readDyMControls.H"
+        #include "CourantNo.H"
+        #include "alphaCourantNo.H"
+        #include "setDeltaT.H"
+
+        ++runTime;
+
+        Info<< "Time = " << runTime.timeName() << nl << endl;
+
+        energyBudget.begin();   // BUDGET: E^n snapshot
+
+        // --- Pressure-velocity PIMPLE corrector loop
+        while (pimple.loop())
+        {
+	  if (pimple.firstIter() || moveMeshOuterCorrectors)
+            {
+	      if (isA<dynamicRefineFvMesh>(mesh) || isA<dynamicMultiDimRefineFvMesh>(mesh) || isA<dynamicMultiDimRefineBalancedFvMesh>(mesh))
+		{
+		  advector.surf().reconstruct();
+		}
+
+                mesh.update();
+
+                if (mesh.changing())
+                {
+		  gh = (g & mesh.C()) - ghRef;
+		  ghf = (g & mesh.Cf()) - ghRef;
+
+		  //  if (isA<dynamicRefineFvMesh>(mesh))
+		  if (isA<dynamicRefineFvMesh>(mesh) || isA<dynamicMultiDimRefineFvMesh>(mesh) || isA<dynamicMultiDimRefineBalancedFvMesh>(mesh))
+                    {
+		      advector.surf().mapAlphaField();
+		      alpha2 = 1.0 - alpha1;
+		      alpha2.correctBoundaryConditions();
+		      rho == alpha1*rho1 + alpha2*rho2;
+		      rho.correctBoundaryConditions();
+		      rho.oldTime() = rho;
+		      alpha2.oldTime() = alpha2;
+                    }
+
+		  MRF.update();
+
+		  if (correctPhi)
+                    {
+                        // Calculate absolute flux
+                        // from the mapped surface velocity
+		      phi = mesh.Sf() & Uf();
+
+                      #include "correctPhi.H"
+
+                        // Make the flux relative to the mesh motion
+		      fvc::makeRelative(phi, U);
+
+		      mixture.correct();
+                    }
+
+                    if (checkMeshCourantNo)
+                    {
+                        #include "meshCourantNo.H"
+		    }
+
+                }
+	}
+
+            #include "alphaControls.H"
+
+            // second-order flux placement: advect alpha and momentum
+            // with the AB2 half-step flux, restore phi afterwards
+            const bool mcvofExtrapolatePhi =
+                pimple.dict().getOrDefault<bool>("mcvofExtrapolatePhi", true);
+            phi.storePrevIter();
+            if (mcvofExtrapolatePhi)
+            {
+                phi = 1.5*phi - 0.5*phi.oldTime();
+            }
+
+            #include "alphaEqnSubCycle.H"
+
+            mixture.correct();
+
+	    interfaceForce.correct();
+
+            // BUDGET: rho^n -> rho^{n+1} bookkeeping at frozen U
+            energyBudget.mark(mcvofEnergyBudget::ALPHA);
+
+            if (pimple.frozenFlow())
+            {
+                phi = phi.prevIter();
+                continue;
+            }
+
+            #include "mcvofAdvection.H"
+
+            phi = phi.prevIter();
+
+            // BUDGET: explicit MCVOF momentum advection U^n -> Ustar
+            energyBudget.mark(mcvofEnergyBudget::ADV);
+
+            #include "UEqn.H"
+
+            // BUDGET: implicit viscous/Sp predictor solve
+            energyBudget.mark(mcvofEnergyBudget::VISC);
+
+            // --- Pressure corrector loop
+            while (pimple.correct())
+            {
+                #include "pEqn.H"
+
+                energyBudget.markPressure();   // BUDGET: corrector 1..3
+            }
+
+            if (pimple.turbCorr())
+            {
+                turbulence->correct();
+            }
+        }
+
+        // BUDGET: E^{n+1}, closing residual, physics integrals, ASCII row
+        energyBudget.write();
+
+	runTime.write();
+
+        runTime.printExecutionTime(Info);
+    }
+
+    Info<< "End\n" << endl;
+
+    return 0;
+}
+
+
+// ************************************************************************* //

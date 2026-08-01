@@ -1,0 +1,491 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2026 Asim Onder
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+License
+    This file is part of OpenFOAM.
+
+    OpenFOAM is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+
+\*---------------------------------------------------------------------------*/
+
+#include <queue>
+#include <cmath>
+
+// * * * * * * * * * * * * Private helper * * * * * * * * * * * * * * * * * //
+
+static bool bboxOverlaps
+(
+    const Foam::point& eMin,
+    const Foam::point& eMax,
+    const Foam::point& dMin,
+    const Foam::point& dMax,
+    const Foam::Vector<bool>& isCyclic,
+    const Foam::vector& L
+)
+{
+    for (Foam::direction d = 0; d < 3; d++)
+    {
+        bool dimOK = false;
+        if (eMin[d] <= dMax[d] && eMax[d] >= dMin[d])
+            dimOK = true;
+
+        if (!dimOK && isCyclic[d] && L[d] > Foam::SMALL)
+        {
+            if ((eMin[d]+L[d]) <= dMax[d] && (eMax[d]+L[d]) >= dMin[d])
+                dimOK = true;
+            if ((eMin[d]-L[d]) <= dMax[d] && (eMax[d]-L[d]) >= dMin[d])
+                dimOK = true;
+        }
+        if (!dimOK) return false;
+    }
+    return true;
+}
+
+
+static bool cellInsideBBox
+(
+    const Foam::point& cc,
+    const Foam::point& bMin,
+    const Foam::point& bMax,
+    const Foam::Vector<bool>& isCyclic,
+    const Foam::vector& L
+)
+{
+    for (Foam::direction d = 0; d < 3; d++)
+    {
+        bool dimIn = false;
+        if (cc[d] >= bMin[d] && cc[d] <= bMax[d])
+            dimIn = true;
+
+        if (!dimIn && isCyclic[d] && L[d] > Foam::SMALL)
+        {
+            if ((cc[d]+L[d]) >= bMin[d] && (cc[d]+L[d]) <= bMax[d])
+                dimIn = true;
+            if ((cc[d]-L[d]) >= bMin[d] && (cc[d]-L[d]) <= bMax[d])
+                dimIn = true;
+        }
+        if (!dimIn) return false;
+    }
+    return true;
+}
+
+
+// Spatial hash key from position and bin size
+static Foam::Vector<Foam::label> spatialKey
+(
+    const Foam::point& p,
+    Foam::scalar invBin
+)
+{
+    return Foam::Vector<Foam::label>
+    (
+        Foam::label(std::floor(p.x() * invBin)),
+        Foam::label(std::floor(p.y() * invBin)),
+        Foam::label(std::floor(p.z() * invBin))
+    );
+}
+
+// Pack labelVector into single label for use as hash key
+static Foam::label packKey(const Foam::Vector<Foam::label>& k)
+{
+    // Use large prime multipliers to reduce collisions
+    return k.x() + 99991 * k.y() + 999979 * k.z();
+}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+template<typename Type>
+void Foam::amrStencil::getZoneField
+(
+    const boolList& zone,
+    Map<Type>& phiMap,
+    const GeometricField<Type, fvPatchField, volMesh>& phi
+)
+{
+    updateIfNeeded();
+
+    if (!procMapsBuilt_)
+    {
+        buildProcMaps();
+    }
+
+    const label nLayers = max(max(iMax_, jMax_), kMax_);
+
+    // ===============================================================
+    //  PARALLEL EXCHANGE (scalable, with spatial hash for O(1) lookup)
+    // ===============================================================
+
+    // Spatial hash: bin -> list of indices into remoteGIds/remoteCCs
+    Map<DynamicList<label>> spatialHash;
+    labelList  remoteGIds;
+    pointField remoteCCs;
+    Map<Type>  gIdToValue;
+    scalar binSize = 0;
+    scalar invBin = 0;
+
+    if (Pstream::parRun())
+    {
+        // --- Gather interface bboxes ---
+
+        point localIMin = point::uniform(VGREAT);
+        point localIMax = point::uniform(-VGREAT);
+
+        forAll(zone, ci)
+        {
+            if (zone[ci])
+            {
+                const point& cc = mesh_.C()[ci];
+                localIMin = Foam::min(localIMin, cc);
+                localIMax = Foam::max(localIMax, cc);
+            }
+        }
+
+        List<point> allIMin(Pstream::nProcs(), point::uniform(VGREAT));
+        List<point> allIMax(Pstream::nProcs(), point::uniform(-VGREAT));
+        allIMin[Pstream::myProcNo()] = localIMin;
+        allIMax[Pstream::myProcNo()] = localIMax;
+        Foam::reduce(allIMin, minOp<List<point>>());
+        Foam::reduce(allIMax, maxOp<List<point>>());
+
+        // --- Gather domain bboxes ---
+
+        const boundBox myBB = mesh_.bounds();
+        List<point> allDMin(Pstream::nProcs(), point::uniform(VGREAT));
+        List<point> allDMax(Pstream::nProcs(), point::uniform(-VGREAT));
+        allDMin[Pstream::myProcNo()] = myBB.min();
+        allDMax[Pstream::myProcNo()] = myBB.max();
+        Foam::reduce(allDMin, minOp<List<point>>());
+        Foam::reduce(allDMax, maxOp<List<point>>());
+
+        // --- Estimate cell spacing ---
+
+        scalar dl = 0;
+        forAll(zone, ci)
+        {
+            if (zone[ci])
+            {
+                const scalar V = mesh_.V()[ci];
+                dl = (isEmpty_.x() || isEmpty_.y() || isEmpty_.z())
+                    ? Foam::sqrt(V / max(dx_, max(dy_, dz_)))
+                    : Foam::cbrt(V);
+                break;
+            }
+        }
+        reduce(dl, maxOp<scalar>());
+
+        const scalar reach = 1.5 * nLayers * dl;
+        const vector L(Lx_, Ly_, Lz_);
+        const bool iHaveInterface = (localIMin.x() < VGREAT/2);
+
+        // --- Partner detection (symmetric) ---
+
+        HashSet<label> exchangeSet;
+
+        for (label p = 0; p < Pstream::nProcs(); p++)
+        {
+            if (p == Pstream::myProcNo()) continue;
+
+            if (allIMin[p].x() < VGREAT/2)
+            {
+                point eMin = allIMin[p] - point::uniform(reach);
+                point eMax = allIMax[p] + point::uniform(reach);
+                if (bboxOverlaps(eMin, eMax, myBB.min(), myBB.max(),
+                        isCyclic_, L))
+                {
+                    exchangeSet.insert(p);
+                    continue;
+                }
+            }
+
+            if (iHaveInterface)
+            {
+                point eMin = localIMin - point::uniform(reach);
+                point eMax = localIMax + point::uniform(reach);
+                if (bboxOverlaps(eMin, eMax, allDMin[p], allDMax[p],
+                        isCyclic_, L))
+                {
+                    exchangeSet.insert(p);
+                }
+            }
+        }
+
+        exchangeProcs_ = exchangeSet.toc();
+        Foam::sort(exchangeProcs_);
+
+        // --- Per-partner exchange ---
+        {
+            PstreamBuffers pBufs(Pstream::commsTypes::nonBlocking);
+            const pointField& cc = mesh_.C();
+
+            forAll(exchangeProcs_, ni)
+            {
+                const label p = exchangeProcs_[ni];
+
+                DynamicList<label> sendG;
+                DynamicList<point> sendC;
+                DynamicList<Type>  sendV;
+
+                if (allIMin[p].x() < VGREAT/2)
+                {
+                    point eMin = allIMin[p] - point::uniform(reach);
+                    point eMax = allIMax[p] + point::uniform(reach);
+
+                    for (label ci = 0; ci < mesh_.nCells(); ci++)
+                    {
+                        if (cellInsideBBox(cc[ci], eMin, eMax,
+                                isCyclic_, L))
+                        {
+                            sendG.append(globalNumbering_.toGlobal(ci));
+                            sendC.append(cc[ci]);
+                            sendV.append(phi[ci]);
+                        }
+                    }
+                }
+
+                UOPstream toNbr(p, pBufs);
+                toNbr << labelList(sendG)
+                      << pointField(sendC)
+                      << List<Type>(sendV);
+            }
+
+            pBufs.finishedSends();
+
+            DynamicList<label> allGIds;
+            DynamicList<point> allCCs;
+
+            forAll(exchangeProcs_, ni)
+            {
+                labelList recvG;
+                pointField recvC;
+                List<Type> recvV;
+
+                UIPstream fromNbr(exchangeProcs_[ni], pBufs);
+                fromNbr >> recvG >> recvC >> recvV;
+
+                forAll(recvG, ci)
+                {
+                    const label gId = recvG[ci];
+                    if (!phiMap.found(gId))
+                    {
+                        phiMap.insert(gId, recvV[ci]);
+                    }
+                    if (!gIdToValue.found(gId))
+                    {
+                        gIdToValue.insert(gId, recvV[ci]);
+                        allGIds.append(gId);
+                        allCCs.append(recvC[ci]);
+                    }
+                }
+            }
+
+            remoteGIds = allGIds;
+            remoteCCs = allCCs;
+        }
+
+        // --- Build spatial hash from remote cells ---
+        if (remoteCCs.size() > 0 && dl > SMALL)
+        {
+            binSize = dl;  // one cell spacing per bin
+            invBin = 1.0 / binSize;
+
+            forAll(remoteCCs, ri)
+            {
+                const label key = packKey(spatialKey(remoteCCs[ri], invBin));
+                if (!spatialHash.found(key))
+                {
+                    spatialHash.insert(key, DynamicList<label>());
+                }
+                spatialHash[key].append(ri);
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Build topology, collect local values,
+    // spatial-hash fill for remote cells.
+    // ---------------------------------------------------------------
+
+    List<labelHashSet> commDummy(Pstream::nProcs());
+
+    forAll(zone, celli)
+    {
+        if (!zone[celli]) continue;
+
+        if (!stencilTopology_.found(celli))
+        {
+            stencilTopology_.insert
+            (
+                celli,
+                buildStencilTopology(celli, commDummy)
+            );
+        }
+
+        const labelList& topo = stencilTopology_[celli];
+
+        // Collect local values
+        forAll(topo, idx)
+        {
+            const label gId = topo[idx];
+            if (gId >= 0 && globalNumbering_.isLocal(gId)
+                && !phiMap.found(gId))
+            {
+                phiMap.insert(gId, phi[globalNumbering_.toLocal(gId)]);
+            }
+        }
+
+        // Quick check: does this stencil need any remote fill?
+        if (!Pstream::parRun() || spatialHash.empty()) continue;
+
+        bool hasRemoteNeeds = false;
+        forAll(topo, idx)
+        {
+            const label gId = topo[idx];
+            if (gId < 0)
+            {
+                hasRemoteNeeds = true;
+                break;
+            }
+            if (!globalNumbering_.isLocal(gId) && !phiMap.found(gId))
+            {
+                hasRemoteNeeds = true;
+                break;
+            }
+        }
+        if (!hasRemoteNeeds) continue;
+
+        // Spatial-hash nearest-neighbour fill
+        const point seedCC = mesh_.C()[celli];
+        const scalar V = mesh_.V()[celli];
+        scalar localDx, localDy, localDz;
+
+        if (isEmpty_.x() && !isEmpty_.y() && !isEmpty_.z())
+        {
+            scalar dl = Foam::sqrt(V / dx_);
+            localDx = dx_; localDy = dl; localDz = dl;
+        }
+        else if (!isEmpty_.x() && isEmpty_.y() && !isEmpty_.z())
+        {
+            scalar dl = Foam::sqrt(V / dy_);
+            localDx = dl; localDy = dy_; localDz = dl;
+        }
+        else if (!isEmpty_.x() && !isEmpty_.y() && isEmpty_.z())
+        {
+            scalar dl = Foam::sqrt(V / dz_);
+            localDx = dl; localDy = dl; localDz = dz_;
+        }
+        else
+        {
+            scalar dl = Foam::cbrt(V);
+            localDx = dl; localDy = dl; localDz = dl;
+        }
+
+        const scalar tol = 1.5 * min(min(localDx, localDy), localDz);
+        const scalar tolSq = tol * tol;
+
+        for (label i = -iMax_; i <= iMax_; i++)
+        for (label j = -jMax_; j <= jMax_; j++)
+        for (label k = -kMax_; k <= kMax_; k++)
+        {
+            const label flatIdx = a3(i, j, k);
+            const label gId = topo[flatIdx];
+
+            bool needFill = (gId < 0);
+            if (!needFill && !globalNumbering_.isLocal(gId)
+                && !phiMap.found(gId))
+            {
+                needFill = true;
+            }
+            if (!needFill) continue;
+
+            point expectedCC = seedCC;
+            if (!isEmpty_.x()) expectedCC.x() += i * localDx;
+            if (!isEmpty_.y()) expectedCC.y() += j * localDy;
+            if (!isEmpty_.z()) expectedCC.z() += k * localDz;
+
+            // Cyclic wrapping
+            const point& bMin = domainMin_;
+            if (isCyclic_.x() && Lx_ > SMALL)
+            {
+                if (expectedCC.x() < bMin.x())
+                    expectedCC.x() += Lx_;
+                else if (expectedCC.x() > bMin.x() + Lx_)
+                    expectedCC.x() -= Lx_;
+            }
+            if (isCyclic_.y() && Ly_ > SMALL)
+            {
+                if (expectedCC.y() < bMin.y())
+                    expectedCC.y() += Ly_;
+                else if (expectedCC.y() > bMin.y() + Ly_)
+                    expectedCC.y() -= Ly_;
+            }
+            if (isCyclic_.z() && Lz_ > SMALL)
+            {
+                if (expectedCC.z() < bMin.z())
+                    expectedCC.z() += Lz_;
+                else if (expectedCC.z() > bMin.z() + Lz_)
+                    expectedCC.z() -= Lz_;
+            }
+
+            // Spatial hash lookup: check bin and 26 neighbours
+            const Vector<label> ck = spatialKey(expectedCC, invBin);
+            scalar bestDistSq = GREAT;
+            label bestIdx = -1;
+
+            for (label di = -1; di <= 1; di++)
+            for (label dj = -1; dj <= 1; dj++)
+            for (label dk = -1; dk <= 1; dk++)
+            {
+                const label key = packKey
+                (
+                    Vector<label>(ck.x()+di, ck.y()+dj, ck.z()+dk)
+                );
+
+                const auto iter = spatialHash.cfind(key);
+                if (!iter.good()) continue;
+
+                const DynamicList<label>& bucket = iter.val();
+                forAll(bucket, bi)
+                {
+                    const label ri = bucket[bi];
+                    const scalar dSq =
+                        Foam::magSqr(remoteCCs[ri] - expectedCC);
+                    if (dSq < bestDistSq)
+                    {
+                        bestDistSq = dSq;
+                        bestIdx = ri;
+                    }
+                }
+            }
+
+            if (bestIdx >= 0 && bestDistSq < tolSq)
+            {
+                const label foundGId = remoteGIds[bestIdx];
+                if (!phiMap.found(foundGId)
+                    && gIdToValue.found(foundGId))
+                {
+                    phiMap.insert(foundGId, gIdToValue[foundGId]);
+                }
+                stencilTopology_[celli][flatIdx] = foundGId;
+            }
+        }
+    }
+}
+
+
+// ************************************************************************* //

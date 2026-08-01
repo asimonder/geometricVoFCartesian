@@ -11,17 +11,21 @@ Class
     Foam::fv::momentumConsistentCrankNicolson
 
 Description
-    Hybrid temporal scheme that uses Euler at the interface (detected via 
-    snGrad(alpha)) and Crank-Nicolson in bulk phases for consistency with
-    isoAdvector in large density ratio flows.
-    
+    Hybrid temporal scheme that uses Euler inside the interface band and
+    Crank-Nicolson in the bulk phases, for mass-momentum consistency with
+    isoAdvector in large density ratio flows. The band comes from the
+    interfaceBand mesh object (fvSolution keys interfaceThreshold and
+    nBufferLayers), shared with momentumConsistentLinear so the Euler
+    region and the upwind region coincide.
+
     Usage:
     \verbatim
     ddtSchemes
     {
-        default  momentumConsistentCrankNicolson 0.9 0.01;
-        // 0.9 is bulk Crank-Nicolson coefficient
-        // 0.01 is interface threshold for |grad(alpha)|
+        ddt(rho,U)  momentumConsistentCrankNicolson 0.9;
+        ddt(U)      momentumConsistentCrankNicolson 0.9;
+        // 0.9 is the bulk Crank-Nicolson coefficient
+        // (a legacy trailing threshold argument is accepted and ignored)
     }
     \endverbatim
 
@@ -90,15 +94,9 @@ class momentumConsistentCrankNicolson
             void operator=(const GeoField& gf);
         };
 
-        //- Reference to alpha field
-        const volScalarField& alpha_;
-        
         //- Bulk Crank-Nicolson coefficient
         scalar bulkCnCoeff_;
-        
-        //- Interface threshold for |grad(alpha)|
-        scalar interfaceThreshold_;
-        
+
         //- Spatially varying offset coefficient field
         //  Must be volScalarField to handle parallel/cyclic BCs correctly
         volScalarField ocCoeff_;

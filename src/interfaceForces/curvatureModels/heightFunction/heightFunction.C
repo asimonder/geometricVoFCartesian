@@ -29,6 +29,10 @@ License
 #include "IFstream.H"
 #include "unitConversion.H"
 #include "cellSet.H"
+#include "DynamicList.H"
+#include "reconstructedDistanceFunction.H"
+#include "rdfCurvature.H"
+
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 namespace Foam
@@ -103,7 +107,8 @@ Foam::heightFunction::heightFunction
       else
 	dl_=dz;
     }
-
+  
+  //rdfPtr_.reset(new reconstructedDistanceFunction(mesh_));
 }
 
 // * * * * * * * * * * * * * * Public Access Member Functions  * * * * * * * * * * * * * * //
@@ -209,6 +214,7 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 		 else
 		   kl=(kP+k+Nz)%Nz;
 		 label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
+		 if (!phiIJK.found(gblIdx)) return List<scalar>();
 		 if (dir==1)
 		   H[k+1]+=phiIJK[gblIdx];
 		 else
@@ -236,6 +242,7 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 		 else
 		   kl=(kP+k+Nz)%Nz;
 		 label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
+		 if (!phiIJK.found(gblIdx)) return List<scalar>();
 		 if (dir==0)
 		   H[k+1]+=phiIJK[gblIdx];
 		 else
@@ -263,6 +270,7 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 		 else
 		   jl=(jP+j+Ny)%Ny;
 		 label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
+		 if (!phiIJK.found(gblIdx)) return List<scalar>();
 		 if (dir==0)
 		   H[j+1]+=phiIJK[gblIdx];
 		 else
@@ -299,6 +307,7 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
 		  else
 		    kl=(kP+k+Nz)%Nz;
 		  label gblIdx=ijkMesh_.lookupGlobalId(il,jl,kl);
+		  if (!phiIJK.found(gblIdx)) return List<scalar>();
 		  if (dir==0)
 		    H[j+1+3*(k+1)]+=phiIJK[gblIdx];
 		  else if (dir==1)
@@ -314,54 +323,38 @@ Foam::List<Foam::scalar> Foam::heightFunction::calculateHeights(const Map<scalar
   
 }
 
+
 void Foam::heightFunction::calculateK()
 {
   const fvMesh& mesh = alpha1_.mesh();
   const volVectorField& C = mesh.C();
-  //modify to dynamic version for speed up
   Map<scalar> alphaIJK;
 
-  /////////// apply divGradAlpha on solid boundaries ////////////////
-  const surfaceVectorField& Sf = mesh.Sf();
-  const volVectorField gradAlpha(fvc::grad(alpha1_, "nHat"));
-  surfaceVectorField gradAlphaf(fvc::interpolate(gradAlpha));
-  surfaceVectorField nHatfv(gradAlphaf/(mag(gradAlphaf) + deltaN_));
-  const volVectorField nHat(gradAlpha/(mag(gradAlpha) + deltaN_));
-  const volScalarField KDivGrad(-fvc::div(nHatfv & Sf));
-  correctContactAngle(nHatfv.boundaryFieldRef(), gradAlphaf.boundaryFieldRef());
-  ///////////////////////////////////////////////////////////////////////
-
-  
   forAll(K_,celli)
     K_[celli]=0;
 
   reconstructionSchemes& surf =
     mesh.lookupObjectRef<reconstructionSchemes>("reconstructionScheme");
 
-  //surf.reconstruct(false);
-  //surf.reconstruct(true);
-
   const boolList& interfaceCells = surf.interfaceCell();
-  //boolList interfaceCells(surf.interfaceCell().size(),false);
-  //forAll(interfaceCells,iCell)
-  // {
-  //  if (alpha1_[iCell]>interfaceTol_ or alpha1_[iCell]<1-interfaceTol_)
-  //	{
-  //	  interfaceCells[iCell]=true;
-  //	}
-  //}
-  
-  //const volVectorField& faceCentre = surf.centre();
   const volVectorField& faceNormal = surf.normal();
 
   Vector<label> stencilSize(nMax_,nMax_,nMax_);
   ijkMesh_.getZoneField(interfaceCells,alphaIJK,alpha1_,stencilSize);
-  
+
+  // --- Pass 1: HF with fallback cells collected ---
+  label nBoundaryFallback = 0;
+  label nHFFallback = 0;
+  label nHFCells = 0;
+  DynamicList<label> fallbackCells;
+
   forAll(interfaceCells,celli)
     {
       vector n = faceNormal[celli];
       if(interfaceCells[celli] && mag(n)>0)
 	{
+	  nHFCells++;
+
 	  label dir=-1;
 	  if (mag(n.x())>0.0 and !ijkMesh_.isEmpty().x())
 	    dir=0;
@@ -372,27 +365,25 @@ void Foam::heightFunction::calculateK()
 	  if (dir==-1)
 	    {
 	      printf("Normal direction is not identified! Continuing for testing purposes.  proc=%d, x=%f, y=%f, z=%f\n",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
-	      //MPI_Abort(Pstream::mpiCommunicator(), -1); 
-	      //FatalErrorInFunction
-	      //<< "Normal direction cannot be identified."
-	      // <<" n="<<n
-	      //<< abort(FatalError);
 	      continue;
 	    }
 
 	  if (boundaryCells_[celli])
 	    {
-	      //printf("Cell at the boundary: proc=%d, x=%f, y=%f, z=%f\n",Pstream::myProcNo(),C[celli].x(),C[celli].y(),C[celli].z());
-	      K_[celli] = KDivGrad[celli];
-	      /*FatalErrorInFunction
-		<< "Interface is at a non-cyclic cellSet or domain boundary. Non-cyclic boundaries is not supported at the moment."
-		<< abort(FatalError);*/
+	      fallbackCells.append(celli);
+	      nBoundaryFallback++;
 	      continue;
 	    }
 
-
 	  Vector<label> ijkG=ijkMesh_.ijk3(celli);
-	  List<scalar> H=calculateHeights(alphaIJK,ijkG,dir); 
+	  List<scalar> H=calculateHeights(alphaIJK,ijkG,dir);
+
+	  if (H.empty())
+	    {
+	      fallbackCells.append(celli);
+	      nHFFallback++;
+	      continue;
+	    }
 
 	  if (is2D_)
 	    {
@@ -402,35 +393,63 @@ void Foam::heightFunction::calculateK()
 	    }
 	  else
 	    {
-	      double H2[3][3]={{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}}; 
-	      for (int i=-1;i<2;i++)//normal 
+	      double H2[3][3]={{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}};
+	      for (int i=-1;i<2;i++)
 		{
-		  for (int j=-1;j<2;j++)//tangent
+		  for (int j=-1;j<2;j++)
 		    {
-		      H2[i+1][j+1]=H[i+1+3*(j+1)]; 
+		      H2[i+1][j+1]=H[i+1+3*(j+1)];
 		    }
 		}
-	      
+
 	      scalar Ht=(H2[2][1]-H2[0][1])/2.0/dl_;
 	      scalar Hb=(H2[1][2]-H2[1][0])/2.0/dl_;
 	      scalar Htt=(H2[2][1]-2.0*H2[1][1]+H2[0][1])/dl_/dl_;
 	      scalar Hbb=(H2[1][2]-2.0*H2[1][1]+H2[1][0])/dl_/dl_;
 	      scalar Htb=(H2[2][2]-H2[2][0]-H2[0][2]+H2[0][0])/4./dl_/dl_;
 	      K_[celli]=(Htt+Hbb+Htt*Hb*Hb+Hbb*Ht*Ht-2.0*Htb*Ht*Hb)/Foam::pow(1.0+Ht*Ht+Hb*Hb,1.5);
-	    }	  	      
-	}      
+	    }
+	}
     }
 
-  if (is2D_)	    
+    // --- Pass 2: RDF fallback via computeKRDF (single-path octree) ---
+    label nFallbackGlobal = fallbackCells.size();
+    reduce(nFallbackGlobal, sumOp<label>());
+
+    if (nFallbackGlobal > 0)
     {
-      #include "../interpolateCutCellsToFaces2D.H"
+        tmp<volScalarField> tKRDF = rdfCurvature::computeKRDF(mesh, alpha1_);
+        const volScalarField& KRDF = tKRDF();
+
+        forAll(fallbackCells, i)
+        {
+            K_[fallbackCells[i]] = KRDF[fallbackCells[i]];
+        }
     }
-  else
+
+    reduce(nBoundaryFallback, sumOp<label>());
+    reduce(nHFFallback, sumOp<label>());
+    reduce(nHFCells, sumOp<label>());
+    if (nBoundaryFallback + nHFFallback > 0)
     {
-      #include "../interpolateCutCellsToFaces3D.H"
-      //      #include "../interpolateCutCellsToFaces3D_dbg.H"
+        Info << "heightFunction: "
+             << nHFCells << " interface cells, "
+             << nBoundaryFallback << " zone-boundary + "
+             << nHFFallback << " incomplete-stencil"
+             << " fell back to rdfCurvature" << endl;
     }
+
+    if (is2D_)
+   {
+    #include "../interpolateCutCellsToFaces2D.H"
+  }
+    else
+  {
+        #include "../interpolateCutCellsToFaces3D.H"
+  }
 }
+
+
 
 
 

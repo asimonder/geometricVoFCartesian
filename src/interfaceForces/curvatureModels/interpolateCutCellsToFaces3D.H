@@ -17,7 +17,7 @@ Kf_=fvc::interpolate(K_);
 const Foam::labelList& nei=alpha1_.mesh().faceNeighbour();
 const Foam::labelList& own=alpha1_.mesh().faceOwner();
 // If a face is between a cutcell and empty cell, its curvature value is that of cutcell.
-forAll(Kf_,iFace)
+/*forAll(Kf_,iFace)
 {
   label iCellO=own[iFace];
   label iCellN=nei[iFace];
@@ -30,6 +30,27 @@ forAll(Kf_,iFace)
     else
 	Kf_[iFace]=K2;      
   }
+  }*/
+
+forAll(interfaceCells, celli)
+{
+    if (!interfaceCells[celli]) continue;
+    const cell& c = mesh.cells()[celli];
+    forAll(c, fi)
+    {
+        const label faceI = c[fi];
+        if (faceI >= mesh.nInternalFaces()) continue;
+        
+        const scalar K1 = K_[own[faceI]];
+        const scalar K2 = K_[nei[faceI]];
+        if (Kf_[faceI] != 0 && K1*K2 == 0.0)
+        {
+            if (Foam::mag(K1) > Foam::mag(K2))
+                Kf_[faceI] = K1;
+            else
+                Kf_[faceI] = K2;
+        }
+    }
 }
 
 //Interior faces: if exactly one side is a cut cell, use the cut-cell curvature

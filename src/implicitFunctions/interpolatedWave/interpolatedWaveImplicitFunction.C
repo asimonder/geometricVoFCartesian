@@ -89,7 +89,7 @@ void Foam::implicitFunctions::interpolatedWaveImplicitFunction::buildEtaTable()
     std::string line;
 
     // Optional: Skip a header line if your CSV has one
-    // std::getline(file, line);
+    std::getline(file, line);
 
     while (std::getline(file, line))
     {
