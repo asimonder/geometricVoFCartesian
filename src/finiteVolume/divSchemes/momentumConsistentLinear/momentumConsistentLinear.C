@@ -201,7 +201,7 @@ Foam::momentumConsistentLinear<Type>::correction
     );
 
     // Zero the correction on band faces: band faces are pure upwind
-    tcorr.ref() *= (scalar(1) - interfaceBand::New(mesh).faceMask());
+    tcorr.ref() *= (1.0 - interfaceBand::New(mesh).faceMask());
 
     return tcorr;
 }

@@ -85,8 +85,8 @@ PtrList<GeometricField<Type, fvPatchField, volMesh>> mcvofSlopes
     {
         dPlus[d].setSize(mesh.nCells(), Type(Zero));
         dMinus[d].setSize(mesh.nCells(), Type(Zero));
-        hPlus[d].setSize(mesh.nCells(), scalar(0));
-        hMinus[d].setSize(mesh.nCells(), scalar(0));
+        hPlus[d].setSize(mesh.nCells(), 0.0);
+        hMinus[d].setSize(mesh.nCells(), 0.0);
         nPlus[d].setSize(mesh.nCells(), 0);
         nMinus[d].setSize(mesh.nCells(), 0);
     }
@@ -110,9 +110,9 @@ PtrList<GeometricField<Type, fvPatchField, volMesh>> mcvofSlopes
 
         // a neighbour contributes only if it carries the phase
         const bool okN = liquidPhase
-            ? (alpha[N] > maskTol) : (alpha[N] < scalar(1) - maskTol);
+            ? (alpha[N] > maskTol) : (alpha[N] < 1.0 - maskTol);
         const bool okP = liquidPhase
-            ? (alpha[P] > maskTol) : (alpha[P] < scalar(1) - maskTol);
+            ? (alpha[P] > maskTol) : (alpha[P] < 1.0 - maskTol);
 
         if (s > 0)
         {
@@ -162,7 +162,7 @@ PtrList<GeometricField<Type, fvPatchField, volMesh>> mcvofSlopes
 
             const bool okNei = liquidPhase
                 ? (pANei[facei] > maskTol)
-                : (pANei[facei] < scalar(1) - maskTol);
+                : (pANei[facei] < 1.0 - maskTol);
             if (!okNei) continue;
 
             if (s > 0)

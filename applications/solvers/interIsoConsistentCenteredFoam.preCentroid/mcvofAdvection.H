@@ -94,7 +94,7 @@
             "q2Star", runTime.timeName(), mesh,
             IOobject::NO_READ, IOobject::NO_WRITE, IOobject::NO_REGISTER
         ),
-        rho2*(scalar(1) - alpha1.oldTime())*U.oldTime()
+        rho2*(1.0 - alpha1.oldTime())*U.oldTime()
     );
 
     q1Star -= runTime.deltaT()*fvc::surfaceIntegrate(rho1*uRecL*alphaPhiL);
@@ -115,7 +115,7 @@
             {
                 q1f[celli] = vector::zero;
             }
-            if (aNew[celli] > scalar(1) - wispTol)
+            if (aNew[celli] > 1.0 - wispTol)
             {
                 q2f[celli] = vector::zero;
             }

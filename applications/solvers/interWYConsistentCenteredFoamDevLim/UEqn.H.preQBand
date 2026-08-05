@@ -1,0 +1,87 @@
+    // consistent momentum recovery: u = (q1+q2)/rho; outside a zonal
+    // advector zone, standard conservative convection stitched at the
+    // zone faces
+    if (!zonal)
+    {
+        U.primitiveFieldRef() =
+            (q1.primitiveField() + q2.primitiveField())
+           /rho.primitiveField();
+    }
+    else
+    {
+        surfaceVectorField momFlux(splitPtr->qPhi());
+        const surfaceVectorField fluxOut
+        (
+            fvc::flux(phi, rho*U, "div(phi,rhoU)")
+        );
+        // zone-face mask rebuilt every step: face counts change under AMR
+        boolList zoneFaceNow(mesh.nInternalFaces(), false);
+        {
+            const boolList& zc = splitPtr->inZone();
+            forAll(zoneFaceNow, facei)
+            {
+                zoneFaceNow[facei] =
+                    zc[mesh.owner()[facei]] || zc[mesh.neighbour()[facei]];
+            }
+        }
+        forAll(zoneFaceNow, facei)
+        {
+            if (!zoneFaceNow[facei])
+            {
+                momFlux[facei] = fluxOut[facei];
+            }
+        }
+        forAll(mesh.boundary(), patchi)
+        {
+            const labelUList& fc = mesh.boundary()[patchi].faceCells();
+            vectorField& pM = momFlux.boundaryFieldRef()[patchi];
+            const vectorField& pF = fluxOut.boundaryField()[patchi];
+            forAll(fc, fi)
+            {
+                if (!splitPtr->inZone()[fc[fi]])
+                {
+                    pM[fi] = pF[fi];
+                }
+            }
+        }
+        const volVectorField divM(fvc::div(momFlux));
+
+        const boolList& zc = splitPtr->inZone();
+        vectorField& Uf = U.primitiveFieldRef();
+        const vectorField& q1f = q1.primitiveField();
+        const vectorField& q2f = q2.primitiveField();
+        const scalarField& rhof = rho.primitiveField();
+        forAll(Uf, celli)
+        {
+            if (zc[celli])
+            {
+                Uf[celli] = (q1f[celli] + q2f[celli])/rhof[celli];
+            }
+            else
+            {
+                Uf[celli] -= dtDim.value()*divM[celli]/rhof[celli];
+            }
+        }
+    }
+    U.correctBoundaryConditions();
+
+    // implicit viscous step on u + dt g (correction(dt) pattern)
+    U += dtDim*gC;
+    {
+        const surfaceScalarField muf(mixture.muf());
+        if (gMax(muf.primitiveField()) > VSMALL)
+        {
+            volVectorField Uprov("Uprov", U);
+            fvVectorMatrix UEqn
+            (
+                fvm::Sp(rho/dtDim, U)
+              - fvm::laplacian(muf, U)
+             ==
+                rho/dtDim*Uprov
+              + fvc::div(muf*(mesh.Sf() & fvc::interpolate(dev2(Foam::T(fvc::grad(U))))))
+            );
+            UEqn.solve();
+        }
+    }
+    U -= dtDim*gC;
+    U.correctBoundaryConditions();

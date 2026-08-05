@@ -55,7 +55,7 @@
     alphaPrev = alpha1;
     const volScalarField rhoNow
     (
-        rho1*alphaPrev + rho2*(scalar(1) - alphaPrev)
+        rho1*alphaPrev + rho2*(1.0 - alphaPrev)
     );
     uPrev.primitiveFieldRef() =
         qWork.primitiveField()/rhoNow.primitiveField();

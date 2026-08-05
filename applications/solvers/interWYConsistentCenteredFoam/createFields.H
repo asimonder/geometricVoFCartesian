@@ -253,7 +253,7 @@ volVectorField q2
         "q2", runTime.timeName(), mesh,
         IOobject::NO_READ, IOobject::NO_WRITE
     ),
-    (scalar(1) - alpha1)*rho2*U
+    (1.0 - alpha1)*rho2*U
 );
 
 // combined pressure-gravity acceleration at cell centres, zero before

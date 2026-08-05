@@ -136,6 +136,10 @@ if (Pstream::parRun())
 }
 else // serial
 {
+    // serial: the local window is the global lattice; without these the
+    // bounds stay uninitialized and ijkGlobalToLocal subtracts garbage
+    minIL_ = 0; minJL_ = 0; minKL_ = 0;
+    maxIL_ = Nx_ - 1; maxJL_ = Ny_ - 1; maxKL_ = Nz_ - 1;
     globalIds_.setSize(Nx_*Ny_*Nz_, -1);
     if (cellIndices.size() > 0)
     {

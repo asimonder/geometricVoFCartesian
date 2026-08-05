@@ -258,7 +258,7 @@ bool Foam::functionObjects::zetaSampler::read(const dictionary& dict)
     // of the Hara-Sullivan mapping. Constant per level (kp is a fixed
     // dictionary scalar), so they are evaluated once here and threaded
     // into the sampling loop and the manifest. kp = 0 gives all ones.
-    levelDecay_.setSize(zetaLevels_.size(), scalar(1));
+    levelDecay_.setSize(zetaLevels_.size(), 1.0);
     forAll(zetaLevels_, k)
     {
         levelDecay_[k] = Foam::exp(-kp_ * mag(zetaLevels_[k]));
@@ -299,7 +299,7 @@ void Foam::functionObjects::zetaSampler::buildZetaLevels()
     DynamicList<scalar> tmp;
 
     // zeta = 0 level
-    tmp.append(scalar(0));
+    tmp.append(0.0);
 
     // Air side: walk +zeta with geometric spacing
     {
@@ -889,7 +889,7 @@ bool Foam::functionObjects::zetaSampler::execute()
             if (flatInterface_)
             {
                 // Rigid-lid: target z* = 0 + zeta_k, so etaLocal is zero.
-                etaTmp.setSize(nxy * nxy, scalar(0));
+                etaTmp.setSize(nxy * nxy, 0.0);
             }
             else
             {

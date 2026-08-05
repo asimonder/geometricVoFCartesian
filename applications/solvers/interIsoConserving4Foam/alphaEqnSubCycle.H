@@ -50,7 +50,7 @@ if (nAlphaSubCycles > 1)
             IOobject::NO_WRITE,
             IOobject::NO_REGISTER
         ),
-        (rho1*alpha1 + rho2*(scalar(1) - alpha1))*U.oldTime()
+        (rho1*alpha1 + rho2*(1.0 - alpha1))*U.oldTime()
     );
     volScalarField alphaPrev("alphaPrev", alpha1);
     volVectorField uPrev("uPrev", U.oldTime());

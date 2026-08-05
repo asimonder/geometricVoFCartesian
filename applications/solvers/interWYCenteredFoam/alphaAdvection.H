@@ -6,7 +6,7 @@
 
         // --- 1. consistent advection (vof event) ----------------------
         q1 == alpha1*rho1*U;
-        q2 == (scalar(1) - alpha1)*rho2*U;
+        q2 == (1.0 - alpha1)*rho2*U;
 
         advector.advect(q1, q2);
 

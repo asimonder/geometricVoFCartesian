@@ -63,6 +63,8 @@ Description
 #include "splitAdvector.H"
 #include "immiscibleIncompressibleTwoPhaseGenericMixture.H"
 #include "pimpleControl.H"
+#include "interfaceForces.H"
+#include "mathematicalConstants.H"
 #include "emptyFvPatch.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -96,6 +98,7 @@ int main(int argc, char *argv[])
     while (runTime.run())
     {
         #include "readTimeControls.H"
+        if (stActive) { maxDeltaT = min(maxDeltaT, dtCap); }
         #include "CourantNo.H"
         #include "alphaCourantNo.H"
         #include "setDeltaT.H"
@@ -108,6 +111,7 @@ int main(int argc, char *argv[])
 
         #include "staggerAlpha.H"
         #include "alphaAdvection.H"
+        if (stActive) { interfaceForcePtr->correct(); }
         #include "momentumRecovery.H"
         #include "viscousStep.H"
         #include "faceFluxProjection.H"

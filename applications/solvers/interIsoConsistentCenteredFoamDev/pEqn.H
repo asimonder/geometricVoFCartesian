@@ -16,7 +16,7 @@
         // air-partial force density at faces, same weights as gravity
         // and surface tension; the cell correction gC returns it to
         // cells
-        af += (scalar(1) - fvc::interpolate(alpha1))
+        af += (1.0 - fvc::interpolate(alpha1))
              *((airForce & mesh.Sf())/mesh.magSf())/rhof;
     }
 

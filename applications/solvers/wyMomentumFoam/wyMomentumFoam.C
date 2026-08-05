@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
             "q2", runTime.timeName(), mesh,
             IOobject::NO_READ, IOobject::AUTO_WRITE
         ),
-        (scalar(1) - alpha1)*rho2*U
+        (1.0 - alpha1)*rho2*U
     );
 
     splitAdvector advector(alpha1, phi, U);
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
         advector.advect(q1, q2);
 
         // recover the one-fluid velocity
-        volScalarField rho(alpha1*rho1 + (scalar(1) - alpha1)*rho2);
+        volScalarField rho(alpha1*rho1 + (1.0 - alpha1)*rho2);
         U.primitiveFieldRef() =
             (q1.primitiveField() + q2.primitiveField())
            /rho.primitiveField();

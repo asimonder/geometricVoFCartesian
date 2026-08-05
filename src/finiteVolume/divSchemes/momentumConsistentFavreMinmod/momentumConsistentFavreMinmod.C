@@ -246,7 +246,7 @@ Foam::momentumConsistentFavreMinmod<Type>::correction
     if (tbulkScheme_().corrected())
     {
         tcorr.ref() +=
-            (scalar(1) - faceMask)*tbulkScheme_().correction(vf);
+            (1.0 - faceMask)*tbulkScheme_().correction(vf);
     }
 
     return tcorr;

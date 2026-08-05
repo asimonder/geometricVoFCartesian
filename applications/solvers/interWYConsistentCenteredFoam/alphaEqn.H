@@ -45,7 +45,7 @@
 
     // consistent advection: phase momenta ride the alpha fluxes
     q1 == alpha1*rho1*U;
-    q2 == (scalar(1) - alpha1)*rho2*U;
+    q2 == (1.0 - alpha1)*rho2*U;
 
     advector.advect(q1, q2);
 

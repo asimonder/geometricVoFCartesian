@@ -87,8 +87,8 @@ PtrList<GeometricField<Type, fvPatchField, volMesh>> kuhnSlopes
     {
         dPlus[d].setSize(mesh.nCells(), Type(Zero));
         dMinus[d].setSize(mesh.nCells(), Type(Zero));
-        hPlus[d].setSize(mesh.nCells(), scalar(0));
-        hMinus[d].setSize(mesh.nCells(), scalar(0));
+        hPlus[d].setSize(mesh.nCells(), 0.0);
+        hMinus[d].setSize(mesh.nCells(), 0.0);
         nPlus[d].setSize(mesh.nCells(), 0);
         nMinus[d].setSize(mesh.nCells(), 0);
     }
@@ -609,7 +609,7 @@ Foam::momentumConsistentKuhn<Type>::correction
     if (tbulkScheme_().corrected())
     {
         tcorr.ref() +=
-            (scalar(1) - faceMask)*tbulkScheme_().correction(vf);
+            (1.0 - faceMask)*tbulkScheme_().correction(vf);
     }
 
     return tcorr;

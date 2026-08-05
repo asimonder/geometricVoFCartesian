@@ -130,7 +130,7 @@
             "q2", runTime.timeName(), mesh,
             IOobject::NO_READ, IOobject::NO_WRITE
         ),
-        (scalar(1) - alpha1)*rho2*U
+        (1.0 - alpha1)*rho2*U
     );
 
     // combined pressure-gravity acceleration at cell centres
@@ -146,3 +146,55 @@
         dimensionedVector(dimAcceleration, Zero)
     );
 
+
+// surface tension: active when sigma > 0; curvature via curvatureDict.
+// sigma = 0 skips construction entirely, keeping every sigma-free
+// record bit-identical (required: this solver is a paper deliverable
+// and must carry the feature; added 2026-08-03)
+// the mixture already registered transportProperties; look it up
+const IOdictionary& transportProperties =
+    mesh.lookupObject<IOdictionary>("transportProperties");
+
+const dimensionedScalar sigmaDim
+(
+    "sigma", dimMass/sqr(dimTime), 0, transportProperties
+);
+const scalar sigmaVal = sigmaDim.value();
+const bool stActive = sigmaVal > VSMALL;
+autoPtr<IOdictionary> curvatureDictPtr;
+autoPtr<interfaceForces> interfaceForcePtr;
+scalar dtCap = GREAT;
+if (stActive)
+{
+    curvatureDictPtr.reset
+    (
+        new IOdictionary
+        (
+            IOobject
+            (
+                "curvatureDict", runTime.system(), mesh,
+                IOobject::MUST_READ_IF_MODIFIED, IOobject::NO_WRITE
+            )
+        )
+    );
+    interfaceForcePtr.reset
+    (
+        new interfaceForces(alpha1, U, transportProperties, *curvatureDictPtr)
+    );
+    const scalar hMin =
+        1.0/gMax(mesh.surfaceInterpolation::deltaCoeffs().primitiveField());
+    dtCap = Foam::sqrt
+    (
+        0.5*(rho1.value() + rho2.value())*Foam::pow3(hMin)
+       /(Foam::constant::mathematical::pi*sigmaVal)
+    );
+    Info<< "interWYCenteredFoam: surface tension ACTIVE, sigma = "
+        << sigmaVal << ", curvature model "
+        << curvatureDictPtr->get<word>("curvatureModel")
+        << ", capillary dt cap = " << dtCap << " s" << nl << endl;
+}
+else
+{
+    Info<< "interWYCenteredFoam: surface tension inactive (sigma = 0)"
+        << nl << endl;
+}

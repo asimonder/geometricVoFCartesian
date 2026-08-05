@@ -1,0 +1,29 @@
+    // consistent momentum recovery: momentum is advected on every
+    // cell by the sweeps (geometric on the lattice, per-phase
+    // Lax-Wendroff in the pure-phase bulk), so the one-fluid
+    // velocity is recovered everywhere from the phase momenta
+    U.primitiveFieldRef() =
+        (q1.primitiveField() + q2.primitiveField())
+       /rho.primitiveField();
+    U.correctBoundaryConditions();
+
+    // implicit viscous step on u + dt g (correction(dt) pattern)
+    U += dtDim*gC;
+    {
+        const surfaceScalarField muf(mixture.muf());
+        if (gMax(muf.primitiveField()) > VSMALL)
+        {
+            volVectorField Uprov("Uprov", U);
+            fvVectorMatrix UEqn
+            (
+                fvm::Sp(rho/dtDim, U)
+              - fvm::laplacian(muf, U)
+             ==
+                rho/dtDim*Uprov
+              + fvc::div(muf*(mesh.Sf() & fvc::interpolate(dev2(Foam::T(fvc::grad(U))))))
+            );
+            UEqn.solve();
+        }
+    }
+    U -= dtDim*gC;
+    U.correctBoundaryConditions();

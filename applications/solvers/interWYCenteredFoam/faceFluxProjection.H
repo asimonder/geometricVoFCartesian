@@ -7,7 +7,13 @@
         // --- 3. face flux + acceleration ------------------------------
         const surfaceScalarField rhof(fvc::interpolate(rho));
         // well-balanced face gravity acceleration [m/s2]
-        const surfaceScalarField af(-ghf*fvc::snGrad(rho)/rhof);
+        surfaceScalarField af(-ghf*fvc::snGrad(rho)/rhof);
+        if (stActive)
+        {
+            // surface tension shares rhof and the operators with the
+            // pressure gradient (balanced-force placement)
+            af += interfaceForcePtr->surfaceTensionForce()/rhof;
+        }
 
         phi = (fvc::interpolate(U) & mesh.Sf())
             + dtDim*af*mesh.magSf();

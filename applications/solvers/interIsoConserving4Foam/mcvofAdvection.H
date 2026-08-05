@@ -91,7 +91,7 @@ if (!mcvofSubcycled)
             IOobject::NO_WRITE,
             IOobject::NO_REGISTER
         ),
-        (rho1*alpha1.oldTime() + rho2*(scalar(1) - alpha1.oldTime()))
+        (rho1*alpha1.oldTime() + rho2*(1.0 - alpha1.oldTime()))
        *U.oldTime()
     );
 

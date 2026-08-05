@@ -882,7 +882,7 @@ void Foam::functionObjects::surfaceElevation::buildEtaGrid()
                     IOobject::REGISTER
                 ),
                 mesh_,
-                dimensionedScalar("zeta", dimLength, scalar(0))
+                dimensionedScalar("zeta", dimLength, 0.0)
             )
         );
     }

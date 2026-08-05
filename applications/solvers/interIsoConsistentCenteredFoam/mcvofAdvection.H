@@ -103,9 +103,9 @@
             const scalar den = b0 + b1;
             const scalar s =
                 (den < SMALL)
-              ? scalar(0.5)
+              ? 0.5
               : min(max((b0 + 2.0*b1)/(3.0*den), sLo), sHi);
-            return min(max(s + dTheta, scalar(0)), scalar(1));
+            return min(max(s + dTheta, 0.0), 1.0);
         };
 
         const labelUList& own = mesh.owner();
@@ -126,7 +126,7 @@
             tG[facei] =
                 dtVal*centroidFrac
                 (
-                    scalar(1) - a0[dcG], scalar(1) - a1f[dcG]
+                    1.0 - a0[dcG], 1.0 - a1f[dcG]
                 );
         }
 
@@ -177,8 +177,8 @@
                 const bool ownG = (pfG[fi] >= 0);
                 ptG[fi] = dtVal*centroidFrac
                 (
-                    scalar(1) - (ownG ? pA0In[fi] : pA0Nei[fi]),
-                    scalar(1) - (ownG ? pA1In[fi] : pA1Nei[fi])
+                    1.0 - (ownG ? pA0In[fi] : pA0Nei[fi]),
+                    1.0 - (ownG ? pA1In[fi] : pA1Nei[fi])
                 );
             }
         }
@@ -254,8 +254,8 @@
             if (mag(m) > VSMALL)
             {
                 scalar w = mL/m;
-                w = min(max(w, scalar(0)), scalar(1));
-                u = w*uLf[facei] + (scalar(1) - w)*uGf[facei];
+                w = min(max(w, 0.0), 1.0);
+                u = w*uLf[facei] + (1.0 - w)*uGf[facei];
             }
             else
             {
@@ -297,8 +297,8 @@
                 if (mag(m) > VSMALL)
                 {
                     scalar w = mL/m;
-                    w = min(max(w, scalar(0)), scalar(1));
-                    u = w*puL[fi] + (scalar(1) - w)*puG[fi];
+                    w = min(max(w, 0.0), 1.0);
+                    u = w*puL[fi] + (1.0 - w)*puG[fi];
                 }
                 else
                 {
@@ -333,7 +333,7 @@
             "q2Star", runTime.timeName(), mesh,
             IOobject::NO_READ, IOobject::NO_WRITE, IOobject::NO_REGISTER
         ),
-        rho2*(scalar(1) - alpha1.oldTime())*U.oldTime()
+        rho2*(1.0 - alpha1.oldTime())*U.oldTime()
     );
 
     if (favreKuhn)
@@ -365,7 +365,7 @@
             {
                 q1f[celli] = vector::zero;
             }
-            if (aNew[celli] > scalar(1) - wispTol)
+            if (aNew[celli] > 1.0 - wispTol)
             {
                 q2f[celli] = vector::zero;
             }

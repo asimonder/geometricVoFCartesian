@@ -414,7 +414,7 @@ Foam::scalar Foam::limitedSplitAdvector::slabFraction
         area += (bLin - aLin)*(ai - mx*xm)/mt;
     }
 
-    return min(max(area/w, scalar(0)), scalar(1));
+    return min(max(area/w, 0.0), 1.0);
 }
 
 
@@ -431,7 +431,7 @@ Foam::scalar Foam::limitedSplitAdvector::boxFraction3
     const scalar mSum = m1 + m2 + m3;
     if (mSum < SMALL)
     {
-        return min(max(aiIn, scalar(0)), scalar(1));
+        return min(max(aiIn, 0.0), 1.0);
     }
     m1 /= mSum; m2 /= mSum; m3 /= mSum;
     if (m1 > m2) { const scalar t = m1; m1 = m2; m2 = t; }
@@ -439,7 +439,7 @@ Foam::scalar Foam::limitedSplitAdvector::boxFraction3
     if (m1 > m2) { const scalar t = m1; m1 = m2; m2 = t; }
 
     // symmetric wrapper: evaluate for ai <= 1/2
-    const scalar ai = min(max(aiIn, scalar(0)), scalar(1));
+    const scalar ai = min(max(aiIn, 0.0), 1.0);
     const scalar a5 = min(ai, 1 - ai);
     const scalar eps = 1e-12;
 
@@ -454,7 +454,7 @@ Foam::scalar Foam::limitedSplitAdvector::boxFraction3
     }
     else if (m2 < eps)
     {
-        F = min(a5/m3, scalar(0.5));     // 1D front (m3 = 1)
+        F = min(a5/m3, 0.5);     // 1D front (m3 = 1)
     }
     else if (m1 < eps)
     {
@@ -551,7 +551,7 @@ Foam::scalar Foam::limitedSplitAdvector::donorFraction
 
     // slab interval in the donor's local d coordinate
     scalar xa = (sOut > 0) ? (1 - w) : 0;
-    scalar xb = (sOut > 0) ? scalar(1) : w;
+    scalar xb = (sOut > 0) ? 1.0 : w;
 
     if (nSweeps_ == 2)
     {
@@ -1181,14 +1181,14 @@ void Foam::limitedSplitAdvector::advanceStep
     forAll(aRef, celli)
     {
         const scalar exc =
-            max(-aRef[celli], aRef[celli] - scalar(1));
+            max(-aRef[celli], aRef[celli] - 1.0);
         if (exc > 0)
         {
             maxExcursion_ = max(maxExcursion_, exc);
             if (exc <= clampTol_)
             {
                 // (clamp)
-                aRef[celli] = min(max(aRef[celli], scalar(0)), scalar(1));
+                aRef[celli] = min(max(aRef[celli], 0.0), 1.0);
                 ++nClamped_;
 
                 

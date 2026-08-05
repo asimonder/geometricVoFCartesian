@@ -26,7 +26,7 @@ scalar domainFraction = 0;
 //if (porosityEnabled)
 //{
 //   const volScalarField& porosity = tporosity.cref();
-//   rhoPhi *= scalar(1)/fvc::interpolate(porosity);
+//   rhoPhi *= 1.0/fvc::interpolate(porosity);
 //    domainFraction = alpha1.weightedAverage(mesh.Vsc()*porosity).value();
 //}
 //else

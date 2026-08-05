@@ -79,34 +79,25 @@ forAll(interfaceCells, celli)
 // If a boundary face has non-zero curvature, we assume it is on a periodic boundary -- must generalize later!
 // We re-apply linear interpolation if neigbouring cells of the periodic face are interface cells. If not, only cutcell-value is used. 
 
-scalar thr=1e-14/dl_;
+scalar thr=1e-12/dl_;
 forAll(mesh.boundaryMesh(),iPatch)
 {
   word pType=Kf_.boundaryField()[iPatch].type();
   if(pType!="empty")
     {	  
       const polyPatch& cPatch = mesh.boundaryMesh()[iPatch];
-      //label iFaceStart = cPatch.start();
-      const labelUList& faceCells = cPatch.faceCells();
+       const labelUList& faceCells = cPatch.faceCells();
       forAll(faceCells,iFace)
 	{
 	  if (Kf_.boundaryFieldRef()[iPatch][iFace]!=0)
 	    {
-	      //Kf_.boundaryFieldRef()[iPatch][iFace]=0;
-	      //const point Cfp=Cf.boundaryField()[iPatch][iFace];
-
 	      label iCell=faceCells[iFace];
 	      scalar K=K_[iCell];	    
-	      //if Kf=K/2. or K=0, it means one neighbouring cell is empty, and interpolation was halved (K/2). Correction by doubling:
-	      if (Foam::mag(2.*Kf_.boundaryFieldRef()[iPatch][iFace]-K)<thr or K<thr)
-		//Kf_.boundaryFieldRef()[iPatch][iFace]=K;
+	      if (Foam::mag(2.*Kf_.boundaryFieldRef()[iPatch][iFace]-K)<thr or Foam::mag(K)<thr)
 		Kf_.boundaryFieldRef()[iPatch][iFace]*=2.;
-
-	      //Info<<"K_["<<celli<<"]="<<K_[celli]<<endl;
 	    }
 	}
     }
 }  
 
  
-

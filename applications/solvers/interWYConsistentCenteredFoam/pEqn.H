@@ -19,7 +19,7 @@
         // budget on every face including mixed ones (the Basilisk
         // original adds a bare kinematic acceleration instead and
         // over-delivers at mixed faces by the local density ratio).
-        af += (scalar(1) - fvc::interpolate(alpha1))
+        af += (1.0 - fvc::interpolate(alpha1))
              *((airForce & mesh.Sf())/mesh.magSf())/rhof;
     }
 

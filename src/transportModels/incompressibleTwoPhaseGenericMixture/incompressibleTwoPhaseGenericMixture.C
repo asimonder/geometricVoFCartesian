@@ -52,7 +52,7 @@ void Foam::incompressibleTwoPhaseGenericMixture::calcNu()
     );
 
     // Average kinematic viscosity calculated from dynamic viscosity
-    nu_ = mu()/(limitedAlpha1*rho1_ + (scalar(1) - limitedAlpha1)*rho2_);
+    nu_ = mu()/(limitedAlpha1*rho1_ + (1.0 - limitedAlpha1)*rho2_);
 }
 
 
@@ -151,7 +151,7 @@ Foam::incompressibleTwoPhaseGenericMixture::mu() const
         (
             "mu",
             IOobject::NO_REGISTER,
-            (mu1*mu2)/(limitedAlpha1*mu2 + (scalar(1) - limitedAlpha1)*mu1)
+            (mu1*mu2)/(limitedAlpha1*mu2 + (1.0 - limitedAlpha1)*mu1)
         );
     }
     else
@@ -160,7 +160,7 @@ Foam::incompressibleTwoPhaseGenericMixture::mu() const
         (
             "mu",
             IOobject::NO_REGISTER,
-            limitedAlpha1*mu1 + (scalar(1) - limitedAlpha1)*mu2
+            limitedAlpha1*mu1 + (1.0 - limitedAlpha1)*mu2
         );
     }
 }
@@ -190,7 +190,7 @@ Foam::incompressibleTwoPhaseGenericMixture::muf() const
         (
             "muf",
             IOobject::NO_REGISTER,
-            (mu1f*mu2f) / (alpha1f*mu2f + (scalar(1) - alpha1f)*mu1f)
+            (mu1f*mu2f) / (alpha1f*mu2f + (1.0 - alpha1f)*mu1f)
         );
     }
     else
@@ -199,7 +199,7 @@ Foam::incompressibleTwoPhaseGenericMixture::muf() const
         (
             "muf",
             IOobject::NO_REGISTER,
-            alpha1f*mu1f + (scalar(1) - alpha1f)*mu2f
+            alpha1f*mu1f + (1.0 - alpha1f)*mu2f
         );
     }
 }
@@ -215,7 +215,7 @@ Foam::incompressibleTwoPhaseGenericMixture::nuf() const
     const surfaceScalarField mu1f = (rho1_ * fvc::interpolate(nuModel1_->nu()))();
     const surfaceScalarField mu2f = (rho2_ * fvc::interpolate(nuModel2_->nu()))();
     const surfaceScalarField rhof =
-      (alpha1f*rho1_ + (scalar(1) - alpha1f)*rho2_)();
+      (alpha1f*rho1_ + (1.0 - alpha1f)*rho2_)();
 
     if (phaseInterpolation_ == "harmonic")
     {
@@ -223,7 +223,7 @@ Foam::incompressibleTwoPhaseGenericMixture::nuf() const
         (
             "nuf",
             IOobject::NO_REGISTER,
-            (mu1f*mu2f) / (alpha1f*mu2f + (scalar(1) - alpha1f)*mu1f) / rhof
+            (mu1f*mu2f) / (alpha1f*mu2f + (1.0 - alpha1f)*mu1f) / rhof
         );
     }
     else
@@ -232,7 +232,7 @@ Foam::incompressibleTwoPhaseGenericMixture::nuf() const
         (
             "nuf",
             IOobject::NO_REGISTER,
-            (alpha1f*mu1f + (scalar(1) - alpha1f)*mu2f) / rhof
+            (alpha1f*mu1f + (1.0 - alpha1f)*mu2f) / rhof
         );
     }
 }
